@@ -27,7 +27,8 @@ $isMenuItemActive = function (array $item) use ($currentPage, $currentPath) {
             return true;
         }
 
-        if (str_contains($currentPath, '/' . ltrim($active, '/'))) {
+        // PHP 7.x compatible version of str_contains()
+        if (strpos($currentPath, '/' . ltrim($active, '/')) !== false) {
             return true;
         }
     }
