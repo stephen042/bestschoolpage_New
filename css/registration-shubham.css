@@ -1,0 +1,272 @@
+
+.registartion-area{
+    padding: 50px 0 100px 0px;
+	background:#dddbdb6b;
+   
+}
+
+
+.registartion-area .center, .center-align {
+    text-align: center;
+}
+.registartion-area .green-text {
+    color: #FFCB00 ;
+	margin-top: 20px;
+}
+.registartion-area .green-text h4{
+font-size: 26px;
+    font-weight: 400;
+    margin-bottom: 30px;
+    line-height: 110%;
+}
+
+.registartion-area .learnpro-register-form {
+    background-color: #fff;
+    padding: 20px;
+	 box-shadow: 0 2px 5px 0 rgba(0,0,0,0.16), 0 2px 10px 0 rgba(0,0,0,0.12);
+	 
+}
+.registartion-area .learnpro-register-form .lead {
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    text-transform: uppercase;
+}
+.registartion-area .learnpro-register-form input[type="text"], .registartion-area .learnpro-register-form input[type="password"],.registartion-area .learnpro-register-form input[type="datetime"],.registartion-area .learnpro-register-form input[type="datetime-local"],.registartion-area .learnpro-register-form input[type="date"],.registartion-area .learnpro-register-form input[type="month"],.registartion-area .learnpro-register-form input[type="time"],.registartion-area .learnpro-register-form input[type="week"],.registartion-area .learnpro-register-form input[type="number"],.registartion-area .learnpro-register-form input[type="email"],.registartion-area .learnpro-register-form input[type="url"],.registartion-area .learnpro-register-form input[type="search"],.registartion-area .learnpro-register-form input[type="tel"],.registartion-area .learnpro-register-form input[type="color"],.registartion-area .learnpro-register-form .uneditable-input {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #9e9e9e;
+    border-radius: 0;
+    outline: none;
+    height: 3rem;
+    width: 100%;
+    font-size: 1rem;
+
+    padding: 0;
+    box-shadow: none;
+    box-sizing: content-box;
+    transition: all .3s;
+}
+.registartion-area .learnpro-register-form  input:not([type]):focus:not([readonly]),.registartion-area .learnpro-register-form input[type=text]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=password]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=email]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=url]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=time]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=date]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=datetime-local]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=tel]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=number]:focus:not([readonly]),.registartion-area .learnpro-register-form  input[type=search]:focus:not([readonly]),.registartion-area .learnpro-register-form  textarea.materialize-textarea:focus:not([readonly]) {
+    
+    box-shadow: 0 1px 0 0 #1b3058;
+}
+.registartion-area .learnpro-register-form input:not([type]),.registartion-area .learnpro-register-form  input[type=text],.registartion-area .learnpro-register-form  input[type=password],.registartion-area .learnpro-register-form  input[type=email],.registartion-area .learnpro-register-form  input[type=url],.registartion-area .learnpro-register-form  input[type=time],.registartion-area .learnpro-register-form  input[type=date],.registartion-area .learnpro-register-form  input[type=datetime-local], input[type=tel], input[type=number], input[type=search], textarea.materialize-textarea {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #9e9e9e;
+    border-radius: 0;
+    outline: none;
+    height: 3rem;
+    width: 100%;
+    font-size:14px;
+   text-transform: capitalize;
+    padding: 0;
+    box-shadow: none;
+    box-sizing: content-box;
+    transition: all .3s;
+	color:#9e9e9e;
+}
+.registartion-area .learnpro-register-form .form-group {
+    margin-bottom: 20px;
+}
+.registartion-area .learnpro-register-form .form-group.sclacu{
+    margin-bottom: 0px;
+}
+
+.registartion-area  .learnpro-register-form .register-btn .btn {
+    width: 100%;
+    border-radius: 3px;
+    background: #FFCB00;
+    color: #fff;
+    border: none;
+    text-transform: uppercase;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 5px 0;
+    box-shadow: none;
+	letter-spacing: .5px;
+}
+
+
+.registartion-area .learnpro-register-form .register-btn .fa{position: relative;
+    left: 5px;
+    top: -1px;
+    font-size: 15px;
+    font-weight: 100;
+	}		
+		
+
+.registartion-area .learnpro-register-form  .admin{
+	    color: #FFCB00;
+    margin: 16px 0 10px 0;
+    font-size: 14px;
+    letter-spacing: .4px;
+	font-weight: 500;
+}
+.registartion-area .here{
+padding-left: 22px;
+    text-transform: capitalize;
+    font-weight: 500;
+    font-size: 15px;
+    
+}
+.registartion-area .here a:hover {
+   color: #FFCB00;
+    text-decoration: none;
+}
+.registartion-area .here a {
+   color:#FFCB00;
+
+}
+.main-navbar.mrgn-botm{
+margin-bottom:0px;
+}
+
+
+.volsab {
+    width: 100%;
+    height: 35px;
+    font-size: 15px;
+    border-bottom: 1px solid #9e9e9e!important;
+    border: none;
+    font-weight: 500;
+	color: #9e9e9e;
+	margin-top: 11px;
+}
+.volsab:focus {
+    outline: none!important;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.login-part{
+    padding: 100px 0 120px 0px;
+	background:#dddbdb6b;
+   
+}
+.login-part .login-form {
+    background-color: #fff;
+    padding: 40px;
+	 box-shadow: 0 2px 5px 0 rgba(0,0,0,0.16), 0 2px 10px 0 rgba(0,0,0,0.12);
+	 
+}
+.login-part .login-form .lead {
+    margin-bottom: 20px;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    text-transform: uppercase;
+}
+.login-part .login-form input[type="text"], .login-part .login-form input[type="password"],.login-part .login-form input[type="datetime"],.login-part .login-form input[type="datetime-local"],.login-part .login-form input[type="date"],.login-part .login-form input[type="month"],.login-part .login-form input[type="time"],.login-part .login-form input[type="week"],.login-part .login-form input[type="number"],.login-part .login-form input[type="email"],.login-part .login-form input[type="url"],.login-part .login-form input[type="search"],.login-part .login-form input[type="tel"],.login-part .login-form input[type="color"],.login-part .login-form .uneditable-input {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #9e9e9e;
+    border-radius: 0;
+    outline: none;
+    height: 3rem;
+    width: 100%;
+    font-size: 1rem;
+
+    padding: 0;
+    box-shadow: none;
+    box-sizing: content-box;
+    transition: all .3s;
+}
+.login-part .login-form  input:not([type]):focus:not([readonly]),.login-part .login-form input[type=text]:focus:not([readonly]),.login-part .login-form  input[type=password]:focus:not([readonly]),.login-part .login-form  input[type=email]:focus:not([readonly]),.login-part .login-form  input[type=url]:focus:not([readonly]),.login-part .login-form  input[type=time]:focus:not([readonly]),.login-part .login-form  input[type=date]:focus:not([readonly]),.login-part .login-form  input[type=datetime-local]:focus:not([readonly]),.login-part .login-form  input[type=tel]:focus:not([readonly]),.login-part .login-form  input[type=number]:focus:not([readonly]),.login-part .login-form  input[type=search]:focus:not([readonly]),.login-part .login-form  textarea.materialize-textarea:focus:not([readonly]) {
+    
+    box-shadow: 0 1px 0 0 #1b3058;
+}
+.login-part .login-form input:not([type]),.login-part .login-form  input[type=text],.login-part .login-form  input[type=password],.login-part .login-form  input[type=email],.login-part .login-form  input[type=url],.login-part .login-form  input[type=time],.login-part .login-form  input[type=date],.login-part .login-form  input[type=datetime-local], input[type=tel], input[type=number], input[type=search], textarea.materialize-textarea {
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid #9e9e9e;
+    border-radius: 0;
+    outline: none;
+    height: 3rem;
+    width: 100%;
+    font-size:14px;
+   text-transform: capitalize;
+    padding: 0;
+    box-shadow: none;
+    box-sizing: content-box;
+    transition: all .3s;
+	color:#9e9e9e;
+}
+.login-part .login-form .form-group {
+    margin-bottom: 25px;
+}
+.login-part .login-form .form-group.sclacu{
+    margin-bottom: 0px;
+}
+.login-part  .login-form .register-btn .btn {
+    width: 100%;
+    border-radius: 3px;
+    background: #FFCB00;
+    color: #fff;
+    border: none;
+    text-transform: uppercase;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 6px 0;
+    box-shadow: none;
+	letter-spacing: .5px;
+}
+
+.login-part .login-form .form-group.frgt{
+margin-bottom:0px;	
+}
+.login-part .here{
+text-transform: capitalize;
+    font-weight: 500;
+    font-size: 16px;
+    padding-top: 4px;  
+}
+.login-part .here a:hover {
+   color: #FFCB00;
+    text-decoration: none;
+}
+.login-part .here a {
+   color:#7191ce;
+
+}
+.login-part .rgstrscl{
+	margin-left: 16px;
+    text-transform: capitalize;
+    font-size: 17px;
+    font-weight: 500;
+}
+.login-part .rgstrscl a:hover {
+   color: #FFCB00;
+    text-decoration: none;
+}
+.login-part .rgstrscl a {
+   color:#7191ce;
+
+}
+.main-navbar.mrgn-botm{
+margin-bottom:0px;
+}

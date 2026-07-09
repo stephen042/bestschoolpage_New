@@ -1,0 +1,14 @@
+[15-Nov-2022 07:04:35 UTC] PHP Warning:  Use of undefined constant URL_ROOT - assumed 'URL_ROOT' (this will throw an Error in a future version of PHP) in /home/bestsch3/public_html/config.php on line 53
+[15-Nov-2022 07:04:35 UTC] PHP Warning:  Use of undefined constant URL_ROOT - assumed 'URL_ROOT' (this will throw an Error in a future version of PHP) in /home/bestsch3/public_html/config.php on line 54
+[15-Nov-2022 07:04:35 UTC] PHP Warning:  Use of undefined constant URL_ROOT - assumed 'URL_ROOT' (this will throw an Error in a future version of PHP) in /home/bestsch3/public_html/config.php on line 55
+[15-Nov-2022 07:04:35 UTC] PHP Warning:  mysqli_connect(): (HY000/2002): No such file or directory in /home/bestsch3/public_html/library/class.database.php on line 78
+[15-Nov-2022 07:04:35 UTC] PHP Deprecated:  Function get_magic_quotes_gpc() is deprecated in /home/bestsch3/public_html/library/class.database.php on line 31
+[15-Nov-2022 07:04:35 UTC] PHP Warning:  mysqli_query() expects parameter 1 to be mysqli, bool given in /home/bestsch3/public_html/library/class.database.php on line 122
+[15-Nov-2022 07:04:35 UTC] PHP Warning:  mysqli_error() expects exactly 1 parameter, 0 given in /home/bestsch3/public_html/library/class.database.php on line 129
+[15-Nov-2022 07:04:35 UTC] PHP Warning:  mysqli_errno() expects exactly 1 parameter, 0 given in /home/bestsch3/public_html/library/class.database.php on line 129
+[15-Nov-2022 12:34:35 Asia/Kolkata] PHP Warning:  mysqli_query() expects parameter 1 to be mysqli, bool given in /home/bestsch3/public_html/library/class.database.php on line 122
+[15-Nov-2022 12:34:35 Asia/Kolkata] PHP Warning:  mysqli_error() expects exactly 1 parameter, 0 given in /home/bestsch3/public_html/library/class.database.php on line 129
+[15-Nov-2022 12:34:35 Asia/Kolkata] PHP Warning:  mysqli_errno() expects exactly 1 parameter, 0 given in /home/bestsch3/public_html/library/class.database.php on line 129
+[15-Nov-2022 12:34:35 Asia/Kolkata] PHP Warning:  mysqli_query() expects parameter 1 to be mysqli, bool given in /home/bestsch3/public_html/library/class.database.php on line 122
+[15-Nov-2022 12:34:35 Asia/Kolkata] PHP Warning:  mysqli_error() expects exactly 1 parameter, 0 given in /home/bestsch3/public_html/library/class.database.php on line 129
+[15-Nov-2022 12:34:35 Asia/Kolkata] PHP Warning:  mysqli_errno() expects exactly 1 parameter, 0 given in /home/bestsch3/public_html/library/class.database.php on line 129

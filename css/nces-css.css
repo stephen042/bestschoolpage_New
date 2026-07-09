@@ -1,0 +1,3912 @@
+/*  ********************************   */
+/* 	        Announcement Panel         */
+/*  ********************************   */
+ #MainContent .naep-panel.naep-announcement-panel {
+	margin-bottom:0;
+	padding-bottom:10px;
+	border-bottom:none;
+	padding-top:10px;
+	height:100%;
+	box-sizing:border-box;
+}
+ #MainContent .naep-panel.naep-announcement-panel .naep-announcement{
+	display:flex;
+	flex-flow:row nowrap;
+	justify-content:center;
+	align-items:center;
+	width:100%;
+	position:relative;
+}
+ #MainContent .naep-panel.naep-announcement-panel .announcement-text{
+	display:inline-block;
+	position:relative;
+	max-width:70%;
+	text-decoration:underline;
+}
+
+ #MainContent .naep-panel.naep-announcement-panel a.learn-more {
+	margin-left:20px;
+	width:100px;
+	margin-top:0;
+}
+ #MainContent .naep-panel.naep-announcement-panel a.learn-more:hover {
+	cursor:pointer;
+}
+ #MainContent .naep-panel.naep-announcement-panel + .naep-panel {
+	padding-top:0;
+}
+/*  ********************************   */
+/* 	        Image-Slider Panel         */
+/*  ********************************   */
+ #MainContent .naep-image-slider-panel .carousel {
+	margin:0 -40px;
+	border:none;
+	box-shadow:none;
+}
+ #MainContent .naep-image-slider-panel .carousel .shadow-box {
+	position:absolute;
+	top:0;
+	bottom:0;
+	left:0;
+	right:0;
+	height:100%;
+	width:100%;
+	opacity:0;
+	background-color:#fff;
+	z-index:3;
+	box-shadow:inset 0 0 30px rgb(0,0,0);	
+}
+ #MainContent .naep-image-slider-panel .carousel:hover .shadow-box {
+	pointer-events: none;
+}
+ #MainContent .naep-image-slider-panel .carousel .slides {
+	z-index:10;
+}
+ #MainContent .naep-image-slider-panel .carousel .controls-container {
+	position: relative;
+	z-index: 40;
+	width: 100%;
+	height: 45px;
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: center;
+	margin-top: -45px;
+	padding-top: 10px !important;
+	padding-bottom: 10px !important;
+	background-color: rgba(54, 54, 54, .25);
+}
+.flex-pauseplay { 
+	display:inline-block;
+	z-index:30;	
+}
+.flex-pauseplay a { 
+	display:inline-block;
+	width: 43px !important; 
+	height: 40px !important; 
+	position:inherit !important;
+}
+ #MainContent .naep-image-slider-panel .carousel ol.flex-control-paging
+{
+	z-index:30;
+}
+ #MainContent .naep-image-slider-panel .carousel ol.flex-control-paging {
+	margin-top: -4px;
+}
+
+/* Control Nav */
+ #MainContent .naep-image-slider-panel .carousel .flex-control-nav {
+	width: 160px;
+	height: 50px;
+	display: inline-block;
+	position: relative; /*bottom: -40px;*/
+	text-align: center;
+}
+ #MainContent .naep-image-slider-panel .carousel .flex-control-nav li {margin: 0 8px; display: inline-block; zoom: 1; *display: inline;}
+ #MainContent .naep-image-slider-panel .flex-control-paging li a {box-shadow: none !important;}
+ #MainContent .naep-image-slider-panel .flex-pauseplay a:focus, .flex-pauseplay a:active { outline: 3px solid #c69214; outline-offset:2px; }
+ #MainContent .naep-image-slider-panel .flex-direction-nav a  { width: 50px !important; height: 95px !important;padding:20px; }
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-prev {left: 0; background: rgba(54,54,54,.15) url("../images/slider_chevron_left.png") no-repeat center center;
+}
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-next {right: 0; background: rgba(54,54,54,.15) url("https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/slider_chevron_right.png") no-repeat center center;
+}
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-prev:hover { background:rgba(54,54,54,.3) url("../images/slider_chevron_left_hover.png") no-repeat center center; }
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-next:hover { background:rgba(54,54,54,.3) url("../images/slider_chevron_right_hover.png") no-repeat center center;}
+
+ #MainContent .flex-pauseplay a:hover {
+
+	background-color:transparent;
+}
+
+/*#PageBody #MainContent .naep-image-slider-panel .flex-direction-nav .flex-prev:focus{ outline: 3px solid #c69214 !important; outline-offset:2px;}
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-next:focus{ outline: 3px solid #c69214 !important; outline-offset:2px;}*/
+/**************** End- Flex slider customization ***********************/
+/*  ********************************   */
+/* 	     First Row Attractors          */
+/*  ********************************   */
+ #MainContent .first-row-attractors {
+	background: linear-gradient(#001871,#33468d);
+	display: flex;
+	flex-flow: row nowrap;
+	padding: 14px 40px 20px 40px;
+	margin: 0 -5px;
+	border: 1px solid #4f516e;
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+}
+ #MainContent .first-row-attractor {
+	display: inline-block;
+width:33%;
+	padding: 0 20px;
+	
+}
+
+}
+ #MainContent .first-row-attractor a{
+	text-decoration:none;
+}
+.first-row-attractor a:hover {
+	text-decoration: none;
+	
+}
+
+ #MainContent .first-row-attractor:hover .row-attractor-title {
+	border-bottom: .1em #fff solid;
+	box-sizing: border-box;
+	margin-bottom:-2px;
+	
+}
+
+ #MainContent .first-row-attractor .row-attractor-title {
+	border-bottom: .1em solid transparent;
+	transition: border-bottom 200ms;
+	text-decoration: none;
+}
+
+
+ #MainContent .first-row-attractor .row-attractor-title {
+
+	text-decoration:none;
+}
+
+ #MainContent  .naep-panel a:link {
+
+	    text-decoration: none;
+    border-radius: 3px;
+    box-shadow: none;
+    padding: 8px;
+    font-size: 17px;
+}
+
+.owl-item div {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+
+ #MainContent .first-row-attractor:hover .row-attractor-title {
+	border-bottom: .1em #fff solid;
+	box-sizing: border-box;
+	margin-bottom: -2px;
+}
+
+ #MainContent .first-row-attractor:hover .row-attractor-text {
+	text-decoration:underline;
+}
+
+
+ #MainContent .first-row-attractor:first-child {
+	padding-left: 0;
+}
+ #MainContent .first-row-attractor:last-child{
+	padding-right:0;
+}
+	 #MainContent .first-row-attractor:nth-child(2) {
+		border-left: 1px solid #c3c4d5;
+		border-right: 1px solid #c3c4d5;
+	}
+ #MainContent .first-row-attractor .row-attractor-title {
+    margin: 0 auto;
+    display: table;
+    color: #081f76;
+    text-align: center;
+    margin-top: -4px;
+    background: white;
+    font-weight: 500;
+    text-transform: capitalize;
+    font-family: sans-serif;
+}
+ #MainContent .first-row-attractor .row-attractor-text {
+	color: #e1f5f3;
+	display: block;
+	position: relative;
+	padding-right: 24px;
+	padding-left:20px;
+	padding-top: 20px;
+	line-height: 1.8;
+	margin-top: -2px;
+}
+	 #MainContent .first-row-attractor .row-attractor-text:after {
+		position: absolute;
+		right: 0;
+		margin-left: 20px;
+		content: "";
+		display: block;
+		height: 34px;
+		width: 20px;
+		padding-top: 28px;
+		background: url('https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/FRA_chevron.png');
+		top: 50%;
+		-webkit-transform: translateY(-50%);
+		-moz-transform: translateY(-50%);
+		-ms-transform: translateY(-50%);
+		transform: translateY(-50%);
+	}
+
+/*  ********************************   */
+/* 	         Split-Panel              */
+/*  ********************************   */
+ #MainContent .split-panel{
+	display:flex;
+	flex-flow:row nowrap;
+}
+ #MainContent .split-panel > .panel-body{
+	width: 50%;
+    float: right;
+	padding: 48px;
+}
+.abhi-jee {
+	width: 50%;
+    float: left;
+}
+.abhi-jee .gtg {
+	float: left;
+    margin-left: 84px;
+    box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+    width: 70%;
+    padding: 32px;
+}
+
+.abhi-jee .gtg h2 {
+    padding-left: 0!important;
+}
+
+.abhi-jee .gtg i {
+    padding-right: 7px;
+}
+
+.abhi-jee .gtg button {
+    padding: 5px;
+    background: #229e22;
+}
+
+.abhi-jee .gtg button a {
+    color: #ffffffe0;
+    font-size: 15px!important;
+    font-weight: 600;
+    font-family: sans-serif;
+}
+
+.gtg .maill p {
+    color: #1980dc;
+}
+
+ #MainContent .split-panel > .panel-body:first-child{
+	margin-right:20px;
+}
+ #MainContent .split-panel > .panel-body:last-child{
+	margin-left:20px;
+}
+ #MainContent .split-panel > .panel-body .panel-body{
+	background-color:#fff;
+	border-radius:5px;
+	border:1px solid #dfdfdf;
+	box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+	padding:16px 20px 20px 20px;
+	height:100%;
+}
+ #MainContent .split-panel > .naep-icon-link-panel .panel-body{
+
+}
+ #MainContent .what-is-naep > .panel-body div:first-child{
+	padding-bottom:20px;
+	border-bottom:1px solid #cbc9c9;
+}
+ #MainContent .what-is-naep > .panel-body div:last-child{
+	padding-top:10px;	
+}
+
+ #MainContent .split-panel .naep-icon-link-panel .icon-link .link-icon {
+	border-radius:10px;
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+}
+/*  ********************************   */
+/* 	     Second Row Attractors         */
+/*  ********************************   */
+ #MainContent .second-row-attractors .panel-body {
+	display: flex;
+	flex-flow: row nowrap;
+}
+ #MainContent .second-row-attractor {
+	position:relative;
+	width:calc(33% - 5px);
+	display:flex;
+	flex-flow: column nowrap;
+	background-color:#fff;
+	border-radius:5px;
+	border:1px solid #dfdfdf;
+	box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+	padding:20px;
+	margin:0 5px;
+}
+
+ #MainContent .second-row-attractor:first-child{
+	margin-left:0;
+}
+ #MainContent .second-row-attractor:last-child{
+	margin-right:0;
+}
+	 #MainContent .second-row-attractor img {
+		width: 100%;
+		flex-shrink: 0;
+		border: solid #c69214 1px;
+		box-shadow: 0 3px 6px rgba(54,54,54, .15);
+	}
+ #MainContent .second-row-attractor h2{
+	margin:0 auto;
+	display:table;
+	line-height:1em;
+	padding:17px 0 13px 0;
+	font-size:19px;
+}
+ #MainContent .second-row-attractor p:last-of-type {
+	margin-bottom:36px;
+	padding-bottom:14px;
+}
+ #MainContent .second-row-attractor a.learn-more {
+	position:absolute;
+	bottom:20px;
+	left:20px;
+	right:20px;
+}
+/*  ********************************   */
+/* 	        Image Attractors           */
+/*  ********************************   */
+ #MainContent .image-attractors .panel-body {
+	position:relative;
+	display:block;
+	background-color:#fff;
+	border-radius:5px;
+	border:1px solid #dfdfdf;
+	box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+	padding:20px;
+	width:100%;
+	clear:both;
+}
+ #MainContent .image-attractors .panel-body:after{
+	content:"";
+	display:block;
+	height:0;
+	clear:both;
+}
+ #MainContent .image-attractors .panel-body h2 {
+	margin-top:0;
+	line-height:1em;
+}
+ #MainContent .image-attractors.right .panel-body p{
+	margin-right:20px;
+	position:absolute;
+	width:calc(45% - 40px);
+
+	top:45%;
+	-webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+ #MainContent .image-attractors.left .panel-body p{
+	margin-right:20px;
+	position:absolute;
+	width:calc(45% - 40px);
+	left:calc(55% + 20px);	
+	top:45%;
+	-webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+ #MainContent .image-attractors .panel-body p:last-of-type {
+	margin-bottom:56px;
+	padding-bottom:0;
+}
+ #MainContent .image-attractors.right .panel-body .learn-more {
+	position:absolute;
+	bottom:20px;
+	left:20px;
+}
+ #MainContent .image-attractors.left .panel-body .learn-more {
+	position:absolute;
+	bottom:20px;
+	left:calc(55% + 20px);
+}
+ #MainContent .image-attractors.right .panel-body img {
+	width: 55%;
+	float: right;
+	margin-left: 20px;
+	border: 1px solid #c69214;
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+}
+ #MainContent .image-attractors.left .panel-body img {
+	width: 55%;
+	float: left;
+	margin-right: 20px;
+	border: 1px solid #c69214;
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+}
+/*  ********************************   */
+/* 	         Video Gallery             */
+/*  ********************************   */
+ #MainContent .naep-video-gallery .video-player {
+	position: relative;
+	padding-bottom: 52%;
+	padding-top: 30px; 
+	height: 0; 
+	width:100%;
+}
+
+	 #MainContent .naep-video-gallery .video-player iframe,
+	 #MainContent .naep-video-gallery .video-player object,
+	 #MainContent .naep-video-gallery .video-player embed {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		max-height: 610px;
+		height: 100%;
+		border: solid #c69214 1px;
+		box-shadow: 0 3px 6px rgba(54,54,54, .15);
+	}
+ #MainContent .naep-video-gallery .video-list-frame {
+	position:relative;
+	margin:20px 0;
+}
+
+	 #MainContent .naep-video-gallery .video-list-frame:not(.start):before {
+		content: "";
+		position: absolute;
+		width: 10%;
+		height: 128px;
+		top: 0;
+		left: 50px;
+		background: linear-gradient(90deg,rgba(255,255,255,1),rgba(255,255,255,0));
+		z-index: 20;
+		pointer-events: none;
+	}
+	 #MainContent .naep-video-gallery .video-list-frame:not(.end):after {
+		content: "";
+		position: absolute;
+		width: 10%;
+		height: 128px;
+		top: 0;
+		right: 50px;
+		background: linear-gradient(90deg, rgba(255,255,255,0),rgba(255,255,255,1));
+		z-index: 20;
+		pointer-events: none;
+	}	
+ #MainContent .naep-video-gallery .video-list {
+	display:flex;
+	flex-flow:row nowrap;
+	position:relative;
+	min-width:calc(100% - 120px);
+	margin:0 50px;
+	width:auto;
+	overflow:hidden;	
+}
+ #MainContent .naep-video-gallery .video-list-item {
+	display: inline-block;
+	width: 225px;
+	white-space:normal;
+	flex-shrink:0;
+	margin:0 10px 0 0 ;
+
+}
+ #MainContent .naep-video-gallery .video-list-thumb {
+	cursor:pointer;
+	position:relative;
+	height:128px;
+	box-shadow:0px 3px 6px 0px rgba(54,54,54,.15);
+	border: solid 1px #c69214;
+
+}
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration {
+		position: absolute;
+		color: #fff;
+		z-index: 2;
+		font-weight: bold;
+		text-shadow: 0px 3px 6px rgba(0,0,0,0.75);
+		top: 0%;
+		left: 50%;
+		padding: 0 0 0 50px;
+		-webkit-transform: translate(-50%);
+		-moz-transform: translate(-50%);
+		-ms-transform: translate(-50%);
+		transform: translate(-50%);
+		cursor: pointer;
+		z-index: 2;	
+		background-color: transparent;
+		width: 220px;
+		height: 126px;
+	}
+
+
+		 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration:hover {
+			background-color: rgba(198, 146, 20, .2);
+		}
+		
+		/*fix video hover here*/
+		 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration:before{
+	position:absolute;
+	left:0;
+	top:34%;
+	content: url(../images/play_btn.png);
+	width: 50px;
+	height: 45px;
+	margin-right:10px;
+}
+ #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing span {
+	visibility:hidden;
+}
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing {
+		background: #001871;
+		height: 100%;
+		width: 100%;
+		top: 0;
+		left: 0;
+		transform: none;
+		z-index: 5;
+		color: #fff;
+		cursor: default;
+		pointer-events: none;
+		box-shadow: inset 0px 0px 25px rgba(0,0,0,0.5);
+	}
+ #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing:before{
+	position:absolute;
+	top:15%;
+	left:0;
+	content: "NOW";
+	width:100%;
+	font-size:3.25em;
+	line-height: 1;
+	text-align: center;
+	pointer-events:none;
+	display:block;
+	margin:0;
+}
+ #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing:after {
+	content: "PLAYING";
+	position:absolute;
+	top:55%;
+	left:0;
+	width:100%;
+	font-size:1.938em;
+	line-height: 1;
+	text-align: center;
+	pointer-events:none;
+	display:block;
+	margin:0;
+}
+ #MainContent .naep-video-gallery .video-list-thumb img {
+	width: 100%;
+	position: relative;
+	z-index:1;
+	border:1px solid #c69214;
+	box-shadow:0 3px 6px rgba(54,54,54, .15);
+	opacity:.7;
+
+}
+
+
+	 #MainContent .naep-video-gallery .video-list-thumb:hover {
+		box-shadow: none;
+	}
+		
+		
+		 #MainContent .naep-video-gallery .video-list-item:hover .video-list-thumb img {
+	box-shadow:inset 0 3px 6px rgba(54,54,54, .15);	
+	opacity:1;
+
+}
+
+	 #MainContent .naep-video-gallery .video-list-item:hover .video-list-thumb img:hover {
+
+		opacity:1;
+	}
+	
+	
+	
+	 #MainContent .naep-video-gallery .video-list-item .desc {
+		color: #001871;
+		font-size: 1em;
+		line-height: 20px;
+		margin-top: 18px;
+	}
+ #MainContent .naep-video-gallery .video-list-item:hover  .desc {
+	text-decoration:underline;
+}
+ #MainContent .naep-video-gallery .video-list-arrows  {
+
+}
+	 #MainContent .naep-video-gallery .video-list-arrows .arrow-left {
+		position: absolute;
+		left: 0px;
+		top: 20px;
+		height: 92px;
+		width: 50px;
+		cursor: pointer;
+		padding: 20px 10px;
+		background: rgba(36,36,36,.15) url("https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/slider_chevron_left.png") no-repeat center center;
+		-o-transition: 200ms;
+		-ms-transition: 200ms;
+		-moz-transition: 200ms;
+		-webkit-transition: 200ms;
+		transition: 200ms;
+	}
+ #MainContent .naep-video-gallery .video-list-arrows .arrow-left:hover {
+	background:rgba(36,36,36,.30) url("https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/slider_chevron_left_hover.png") no-repeat center center;	
+}
+	 #MainContent .naep-video-gallery .video-list-arrows .arrow-right {
+		position: absolute;
+		right: 0px;
+		top: 20px;
+		height: 92px;
+		width: 50px;
+		cursor: pointer;
+		padding: 20px 10px;
+		background: rgba(36,36,36,.15) url("../images/slider_chevron_right.png") no-repeat center center;
+		-o-transition: 200ms;
+		-ms-transition: 200ms;
+		-moz-transition: 200ms;
+		-webkit-transition: 200ms;
+		transition: 200ms;
+	}
+
+
+	 #MainContent .naep-video-gallery .video-list-arrows .arrow-right:focus,  #MainContent .naep-video-gallery .video-list-arrows .arrow-left:focus {
+		outline:none;
+	}
+
+ #MainContent .what-is-naep > .panel-body div:last-child .video-asset {
+
+	margin-top:-7px;
+}
+
+
+ #MainContent .naep-video-gallery .video-list-thumb .thumb_duration span {
+
+	margin-top:12%;
+	position:absolute;
+}
+
+
+
+
+
+ #MainContent .naep-video-gallery .video-list-arrows .arrow-right:hover {
+	background: rgba(36,36,36,.30) url("../images/slider_chevron_right_hover.png") no-repeat center center;
+
+}
+
+
+
+.flex-pauseplay {
+    text-align: center;
+	margin-top:-2px;
+}
+
+
+
+	/*  ********************************   */
+	/* 	        Media Queries              */
+	/*  ********************************   */
+
+@media screen and (min-width: 1200px) {
+	 #MainContent .what-is-naep.panel-body .video-asset{
+		width:100%;
+		margin:0;
+	}		
+	 #MainContent .split-panel .naep-icon-link-panel .icon-link .link-icon {
+		display:inline-block;
+		margin-right:20px;
+		background-repeat: no-repeat;
+		background-position:center center;
+		
+	}	
+	 #MainContent .split-panel .naep-icon-link-panel .icon-link .link-text span {
+		width: 280px;
+		padding-right: 20px;
+	}
+
+
+	/*  ********************************   */
+	/* 	         Video Gallery             */
+	/*  ********************************   */
+	 #MainContent .naep-video-gallery .video-list-arrows .small_arrow {
+		display: none;
+	}
+
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration span {
+		font-size: 3.438em;
+		left: 26%;
+	}
+}
+
+@media screen and (min-width: 992px) and (max-width: 1199px) {
+	 #MainContent .what-is-naep.panel-body .video-asset {
+		width: 390px;
+		margin: 0;
+	}
+
+	 #MainContent .split-panel .naep-icon-link-panel .icon-link .link-icon {
+		display: inline-block;
+		margin-right: 20px;
+		background-repeat: no-repeat;
+		background-position: center center;
+	}
+
+	 #MainContent .split-panel .naep-icon-link-panel .icon-link .link-text span {
+		width: 280px;
+		padding-right: 20px;
+	}
+	/*  ********************************   */
+	/* 	         Video Gallery             */
+	/*  ********************************   */
+	 #MainContent .naep-video-gallery .video-list-arrows .small_arrow {
+		display: none;
+	}
+
+
+
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration span {
+		font-size: 3.929em;
+	}
+}
+
+
+
+
+
+@media screen and (min-width: 768px) and (max-width: 991px) {
+	/*  ********************************   */
+	/* 	     First Row Attractors          */
+	/*  ********************************   */
+
+	 #MainContent .first-row-attractor .row-attractor-title {
+		/*min-height:76px;*/
+	}
+
+	/*  ********************************   */
+	/* 	     Second Row Attractors          */
+	/*  ********************************   */
+	 #MainContent .second-row-attractor h2 {
+		font-size: 26px;
+	}
+
+	/*  ********************************   */
+	/* 	         Split-Panel               */
+	/*  ********************************   */
+	 #MainContent .naep-panel {
+		padding-top: 30px;
+		padding-bottom: 30px;
+	}
+
+	 #MainContent .split-panel {
+		padding: 30px 0;
+	}
+
+	 #MainContent .split-panel {
+		flex-flow: column nowrap;
+	}
+
+	 #MainContent .split-panel > .panel-body {
+		width: 100%;
+	}
+
+	 #MainContent .split-panel > .panel-body:first-child {
+		padding-bottom: 30px;
+		margin: 0;
+		border-bottom: 1px solid #cbc9c9;
+	}
+
+	 #MainContent .split-panel > .panel-body:last-child {
+		padding-top: 30px;
+		margin: 0;
+	}
+
+	 #MainContent .split-panel .video-asset {
+		width: 100%;
+		margin: 0 auto;
+	}
+
+	 #MainContent .split-panel .naep-icon-link-panel .link-text span {
+		
+		padding-right: 20px;
+	}
+	/*  ********************************   */
+	/* 	         Video Gallery             */
+	/*  ********************************   */
+	 #MainContent .naep-video-gallery .video-list-arrows .large_arrow {
+		display: none;
+	}
+
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing:before {
+		font-size: 3.714em;
+	}
+
+
+
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing:after {
+		font-size: 2.214em;
+	}
+
+
+
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration span {
+		font-size: 3.929em;
+	}
+}
+	
+@media screen and (max-width: 767px){
+	 #MainContent {
+		padding-left:5px;
+		padding-right:5px;
+	}
+
+		 #MainContent .naep-image-slider-panel .flex-control-paging li a {
+
+			border-radius:initial;
+		}
+		
+		
+		 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing:before {
+			font-size: 3.29em;
+		}
+
+
+		 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing:after {
+
+			font-size:2em;
+		}
+	/*  ********************************   */
+	/* 	        Image-Slider Panel         */
+	/*  ********************************   */
+	 #MainContent .naep-image-slider-panel .carousel {
+		margin: 0 -5px;
+		border: none;
+		box-shadow: none;
+		margin:0 0px -5px 0px;
+	}
+
+	.flex-pauseplay a {
+		/*width: 30px !important; */
+		/*height: 30px !important;*/
+	}
+	.flex-pauseplay a img {
+	}
+
+
+	,  #MainContent .naep-image-slider-panel .flex-control-paging li a {
+		margin-top: -5px;
+		background-color: transparent;
+		box-shadow: 1px 2px 10px #363636;
+	
+	}
+
+	 #MainContent .naep-image-slider-panel .flex-control-paging li a.flex-active,  #MainContent .naep-image-slider-panel .flex-control-paging li a,  #MainContent .naep-image-slider-panel .flex-control-paging li a:hover,  #MainContent .naep-image-slider-panel .flex-control-paging li a.flex-active:hover,  #MainContent .naep-image-slider-panel .flex-control-paging li a:hover {
+		background-size: 20px;
+	}
+
+	 #MainContent a.flex-pause img,  #MainContent a.flex-play img {
+		height: 32px;
+	}
+	
+	
+	
+	 #MainContent .naep-image-slider-panel .flex-control-paging li a:hover {
+		background: url(../images/slider_circle_active.png) no-repeat;
+		background-size:20px;
+	}
+
+
+	 #MainContent .naep-image-slider-panel .flex-direction-nav a  { width: 44px !important; height: 67px !important;padding:20px 10px; }
+	 #MainContent .naep-image-slider-panel .carousel .flex-control-nav {width: 180px !important;height:25px; display: inline-block; position: relative; /*bottom: -40px;*/ text-align: center;}
+	 #MainContent .naep-image-slider-panel .carousel .flex-control-nav li {margin: 0 10px !important; display: inline-block; zoom: 1; *display: inline;}
+
+	 #MainContent .naep-image-slider-panel .flex-direction-nav .flex-prev {left:0; background:rgba(54,54,54,.15) url("../images/chevron_slider_small.png") no-repeat center center;}
+	 #MainContent .naep-image-slider-panel .flex-direction-nav .flex-next {right: 0; background:rgba(54,54,54,.15) url("../images/chevron_slider_small_right.png") no-repeat center center;
+	}
+	 #MainContent .naep-image-slider-panel .flex-direction-nav .flex-prev:hover { background:rgba(54,54,54,.3) url("../images/chevron_slider_hover_small.png") no-repeat center center; }
+	 #MainContent .naep-image-slider-panel .flex-direction-nav .flex-next:hover { background:rgba(54,54,54,.3) url("../images/chevron_slider_hover_small_right.png") no-repeat center center;}
+
+	 #MainContent .naep-image-slider-panel .carousel .controls-container {
+		height: 35px;
+		margin-top: -35px;
+		padding-top: 5px !important;
+	}
+
+
+	 #MainContent .naep-image-slider-panel .flex-pauseplay {
+		margin-top: 0px;
+	}
+
+	 #MainContent .naep-image-slider-panel .carousel ol.flex-control-paging {
+		margin-top:2px;
+	}
+
+
+
+
+	/*  ********************************   */
+	/* 	     First Row Attractors          */
+	/*  ********************************   */
+	 #MainContent .first-row-attractors {
+		background: none;
+		flex-flow: column nowrap;
+		border: none;
+	}
+	 #MainContent .first-row-attractor{
+		border-radius:5px;
+		margin:10px 0;
+		padding:20px;
+		background:linear-gradient(#001871,#33468d);
+		width:100%;
+	}
+
+		 #MainContent .first-row-attractor a:hover {
+			text-decoration: none;
+			border-bottom: .1em solid #fff;
+		}
+	
+	 #MainContent .first-row-attractor:first-child{
+		padding:20px;
+	}
+	 #MainContent .first-row-attractor:last-child{
+		padding:20px;
+	}
+	 #MainContent .first-row-attractor:nth-child(2){
+		border-left: none;
+		border-right: none;
+		margin:0;
+	}
+
+
+		
+		/* pb edits*/
+		 #MainContent .first-row-attractor .row-attractor-title {
+			font-size: 1.7em !important;
+			margin-top:-8px;
+		}
+
+		 #MainContent .first-row-attractor .row-attractor-text {
+			font-size: 1.143em;
+		}
+
+	/*  ********************************   */
+	/* 	         Split-Panel               */
+	/*  ********************************   */
+	 #MainContent .naep-panel {
+		padding-top:30px;
+		padding-bottom:30px;
+	}	
+	 #MainContent .split-panel{
+		padding:0;
+		padding-bottom:30px;
+	}
+	 #MainContent .split-panel{
+		flex-flow:column nowrap;
+	}
+	 #MainContent .split-panel > .panel-body {
+		width:100%;
+	}
+	 #MainContent .split-panel > .panel-body:first-child {
+		padding-bottom:30px;
+		margin:0;
+		border-bottom: 1px solid #cbc9c9;
+	}	
+	 #MainContent .split-panel > .panel-body:last-child{
+		padding-top:30px;		
+		margin:0;
+	}
+	 #MainContent .split-panel .video-asset {
+		width:100%;
+		margin:0 auto;		
+	}	
+	 #MainContent .split-panel .naep-icon-link-panel .link-text span {
+		width:auto;
+	}	
+	
+	
+	
+	
+	
+	 #MainContent .second-row-attractors .panel-body {
+		flex-flow:column nowrap;
+	}
+	 #MainContent .second-row-attractor {
+		width:100%;
+		padding:20px;
+		margin:0;
+	}
+	 #MainContent .second-row-attractor:nth-child(2) {
+		margin:10px 0;
+	}
+	 #MainContent .second-row-attractor h2{
+		order:1;
+		margin:0;
+		padding-top:0;
+	}	
+	 #MainContent .second-row-attractor img{
+		order:2;
+		margin-bottom:20px;
+	}	
+	 #MainContent .second-row-attractor p{
+		order:3;
+		margin-bottom:20px;
+	}	
+	 #MainContent .second-row-attractor a{
+		order:4;
+		align-self:flex-start;
+	}		
+	 #MainContent .second-row-attractor a.learn-more {
+		position:relative;
+		bottom:0px;
+		left:0px;
+		right:0px;
+		margin:0;
+	}	
+	/*  ********************************   */
+	/* 	        Image Attractors           */
+	/*  ********************************   */
+	 #MainContent .image-attractors .panel-body {
+		position:relative;
+		display:flex;
+		flex-flow:column nowrap;
+		background-color:#fff;
+		border-radius:5px;
+		border:1px solid #dfdfdf;
+		box-shadow:0 3px 6px rgba(54,54,54, .15);
+		padding:20px;
+		width:100%;
+	}
+	 #MainContent .image-attractors.right .panel-body h2,
+	 #MainContent .image-attractors.left .panel-body h2 {
+		order:1;
+	}		
+	 #MainContent .image-attractors.right .panel-body p,
+	 #MainContent .image-attractors.left .panel-body p {
+		position:relative;
+		order:3;
+		left:auto;
+		top:auto;
+		width:100%;
+		-webkit-transform: none;
+		-moz-transform: none;
+		-ms-transform: none;
+		transform: none;
+	}
+	 #MainContent .image-attractors .panel-body p:last-of-type{
+		margin-bottom:56px;
+	}	
+	 #MainContent .image-attractors.right .panel-body a.learn-more,
+	 #MainContent .image-attractors.left .panel-body a.learn-more {
+		order:4;
+		left:20px;
+	}	
+	 #MainContent .image-attractors.right .panel-body img,
+	 #MainContent .image-attractors.left .panel-body img	{
+		width:100%;
+		margin:0;
+		margin-bottom:10px;
+		order:2;
+		
+	}
+	
+	/*  ********************************   */
+	/* 	         Video Gallery             */
+	/*  ********************************   */
+	 #MainContent 	.naep-video-gallery .video-list-arrows .large_arrow {
+		display:none;
+	}	
+	 #MainContent .naep-video-gallery .video-list-frame:not(.start):before {	
+		width:10%;
+		height:90px;
+		top:0;
+		left:30px;
+
+	}	
+	 #MainContent .naep-video-gallery .video-list-frame:not(.end):after {	
+
+		width:10%;
+		height:90px;
+		top:0;
+		right:30px;
+	}
+	
+	
+	 #MainContent .naep-video-gallery .video-list {
+		position:relative;
+		min-width:calc(100% - 88px);
+		margin:0 30px;
+		overflow-x:hidden;	
+	}
+
+	 #MainContent .naep-video-gallery .video-list-item {
+		display: inline-block;
+		width: 160px;
+		white-space:normal;
+		flex-shrink:0;
+		margin:0 10px 0 0 ;
+
+	}
+	 #MainContent .naep-video-gallery .video-list-thumb {
+		cursor:pointer;
+		position:relative;
+		height:90px;
+	}
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration{
+		position:absolute;
+		top:26%;
+		left:50%;
+		padding:0 0 0 30px;
+	}
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration:before{
+		position:absolute;
+		left:0;
+		top:36px;
+		content:"";
+		background-image:url(../images/play_btn.png);
+		background-size:35px 37px;
+		width: 35px;
+		height: 37px;
+		margin-right:10px;
+	}	
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration span{
+		display:inline-block;
+		font-size:2.571em;
+		line-height:37px;
+		padding:0;
+		margin:32px 0 0 10px;
+		height:37px;
+	}	
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing {
+		background: #001871;
+		height:101%;
+		width:100%;
+		top:30px;
+		left:0;
+	}
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing:before{
+		background:none;
+		top:15%;
+		font-size:3.429em;
+		line-height: .5em;
+	}
+
+
+
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration.now_playing:after {
+		font-size:2em;
+		line-height: 1.1em;
+	}
+
+
+	 #MainContent .naep-video-gallery .video-list-arrows .arrow-left {
+		position: absolute;
+		left: 0px;
+		top: 10px;
+		height: 67px;
+		width: 28px;
+		cursor: pointer;
+		padding: 20px 5px;
+		background: rgba(36,36,36,.15) url("../images/chevron_slider_small.png") no-repeat center center;
+		-o-transition: 200ms;
+		-ms-transition: 200ms;
+		-moz-transition: 200ms;
+		-webkit-transition: 200ms;
+		transition: 200ms;
+	}
+	 #MainContent .naep-video-gallery .video-list-arrows .arrow-left:hover {
+		background:rgba(36,36,36,.30) url("../images/chevron_slider_hover_small.png") no-repeat center center;		
+	}
+	 #MainContent .naep-video-gallery .video-list-arrows .arrow-right {
+		position: absolute;
+		right: 0px;
+		top: 10px;
+		height: 67px;
+		width: 28px;
+		cursor: pointer;
+		padding: 20px 5px;
+		background: rgba(36,36,36,.15) url("../images/chevron_slider_small_right.png") no-repeat center center;
+		-o-transition: 200ms;
+		-ms-transition: 200ms;
+		-moz-transition: 200ms;
+		-webkit-transition: 200ms;
+		transition: 200ms;
+	}
+	 #MainContent .naep-video-gallery .video-list-arrows .arrow-right:hover {
+		background:rgba(36,36,36,.30) url("../images/chevron_slider_hover_small_right.png") no-repeat center center;		
+	}
+
+	 #MainContent .naep-video-gallery .video-list-thumb .thumb_duration {
+
+		width:160px;
+		height:100px;
+		margin-top:-30px;
+	}
+
+}
+@media screen and (max-width: 480px){
+	 #MainContent .naep-image-slider-panel .flex-control-paging li a {
+		width:20px;
+		height:20px;
+		background-size:20px 20px;
+
+	}
+	 #MainContent .naep-image-slider-panel .flex-control-paging li a:hover {
+		width:20px;
+		height:20px;
+		background-size:20px 20px;
+	}	
+}
+/*  ********************************   */
+/* 	           All Panels              */
+/*  ********************************   */
+ #MainContent .naep-panel > *:last-child {
+	margin-bottom:0;
+}	
+	
+
+/*  ********************************   */
+/* 	        Subject h1 Icons           */
+/*  ********************************   */
+ #MainContent h1.h1-icon{
+	position:relative;
+	padding-left:40px;
+	height:36px;
+	padding-top:0px;
+}
+ #MainContent .h1-icon:before {
+	content:"";
+	position:absolute;
+	left:0;
+	top:0;
+	height:36px;
+	width:36px;
+	background-size:36px;
+}
+ #MainContent h2.h2-icon{
+	position:relative;
+	padding-left:40px;
+	height:30px;
+	padding-top:0px;
+}
+ #MainContent .h2-icon:before {
+	content:"";
+	position:absolute;
+	left:0;
+	top:0;
+	height:30px;
+	width:30px;
+	background-size:30px;
+}
+/*
+ #MainContent .h1-icon.h1-icon-arts{
+	position:relative;
+	padding-left:45px;
+	height:35px;
+	padding-top:0;	
+}
+ #MainContent .h1-icon.h1-icon-arts:before {
+	content:"";
+	position:absolute;
+	left:0;
+	top:0;
+	height:35px;
+	width:35px;
+}
+*/
+ #MainContent .h2-icon.h2-icon-math:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-mathematics.svg');
+}
+ #MainContent .h1-icon.h1-icon-math:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-mathematics.svg');
+}
+ #MainContent .h1-icon.h1-icon-arts:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-arts.svg');
+}
+ #MainContent .h1-icon.h1-icon-civics:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-civics.svg');
+}
+ #MainContent .h1-icon.h1-icon-economics:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-economics.svg');
+}
+ #MainContent .h1-icon.h1-icon-geography:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-geography.svg');
+}
+ #MainContent .h1-icon.h1-icon-reading:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-reading.svg');
+}
+ #MainContent .h1-icon.h1-icon-ushistory:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-ushistory.svg');
+}
+ #MainContent .h1-icon.h1-icon-writing:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-writing.svg');
+}
+ #MainContent .h1-icon.h1-icon-tel:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-technology.svg');
+}
+ #MainContent .h1-icon.h1-icon-science:before {
+	content: "";
+	background-image: url('../images/link-icons/icon-branded-science.svg');
+}
+ #MainContent .h1-icon.h1-icon-ap-phase1:before {
+	content: "";
+	background-image: url('/nationsreportcard/subject/assessment_process/icons/AP_128_createFramework.png');
+}
+ #MainContent .h1-icon.h1-icon-ap-phase2:before {
+	content: "";
+	background-image: url('/nationsreportcard/subject/assessment_process/icons/AP_128_createAssessment.png');
+}
+ #MainContent .h1-icon.h1-icon-ap-phase3:before {
+	content: "";
+	background-image: url('/nationsreportcard/subject/assessment_process/icons/AP_128_selectParticipants.png');
+}
+ #MainContent .h1-icon.h1-icon-ap-phase4:before {
+	content: "";
+	background-image: url('/nationsreportcard/subject/assessment_process/icons/AP_128_preparePackageDistribute.png');
+}
+ #MainContent .h1-icon.h1-icon-ap-phase5:before {
+	content: "";
+	background-image: url('/nationsreportcard/subject/assessment_process/icons/AP_128_administerAssessment.png');
+}
+ #MainContent .h1-icon.h1-icon-ap-phase6:before {
+	content: "";
+	background-image: url('/nationsreportcard/subject/assessment_process/icons/AP_128_scoreAssessment.png');
+}
+ #MainContent .h1-icon.h1-icon-ap-phase7:before {
+	content: "";
+	background-image: url('/nationsreportcard/subject/assessment_process/icons/AP_128_results.png');
+}
+
+/*  ********************************   */
+/* 	         Landing Pages             */
+/*  ********************************   */
+ #MainContent {
+	box-sizing:border-box;
+}
+#MainContent #naepPanels {
+    margin-bottom: 50px;
+        box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+}
+ #MainContent .pageupdated {
+	margin-top:0;
+}
+ #MainContent .pageupdated hr{
+	margin-top:0;
+}
+  #header-shell{
+	background-color:#fff;
+}
+ #MainContent .naep-panel{
+	position:relative;
+	padding-bottom:30px;
+	border-bottom:1px solid #cbc9c9;
+	padding-top:30px;
+}
+ #MainContent .naep-panel:after{
+	content:"";
+	visibility:hidden;
+	display:block;
+	height:0px;
+	clear:both;
+}
+ #MainContent .naep-panel H3{
+	margin-bottom:20px;
+	margin-top:20px;
+}
+	 #MainContent .naep-panel H2 {
+		margin-bottom:15px;
+	}
+
+
+	 #MainContent .naep-panel H2:first-child,  #MainContent .naep-panel H3:first-child {
+		margin-top: 0;
+	}
+ #MainContent .naep-panel:first-of-type{
+	border-top:none;
+	padding-top:0px;
+	margin-top:0px;
+}
+ #MainContent .naep-panel:last-of-type{
+	
+	padding-bottom:0;
+}
+
+ #MainContent .naep-panel.merge-bottom {
+	padding-bottom:0;
+	border-bottom:none;
+	margin-bottom:0;
+}
+ #MainContent .panel-body{
+	position:relative;
+}
+ #MainContent .panel-body:after{
+	content:"";
+	visibility:hidden;
+	display:block;
+	height:0px;
+	clear:both;
+}
+ #MainContent .naep-panel .panel-body:last-child;{
+	padding-bottom:0;
+}
+/*  ********************************   */
+/* 	          Button Panel             */
+/*  ********************************   */
+ #MainContent .naep-button-panel {
+	display:block;
+	position:relative;
+}
+ #MainContent .naep-button-panel .button-group {
+	position: relative;
+	display: flex;
+	flex-flow: row wrap;
+	align-items:stretch;
+	margin-bottom: -20px;
+	overflow: hidden;
+	margin-top: -8px;
+	}
+ #MainContent .naep-button-panel .button-group a:link,
+ #MainContent .naep-button-panel .button-group a:visited{
+	text-decoration:none;
+	color:#001871;
+}
+ #MainContent .naep-button-panel .button-group a:hover,
+ #MainContent .naep-button-panel .button-group a:focus{
+	text-decoration:none;
+}
+ #MainContent .naep-button-panel .button-group a:active {
+	text-decoration:none;
+	color:#fff;
+}
+ #MainContent .landing-button {
+	position: relative;
+	display: flex;
+	flex-flow: column nowrap;
+
+	justify-content: center;
+	background: linear-gradient(#f6f6f6,#eee);
+	color: #001871;
+	border: 1px solid #c69214;
+	min-height: 80px;
+	padding: 10px;
+	margin-right:20px;
+	margin-bottom: 20px;
+	border-radius: 5px;
+	text-align: left;
+	vertical-align: top;
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+	-moz-transition: all 300ms;
+	-o-transition: all 300ms;
+	-webkit-transition: all 300ms;
+	transition: all 300ms ease-in;
+}
+ #MainContent .landing-panel-button-list .landing-element .landing-button {
+	margin-right:0px;
+}
+ #MainContent .landing-button.no-padding {
+	padding: 0;
+	margin: 0;
+}
+ #MainContent  .landing-button span{
+	display:block;
+}
+ #MainContent  .landing-button.pdf  span:last-of-type{
+	font-style:italic;
+	font-weight:bold;
+}
+ #MainContent  .landing-button:hover,
+ #MainContent  .landing-button:focus {
+	background:none #bbc7d6;;	
+	border:1px solid #001871;
+	border-radius:5px;
+	box-shadow: inset 0 3px 6px rgba(54,54,54, .15);	
+}
+ #MainContent  .landing-button:active {
+	color:#fff;
+	background:none #001871;	
+	border:1px solid #001871;
+	border-radius:5px;
+	box-shadow: inset 0 3px 6px rgba(54,54,54, .15);	
+	transition:none;
+}
+
+/*  ********************************   */
+/* 	         Landing Panel             */
+/*  ********************************   */
+ #MainContent .naep-landing-panel{
+	position:relative;
+	height:auto;
+}
+ #MainContent .landing-panel > .row {
+	position:relative;
+	margin-left:0;
+	margin-right:0;
+}
+ #MainContent .landing-panel-button-list{
+	list-style-type:none;
+	padding:0;
+	margin:0;
+	display:block;
+}
+ #MainContent .landing-element {
+	position:relative;
+	width:100%;
+	background-color:#fff;
+	margin-bottom:20px;
+	padding:0;
+	clear:both;
+}
+ #MainContent .landing-element:last-child {
+	margin-bottom:0;
+}
+ #MainContent .landing-element a {
+	position:relative;
+	display:flex;
+	flex-flow: row nowrap;
+	align-items:center;
+	width:100%;
+	text-decoration:none;
+	padding:20px;
+}
+ #MainContent .landing-element a {
+	border:1px solid transparent;
+}
+ #MainContent .landing-element a:hover {
+	border: solid #dfdfdf 1px;
+	border-radius: 5px;
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+	transition: all 400ms ease-in;
+}
+ #MainContent .landing-element  .landing-text p{
+	text-decoration:none;
+}
+ #MainContent .landing-element:hover  .landing-text p,
+ #MainContent .landing-element a:focus  .landing-text p {
+	text-decoration:underline;
+}
+ #MainContent .landing-element a p:last-child {
+	margin-bottom:0;
+}
+ #MainContent .landing-element a:last-child {
+	margin-bottom:0;
+}
+ #MainContent  .landing-element .landing-button {
+	margin-bottom:0;
+	width:35%;
+}
+ #MainContent .landing-button > span {
+	display:inline-block;
+	width:calc(100% - 20px);
+}
+ #MainContent .landing-button.external > span {
+	width:calc(100% - 25px);
+}
+ #MainContent .landing-button.pdf > span,  #MainContent .landing-button.pdf-no-size > span {
+	width:calc(100% - 36px);
+}
+ #MainContent .landing-button:after {
+	content: url('../images/Chevron_Related_Info.png');
+	right:10px;
+    position: absolute;
+    display: block;
+	width:10px;
+	height:18px;
+	margin-left:10px;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+ #MainContent .landing-button.external:after {
+	content: url('../images/External_Link.png');
+	width:15px;
+}
+ #MainContent .landing-button.pdf:after,
+ #MainContent .landing-button.pdf-no-size:after  {
+	content: url('../images/pdf.png');
+	height:34px;
+	width:26px;
+}
+ #MainContent .landing-button:hover {
+   -webkit-transform: none;
+    -moz-transform: none;
+    -ms-transform: none;
+    transform: none;	
+}
+ #MainContent .landing-button:active:after {
+	content: url('../images/Learn_More_Active.png');
+	right:10px;
+    position: absolute;
+    display: block;
+    top: 50%;
+}
+ #MainContent .landing-button.external:active:after {
+	content: url('../images/External_Link_Active.png');
+	right:10px;
+    position: absolute;
+    display: block;
+    top: 50%;
+}
+ #MainContent .landing-button.pdf:active:after {
+	content: url('../images/pdf_Active.png');
+	right:10px;
+    position: absolute;
+    display: block;
+    top: 50%;
+}
+ #MainContent .landing-text {
+	display:inline-block;
+	overflow:hidden;
+	margin-left:10px;
+	width:65%;
+}
+ #MainContent .landing-text p {
+	color:#001871;
+}
+ #MainContent .landing-text p:last-child {
+	padding-bottom:0;
+}
+ #MainContent .naep-landing-panel > *:last-child{
+	margin-bottom:0;
+}
+
+ #MainContent .landing-element:hover .landing-button,
+ #MainContent .landing-element a:focus .landing-button {
+	background:none #bbc7d6;	
+	border:1px solid #001871;
+	border-radius:5px;
+	box-shadow: inset 0 3px 6px rgba(54,54,54, .15);
+}
+ #MainContent  .landing-element:hover .landing-button:active,
+ #MainContent  .landing-element a:focus .landing-button:active {
+	background:none #001871;
+	border:1px solid #001871;
+	box-shadow: inset 0 3px 6px rgba(54,54,54, .15);
+	color:#fff;
+}
+ #MainContent .landing-element a:hover, 
+ #MainContent .landing-element a:focus{
+	background:none;
+}
+/* Learn More Button */
+ #MainContent .naep-panel a.learn-more {
+	position:relative;
+	display:inline-block;
+	background: none #fff;	
+	line-height:1em;
+	border-radius:5px;
+	text-align: left;
+vertical-align:bottom;
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+	-moz-transition: all 300ms;
+	-o-transition: all 300ms;
+	-webkit-transition: all 300ms;
+	transition: all 300ms ease-in;
+	min-height:0;
+	bottom:0;
+	left:0;
+	margin-left:0;
+	margin-bottom:20px;
+	margin-top:-7px;
+	border:1px solid #001871;
+	color:#001871;
+	text-decoration:none;
+	padding:10px 20px;
+	padding-right:60px;
+}
+ #MainContent .naep-panel a.learn-more:last-child {
+	margin-bottom: 0px;
+    margin-top: 22px;
+    margin-left: 13px;
+}
+ #MainContent a.learn-more:after {
+	content: url('https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/Chevron_Related_Info.png');
+	right:20px;
+    position: absolute;
+    display: block;
+	margin-left:20px;
+	    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+ #MainContent a.learn-more:hover,
+ #MainContent a.learn-more:focus {
+	background: none #bbc7d6;
+	box-shadow: inset 0 3px 6px rgba(54,54,54, .15);
+		cursor:pointer;
+}
+ #MainContent a.learn-more:active {
+	background: none #001871;
+	color: #fff;
+	box-shadow: inset 0 3px 6px rgba(54,54,54, .15);
+}
+ #MainContent a.learn-more:active:hover,#PageBody #MainContent a.learn-more:active:focus,  #MainContent a.learn-more:active {
+	-webkit-transition-property: none;
+	-moz-transition-property: none;
+	-o-transition-property: none;
+	transition-property: none;
+}
+ #MainContent a.learn-more:active:after {
+	content: url('../images/Learn_More_Active.png');
+	right: 20px;
+	position: absolute;
+	display: block;
+	margin-left: 20px;
+}
+ #MainContent a.learn-more.archive {
+	margin-top:20px;
+}
+ #MainContent a.learn-more.center {
+	margin:0 auto;
+}
+ #MainContent a.learn-more.pdf {
+	height: 60px;
+	line-height:58px;
+	padding:0 60px 0 10px;
+}
+/*  ********************************   */
+/* 	      Learn More Panel             */
+/*  ********************************   */
+
+
+
+/*  ********************************   */
+/* 	           Text Panel              */
+/*  ********************************   */
+ #MainContent .naep-text-panel .panel-body > *:not(.landing-button):not(.video-asset):last-child {
+	margin-bottom:0;
+	padding-bottom:0;
+}
+/*  ********************************   */
+/* 	        Icon-Link Panel            */
+/*  ********************************   */
+ #MainContent .naep-icon-link-panel {
+	
+}
+ #MainContent .naep-icon-link-panel .panel-body {
+	position:relative;
+	background-color:#fff;
+	border-radius:5px;
+	border:1px solid #dfdfdf;
+	box-shadow:0 3px 6px rgba(54,54,54, .15);
+	padding:20px;
+}
+ #MainContent .naep-icon-link-panel .whats-new-header {
+	display:flex;
+	flex-flow:row nowrap;
+	justify-content:space-between;
+	align-items:start;
+}
+ #MainContent .naep-icon-link-panel .whats-new-header span {
+	line-height:1em;
+	display:inline-block;
+}
+ #MainContent .naep-icon-link-panel .subscribe-newsflash {
+	position:relative;
+	color:#2b4d6c;
+	background-color:#f2f2f2;
+	border:1px solid #2b4d6c;
+	box-shadow:0 3px 6px rgba(54,54,54,.15);
+	margin-bottom:20px;
+}
+ #MainContent .naep-icon-link-panel .subscribe-newsflash:hover,
+ #MainContent .naep-icon-link-panel .subscribe-newsflash:focus {
+	box-shadow:inset 0 3px 6px rgba(54,0,0,.35);
+}
+ #MainContent .naep-icon-link-panel .subscribe-newsflash > a {
+	position:relative;
+	height:2em;
+	color:#2b4d6c;
+	background-color:transparent;
+	text-decoration:none;
+}
+ #MainContent .naep-icon-link-panel .subscribe-newsflash > a span{
+	line-height:2em;
+	
+}
+ #MainContent .naep-icon-link-panel .subscribe-newsflash > a:hover,
+ #MainContent .naep-icon-link-panel .subscribe-newsflash > a:focus {
+	text-decoration:underline;
+}
+ #MainContent .naep-icon-link-panel .subscribe-newsflash:before {
+	content:"";
+	background:url("https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/NewsFlash_home.png") no-repeat ;
+	background-size:16px 17px;
+	display:inline-block;
+	vertical-align:middle;
+	margin:0 10px;
+	width:16px;
+	height:17px;
+}
+ #MainContent .naep-icon-link-panel .subscribe-newsflash:after {
+	content:"";
+	background:url("https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/NewsFlash_chevron.png") no-repeat;
+	background-size:9px 18px;
+	display:inline-block;
+	vertical-align:middle;
+	margin:0 10px;
+	width:9px;
+	height:18px;
+}
+ #MainContent .naep-icon-link-panel .icon-link {
+	position:relative;
+	display:flex;
+	flex-flow:row nowrap;
+	padding:20px 0;
+	border-top:1px solid #cbc9c9;
+	clear:both;
+}
+ #MainContent .naep-icon-link-panel .icon-link:visited {
+	color:#001871;
+}
+ #MainContent .naep-icon-link-panel .icon-link:first-of-type{
+	padding-top:0;
+	border-top:0;
+}
+ #MainContent .naep-icon-link-panel .icon-link:last-child{
+	padding-bottom:0;
+}
+ #MainContent .naep-icon-link-panel .icon-link:link {
+	text-decoration:none;
+}
+ #MainContent .naep-icon-link-panel .icon-link:hover,
+ #MainContent .naep-icon-link-panel .icon-link:focus {
+	text-decoration:underline;
+	background:none;
+}
+ #MainContent .naep-icon-link-panel .icon-link:hover .link-icon,
+ #MainContent .naep-icon-link-panel .icon-link:focus .link-icon {
+	box-shadow:inset 0 6px 30px rgba(0,0,0,.5);
+	opacity:.5;
+	text-decoration:underline;
+}
+ #MainContent .naep-icon-link-panel .icon-link:after {
+	content: url('../images/Chevron_Related_Info.png');
+	right:0px;
+    position: absolute;
+    display: block;
+	width:10px;
+	height:18px;
+	margin-left:10px;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+ #MainContent .naep-icon-link-panel .icon-link.external:after {
+	content: url('../images/External_Link.png');
+	width:15px;
+}
+ #MainContent .naep-icon-link-panel .icon-link.pdf:after,
+ #MainContent .naep-icon-link-panel .icon-link.pdf-no-size:after  {
+	content: url('../images/pdf.png');
+	height:34px;
+	width:26px;
+}
+	 #MainContent .naep-icon-link-panel .icon-link .link-icon {
+		display: inline-block;
+		width: 90px;
+		height: 90px;
+		margin-right:20px;
+		background-size: auto 80px;
+		background-repeat: no-repeat;
+		background-position: center center;
+		flex-shrink: 0;
+		border-radius:10px;
+	}
+ #MainContent .naep-icon-link-panel .icon-link:nth-of-type(4n+1) .link-icon {
+	background-color:#001871;
+}
+ #MainContent .naep-icon-link-panel .icon-link:nth-of-type(4n+2) .link-icon {
+	background-color:#c69214;
+}
+ #MainContent .naep-icon-link-panel .icon-link:nth-of-type(4n+3) .link-icon {
+	background-color:#007a33;
+}
+ #MainContent .naep-icon-link-panel .icon-link:nth-of-type(4n+4) .link-icon {
+	background-color:#0077c8;
+}
+ #MainContent .naep-icon-link-panel .link-text {
+	display:inline-flex;
+	flex-flow:column nowrap;
+	justify-content:flex-start;	
+	width:100%;
+}
+ #MainContent .naep-icon-link-panel .link-text > span {
+	display:block;	
+	color:#001871;
+	font-size:1em;
+	padding-right:30px;
+}
+ #MainContent .naep-icon-link-panel .link-text > span:first-child{
+	font-weight: 500;
+    text-transform: capitalize;
+    font-size: 17px;
+    line-height: 43px;
+	padding-bottom: 5px;
+}
+ #MainContent .naep-icon-link-panel .link-text > span:nth-child(2){
+	font-size: 15px;
+    font-weight: 400;
+    font-family: sans-serif;
+}
+ #MainContent .naep-icon-link-panel .icon-link.pdf .link-text > span {
+	display:block;	
+	color:#001871;
+	font-size:1em;
+	padding-right:40px;
+}
+ #MainContent .naep-icon-link-panel .icon-link.pdf .link-text > span:nth-child(2) {
+	padding-bottom:10px;
+	font-size:1.375em;
+}
+ #MainContent .naep-icon-link-panel .icon-link.pdf .link-text > span:last-child{
+	font-weight:600;
+	font-style:italic;
+}
+ #MainContent .link-icon.arts {
+	background-image: url('../images/link-icons/icon-arts.svg');
+}
+ #MainContent .link-icon.blog-post {
+	background-image: url('../images/link-icons/icon-blog.svg');
+}
+ #MainContent .link-icon.brochure {
+	background-image: url('../images/link-icons/icn-brochure.png');
+}
+ #MainContent .link-icon.civics {
+	background-image: url('../images/link-icons/icon-civics.svg');
+}
+ #MainContent .link-icon.conference {
+	background-image: url('../images/link-icons/icn-conference.png');
+}
+ #MainContent .link-icon.economics {
+	background-image: url('../images/link-icons/icon-economics.svg');
+}
+ #MainContent .link-icon.geography {
+	background-image: url('../images/link-icons/icon-geography.svg');
+}
+ #MainContent .link-icon.history {
+	background-image: url('../images/link-icons/icon-history.svg');
+}
+ #MainContent .link-icon.mathematics {
+	background-image: url('../images/link-icons/icon-mathematics.svg');
+}
+ #MainContent .link-icon.measure-up {
+	background-image: url('../images/link-icons/icon-measure-up.svg');
+	background-size: 80px auto ;	
+}
+ #MainContent .link-icon.naep-highlight {
+	background-image: url('../images/link-icons/icon-naep-highlight.svg');
+}
+ #MainContent .link-icon.news-article {
+	background-image: url('../images/link-icons/icn-news-article.png');
+}
+ #MainContent .link-icon.reading {
+	background-image: url('../images/link-icons/icn-reading.png');
+}
+ #MainContent .link-icon.release-activity {
+	background-image: url('../images/link-icons/icn-release-activity.png');
+}
+ #MainContent .link-icon.report-release {
+	background-image: url('../images/link-icons/icon-report-release.svg');
+}
+ #MainContent .link-icon.restricted-use {
+	background-image: url('../images/link-icons/icn-restricted-use.png');
+}
+ #MainContent .link-icon.science {
+	background-image: url('../images/link-icons/icon-science.svg');
+}
+ #MainContent .link-icon.tel {
+	background-image: url('../images/link-icons/icon-technology.svg');
+}
+ #MainContent .link-icon.video {
+	background-image: url('../images/link-icons/icon-video.svg');
+}
+ #MainContent .link-icon.writing {
+	background-image: url('../images/link-icons/icon-writing.svg');
+}
+/*  ********************************   */
+/* 	        Image-Link Panel           */
+/*  ********************************   */
+ #MainContent .naep-image-link-panel{
+
+}
+ #MainContent .naep-image-link-panel .panel-body {
+	display:flex;
+	flex-flow: row wrap;
+	justify-content:space-between;
+	align-items:flex-start;
+	align-content:flex-start;
+	position:relative;
+	height:auto;
+}
+ #MainContent .naep-image-link-panel .image-links {
+	display:flex;
+	flex-flow: row wrap;
+	justify-content:space-between;
+	align-items:flex-start;
+	position:relative;
+	height:auto;
+width:100%;	
+
+}
+ #MainContent .naep-image-link-panel .image-links.single {
+
+	justify-content:center;
+
+}
+ #MainContent .naep-image-link-panel .image-link {
+	width:calc(50% - 15px);
+
+	margin-top:20px;
+	display:inline-block;
+	border:1px solid #c69214;
+	box-shadow:0 3px 6px rgba(54,54,54, .15);
+	vertical-align:top;
+
+}
+ #MainContent .naep-image-link-panel .image-link:last-child {
+margin-left:auto;
+}
+ #MainContent .naep-image-link-panel.small .image-link:last-child {
+margin-left:inherit;
+}
+ #MainContent .naep-image-link-panel .image-link:hover,
+ #MainContent .naep-image-link-panel .image-link:focus {
+	background:none;
+	box-shadow:none;
+}
+ #MainContent .naep-image-link-panel .image-link img{
+	width:100%;
+	display:block;
+}
+ #MainContent .box-shadow {
+	width:100%;
+}
+ #MainContent .image-link > .shadow-box > img {
+	width:100%;
+	margin:0;
+	position:relative;
+	z-index:-2;
+}
+ #MainContent .image-link:hover .shadow-box,
+ #MainContent .image-link:focus .shadow-box {
+	background: rgba(255,255,255,.2);
+	box-shadow:inset 0 3px 30px #000;
+	width:100%;
+}
+ #MainContent .naep-image-link-panel .image-link .image-link-text{
+	position:relative;
+	padding:15px 40px 15px 20px;
+	width:100%;	
+	text-decoration:none;
+	background: linear-gradient(0deg,#f6f6f6,#eee);	
+}
+ #MainContent .naep-image-link-panel .image-link .image-link-text:after{
+	content: url('../images/Chevron_Related_Info.png');
+	right:20px;
+    position: absolute;
+    display: block;
+	width:10px;
+	height:18px;
+	margin-left:10px;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+ #MainContent .naep-image-link-panel .image-link:link{
+	text-decoration:none;
+}
+ #MainContent .naep-image-link-panel .image-link:hover .image-link-text,
+ #MainContent .naep-image-link-panel .image-link:focus .image-link-text  {
+	text-decoration:underline;	
+}
+ #MainContent .naep-image-link-panel .image-link.external .image-link-text:after {
+	content: url('../images/External_Link.png');
+	width:15px;
+}
+ #MainContent .naep-image-link-panel .image-link.external:hover .image-link-text:after,
+ #MainContent .naep-image-link-panel .image-link.external:focus .image-link-text:after  {
+
+}
+ #MainContent .naep-image-link-panel .image-link.pdf .image-link-text:after {
+	content: url('../images/pdf.png');
+	height:34px;
+	width:26px;
+}
+
+ #MainContent .naep-image-link-panel .image-link .image-link-text > span{
+	text-decoration:none;
+	font-size:1em;
+	color:#001871;
+
+}
+ #MainContent .naep-image-link-panel .image-link:hover .image-link-text > span,
+ #MainContent .naep-image-link-panel .image-link:focus .image-link-text > span{
+	text-decoration:underline;
+}
+ #MainContent .naep-image-link-panel .image-link:external .image-link-text > span{
+}
+ #MainContent .naep-image-link-panel .image-link:pdf .image-link-text > span{
+}
+
+/*  ********************************   */
+/* 	    Image-Link Panel (small)       */
+/*  ********************************   */
+ #MainContent .naep-image-link-panel.small .panel-body {
+	display:flex;
+	flex-flow:row wrap;
+	justify-content:space-between;
+}
+ #MainContent .naep-image-link-panel.small .image-link {
+	width:152px;
+	height:152px;
+	margin-top:20px;
+	display:inline-block;
+	border:1px solid #c69214;
+	border-radius:5px;
+	box-shadow:0 3px 6px rgba(0,0,0,.35), inset 0 0 0 transparent;
+	background:linear-gradient(#fff,#ededed)
+	-webkit-transition: all .2s ease;
+	-moz-transition: all .2s ease;
+	-o-transition: all .2s ease;
+	transition: all .2s ease;	
+}
+ #MainContent .naep-image-link-panel.small .image-link:hover, 
+ #MainContent .naep-image-link-panel.small .image-link:focus{
+	box-shadow:0 0 0 transparent, inset 0 3px 30px rgba(54,54,54,1);
+	opacity:.6;
+	
+}
+ #MainContent .naep-image-link-panel.small .image-link:hover .shadow-box, 
+ #MainContent .naep-image-link-panel.small .image-link:focus .shadow-box{
+	box-shadow:none;
+	background:transparent;
+	width:auto;
+	
+}
+ #MainContent .naep-image-link-panel.small .shadow-box {
+	position:relative;
+	box-shadow:none;
+
+}
+ #MainContent .naep-image-link-panel.small .image-link img{
+	display:block;
+	height:75px;
+	width:75px;
+	margin:20px auto;
+	z-index:0;
+}
+ #MainContent .naep-image-link-panel.small .image-link:hover .shadow-box , 
+ #MainContent .naep-image-link-panel.small .image-link:focus .shadow-box {
+	opacity:.4;		
+}
+ #MainContent .naep-image-link-panel.small .image-link .image-link-text {
+	padding:0;
+	background:transparent;
+	text-align:center;
+	margin-bottom:15px;
+}
+ #MainContent .naep-image-link-panel.small .image-link .image-link-text:after {
+	right:10px;
+}
+
+/*  ********************************   */
+/* 	        Accordion Panel            */
+/*  ********************************   */
+ #MainContent .naep-accordion-panel{
+	position:relative;
+	height:auto;
+}
+ #MainContent .naep-accordion-panel .naep-accordion{
+	margin-bottom:20px;
+	border:1px solid #c69214;	
+	border-radius:5px;
+	box-shadow:0 3px 6px rgba(54,54,54,.15);	
+}
+ #MainContent .naep-accordion-panel .naep-accordion:last-child{
+	margin-bottom:0;
+}
+ #MainContent .naep-accordion .naep-accordion-head {
+	position:relative;
+	background: linear-gradient(#f6f6f6,#f3f3f3);
+	font-weight:600;
+	color:#001871;
+	padding:10px;
+	padding-left:70px;
+	padding-right:20px;
+	border-radius:5px 5px 0 0;
+	clear:both;
+	cursor:pointer;
+}
+ #MainContent .naep-accordion.closed .naep-accordion-head  {
+	border-radius:5px;
+}
+ #MainContent .naep-accordion-panel .naep-accordion .naep-accordion-head:hover,
+ #MainContent .naep-accordion-panel .naep-accordion .naep-accordion-head:focus {
+	background: none #f2ede2;
+	text-decoration: underline;
+	cursor: pointer;
+}
+ #MainContent .naep-accordion-panel .naep-accordion-head:before{
+	content:"";
+	background: url('../images/Minus_Related_Info.png') center center no-repeat;
+	width:50px;
+	height:100%;
+	border-right:1px solid #e9ddc4;
+    position: absolute;
+	left:0;
+    display: block;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);	
+}
+ #MainContent .naep-accordion-panel .naep-accordion.closed .naep-accordion-head:before{
+	content:"";
+	background: url('../images/Plus_Related_Info.png') center center no-repeat;
+}
+ #MainContent .naep-accordion-panel .naep-accordion-text {
+	border-top:1px solid #c69214;
+	padding:20px;
+	background-color:#fff;
+	border-radius:0 0 5px 5px;
+	overflow:hidden;
+	-webkit-transition: max-height .3s ease-in-out, padding-top .3s ease-in-out,padding-bottom .3s ease-in-out;
+	-moz-transition:  max-height .3s ease-in-out, padding-top .3s ease-in-out,padding-bottom .3s ease-in-out;
+	-ms-transition:  max-height .3s ease-in-out, padding-top .3s ease-in-out,padding-bottom .3s ease-in-out;
+	transition:  max-height .3s ease-in-out, padding-top .3s ease-in-out,padding-bottom .3s ease-in-out;
+}
+ #MainContent .naep-accordion-panel .naep-accordion.closed .naep-accordion-text {
+	display:block;
+	max-height:0 !important;
+	padding-top:0;
+	padding-bottom:0;
+}
+ #MainContent .naep-accordion-panel .naep-accordion.closed .naep-accordion-text p {
+	margin-bottom:20px;
+}
+ #MainContent .naep-accordion-panel .naep-accordion .naep-accordion-text.hidden {
+	visibility:hidden;	
+} 
+ #MainContent .naep-accordion-panel .naep-accordion-text p:last-child{
+	padding-bottom:0;
+	margin-bottom:0;
+}
+
+/*  ********************************   */
+/* 	        Image-Slider Panel         */
+/*  ********************************   */
+ #MainContent .naep-image-slider-panel {
+
+}
+ #MainContent .naep-image-slider-panel .image-slider,
+ #MainContent .naep-image-slider-panel .carousel
+{	
+	position:relative;
+	
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+}
+ #MainContent .naep-image-slider-panel .image-slider ,
+ #MainContent .naep-image-slider-panel .carousel
+{
+	margin:0 70px;
+}
+ #MainContent .naep-image-slider-panel .image-slider a:focus{
+	outline:none !important;
+}
+ #MainContent .naep-image-slider-panel .flex-control-paging li a {
+	width:35px;
+	height:35px;
+	webkit-box-shadow:none;
+	box-shadow:none;
+}
+ #MainContent .naep-image-slider-panel .flex-control-paging li a
+{
+	background: url(../images/slider_circle.png) no-repeat ;
+}
+ #MainContent .naep-image-slider-panel .flex-control-paging li a:hover,
+ #MainContent .naep-image-slider-panel .flex-control-paging li a:focus
+{
+	background: url(../images/slider_circle_active.png) no-repeat;
+}
+ #MainContent .naep-image-slider-panel .flex-control-paging li a.flex-active
+{	
+	background: url(../images/slider_circle_active.png) no-repeat;
+}
+
+	 #MainContent .naep-image-slider-panel .flex-control-nav li {
+		margin: 0 12px 0 5px /*!important*/;
+		vertical-align: top /*!important*/;
+	}
+
+ #MainContent .naep-image-slider-panel .image-slider ol.flex-control-paging
+{
+	position:relative;
+	padding-top: 10px !important;
+	padding-bottom: 10px !important;
+	background-color: #8e9fbc;
+	box-shadow:inset 0 3px 30px rgba(0,0,0,.35);
+}
+ #MainContent .naep-image-slider-panel .flex-control-paging li  a:active,
+ #MainContent .naep-image-slider-panel .flex-control-paging li a:focus  { outline: none; }
+
+ #MainContent .naep-image-slider-panel .image-slider .flex-pauseplay { 
+	display:none;
+}
+
+ #MainContent .naep-image-slider-panel .image-slider .flex-pauseplay a { 
+	width: 15px !important; 
+	height: 15px !important; 
+	position:inherit !important;
+}
+ #MainContent .naep-image-slider-panel .flex-pauseplay a:focus, .flex-pauseplay a:active { outline: 3px solid #c69214; outline-offset:2px; }
+
+ #MainContent .naep-image-slider-panel .flex-direction-nav a  { width: 50px !important; height: 75px !important;padding:20px; }
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-prev {left:-52px; background:rgba(54,54,54,.15) url("../images/slider_chevron_left.png") no-repeat center center;}
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-next { right:-52px; background:rgba(54,54,54,.15) url("../images/slider_chevron_right.png") no-repeat center center;}
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-prev:hover { background:rgba(54,54,54,.3) url("../images/slider_chevron_left_hover.png") no-repeat center center; }
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-next:hover { background:rgba(54,54,54,.3) url("../images/slider_chevron_right_hover.png") no-repeat center center;}
+/*#PageBody #MainContent .naep-image-slider-panel .flex-direction-nav .flex-prev:focus{ outline: 3px solid #c69214 !important; outline-offset:2px;}
+ #MainContent .naep-image-slider-panel .flex-direction-nav .flex-next:focus{ outline: 3px solid #c69214 !important; outline-offset:2px;}
+
+/**************** End- Flex slider customization ***********************/
+
+/*  ********************************   */
+/* 	        Contractor Panel           */
+/*  ********************************   */
+ #MainContent .naep-panel .contractor-panel-element{
+	position:relative;
+	width:100%;
+	vertical-align:top;
+	margin-bottom:20px;
+}
+ #MainContent .naep-panel .contractor-panel-element .image-button {
+	height:96px;
+	width:170px;
+	text-decoration:none;
+	background:none;
+}
+ #MainContent .naep-panel .contractor-panel-element .image-button > .shadow-box{
+	box-shadow:0 3px 6px rgba(54,54,54, .15);
+	-moz-transition: all 300ms;
+	-o-transition: all 300ms;
+	-webkit-transition: all 300ms;
+	transition: all 300ms ease-in;	
+}
+
+ #MainContent .naep-panel .contractor-panel-element .image-button:hover > .shadow-box,
+ #MainContent .naep-panel .contractor-panel-element .image-button:focus > .shadow-box{
+	background:none;
+	background: rgba(255,255,255,.4);
+	box-shadow:inset 0 3px 30px #000;
+}
+ #MainContent .naep-panel .contractor-panel-element .image-button > .shadow-box {
+	display:inline-block;
+}
+ #MainContent .image-button > .shadow-box > img {
+	position:relative;
+	z-index:-2;
+	display:block;
+}
+ #MainContent .naep-panel .contractor-panel-element .image-button img{
+	height:96px;
+	width:170px;
+}
+ #MainContent .naep-panel .contractor-panel-element .contractor-element-text{
+	display:inline-block;
+	width:calc(100% - 200px);
+	vertical-align:top;
+	margin-left:20px;
+}
+ #MainContent .naep-panel .contractor-panel-element .contractor-element-text span{
+	display:block;
+	width:100%;
+	padding-bottom:10px;
+}
+ #MainContent .naep-panel .contractor-panel-element .contractor-element-text span:last-of-type{
+	margin-bottom:20px;
+	padding-bottom:0;
+}
+/*  ********************************   */
+/* 	     Subject Landing Panel         */
+/*  ********************************   */
+ #MainContent .naep-panel .results-button{
+	display:flex;
+	flex-flow:row nowrap;
+	align-items:center;
+	width:100%;
+	position:relative;
+	text-decoration:none;
+	height:150px;
+	background:linear-gradient(#f6f6f6,#eee);
+	border:1px solid #c69214;
+	padding:10px 20px;
+	margin-right:20px;
+	margin-bottom:20px;
+	border-radius:5px;
+	text-align:center;
+	vertical-align:top;
+	box-shadow:0 3px 6px rgba(54,54,54, .15);
+	-moz-transition: all 300ms;
+	-o-transition: all 300ms;
+	-webkit-transition: all 300ms;
+	transition: all 300ms ease-in;
+}
+ #MainContent .naep-panel .results-button:last-child{
+		margin-bottom:0px;
+}
+	
+ #MainContent .naep-panel .results-button:after{
+	right:20px;
+}
+ #MainContent .naep-panel .results-button span{
+	margin-left:230px;
+	padding-right:30px;
+	width:100%;
+	font-size:22px;
+}
+ #MainContent .naep-panel .results-button:link,
+ #MainContent .naep-panel .results-button:visited{
+	color:#001871;
+}
+ #MainContent .naep-panel .results-button:before{
+	position:absolute;
+	top:10px;
+	left:20px;
+	content:"";
+	background: url('../images/NAEP_logo_large.svg') no-repeat;
+	background-size:contain;
+	height:128px;
+	width:240px;
+}
+ #MainContent .naep-panel .results-button:active:before{
+	background: url('../images/NAEP_logo_large_active.svg') no-repeat;
+	background-size:contain;	
+}
+ #MainContent  .naep-panel .results-button:hover,
+ #MainContent  .naep-panel .results-button:focus {
+	background:none #bbc7d6;
+	border:1px solid #001871;
+	border-radius:5px;
+	box-shadow: inset 0 3px 6px rgba(54,54,54, .15);	
+	text-decoration:underline;
+}
+ #MainContent  .naep-panel .results-button:hover span,
+ #MainContent  .naep-panel .results-button:focus span{
+		text-decoration:underline;
+}
+ #MainContent  .naep-panel .results-button:active {
+	color:#fff;
+	background:none #001871;	
+	border:1px solid #001871;
+	border-radius:5px;
+	box-shadow: inset 0 3px 6px rgba(54,54,54, .15);	
+	transition:none;
+}
+ #MainContent .button-row {
+	display:flex;
+	flex-flow: row nowrap;
+	justify-content:space-between;
+}
+ #MainContent .naep-panel .button-row:last-child .landing-button {
+	margin-right:10px;
+	margin-bottom:0;
+	font-size:16px;
+}
+ #MainContent .naep-panel .button-row .landing-button:last-child {
+	margin-left:10px;
+	margin-right:0;
+}
+ #MainContent .button-row a{
+	flex-grow:1;
+	flex-basis:0;
+	text-decoration:none;
+}
+ #MainContent .button-row a:link,#PageBody #MainContent .button-row a:visited{
+	color:#001871;
+}
+ #MainContent .button-row a:active{
+	color:#fff;
+}
+
+/*  ********************************   */
+/* 	      Image Landing Panel          */
+/*  ********************************   */
+ #MainContent .naep-image-landing-panel {
+	
+}
+ #MainContent .naep-image-landing-panel .image-landing-panel-elements-list{
+	list-style-type:none;
+	padding:0;
+	margin:0;
+	display:block;
+}
+ #MainContent .naep-image-landing-panel .image-landing-element{
+	position:relative;
+	width:100%;
+	background-color:#fff;
+	margin-bottom:20px;
+	padding:0;
+}
+ #MainContent .image-landing-element:last-child {
+	margin-bottom:0;
+}
+ #MainContent .naep-image-landing-panel .image-landing-element{
+	width:100%;
+	border:1px solid transparent;
+	z-index:1;
+}
+ #MainContent .naep-image-landing-panel .image-landing-element a{ 
+	position:relative;
+	display:flex;
+	flex-flow: row nowrap;
+	align-items:flex-start;
+	text-decoration:none;
+	background:none;	
+	padding:20px;
+	color:#001871;
+}
+ #MainContent .naep-image-landing-panel .image-landing-element:hover,
+ #MainContent .naep-image-landing-panel .image-landing-element a:focus{ 
+	background:none;
+	border: solid #dfdfdf 1px;
+	border-radius: 5px;
+	box-shadow: 0 3px 6px rgba(54,54,54, .15);
+	transition: all 200ms ease-in;
+}
+ #MainContent .naep-image-landing-panel .image-landing-element:hover a,
+ #MainContent .naep-image-landing-panel .image-landing-element a:focus { 
+	background:none;
+	
+}
+ #MainContent .naep-image-landing-panel .image-landing-element:hover .image-landing-text,
+ #MainContent .naep-image-landing-panel .image-landing-element a:focus .image-landing-text{ 
+	text-decoration:underline;
+}
+ #MainContent .naep-image-landing-panel .image-landing-element .shadow-box{
+	-moz-transition: all 200ms;
+	-o-transition: all 200ms;
+	-webkit-transition: all 200ms;
+	transition: all 200ms ease-in;	
+	height:96px;
+	width:170px;	
+	border:1px solid #c69214;
+	box-shadow:0px 3px 6px rgba(0,0,0,.35);
+	overflow:hidden;
+}
+ #MainContent .naep-image-landing-panel .image-landing-element:hover .shadow-box,
+ #MainContent .naep-image-landing-panel .image-landing-element a:focus .shadow-box{
+	background:none;
+	background: rgba(255,255,255,.4);
+	box-shadow:inset 0 3px 30px #000;
+}
+ #MainContent .naep-image-landing-panel .image-landing-image{
+	height:96px;
+	width:170px;
+	position:relative;
+	z-index:-2;
+	display:block;	
+}
+
+ #MainContent .naep-panel .image-landing-text {
+	display:inline-block;
+	overflow:hidden;
+	margin-left:20px;
+	width:calc(100% - 220px);
+	vertical-align:top;
+}
+ #MainContent .naep-panel .external .image-landing-text {
+	width:calc(100% - 225px);	
+}
+ #MainContent .naep-panel .pdf .image-landing-text {
+	width:calc(100% - 236px);	
+}
+
+ #MainContent .naep-panel .image-landing-text span{
+	display:block;
+	width:100%;
+	padding-bottom:10px;
+}
+
+ #MainContent .naep-panel .image-landing-text span:first-of-type{
+	font-size:1.375em;	
+	line-height:100%;
+}
+ #MainContent .naep-panel .image-landing-text span:last-of-type{
+	margin-bottom:0;
+	padding-bottom:0;
+}
+ #MainContent .naep-panel .image-landing-element.pdf .image-landing-text span:last-of-type{
+	font-weight:600;
+	font-style:italic;	
+}
+ #MainContent .image-landing-element:last-child {
+	margin-bottom:0;
+}
+
+ #MainContent .image-landing-element:after {
+	content: url('../images/Chevron_Related_Info.png');
+	right:20px;
+    position: absolute;
+    display: block;
+	width:10px;
+	height:18px;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+ #MainContent .image-landing-element.external:after {
+	content: url('../images/External_Link.png');
+	width:15px;
+}
+ #MainContent .image-landing-element.pdf:after,
+ #MainContent .image-landing-element.pdf-no-size:after {
+	content: url('../images/pdf.png');
+	height:34px;
+	width:26px;
+}
+
+/*  ********************************   */
+/* 	          Pull Quotes              */
+/*  ********************************   */
+ #MainContent .pull-quote {
+	position:relative;
+	font-style:italic;
+	border:10px solid #c69214;
+	box-shadow:0 3px 6px rgba(54,54,54, .15);
+	margin:20px;
+	padding:20px 10px 20px 23px;
+}
+ #MainContent .pull-quote:before {
+	position:absolute;
+	left:-35px;
+	content: "";
+	display:block;
+	height:82px;
+	width:59px;
+	background-color:white;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);	
+}
+ #MainContent .pull-quote:after {
+	position:absolute;
+	left:-36px;
+	content: url('../images/Quotes.png');
+	display:block;
+	height:42px;
+	width:47px;
+	background-color:white;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);	
+}
+ #MainContent .pull-quote p{
+	font-size:1.375em;
+	color:#001871;
+	margin:0 0 20px 0;
+	padding:0;
+}
+ #MainContent .pull-quote p.quote-attribution{
+	font-size:1em;
+}
+ #MainContent .pull-quote p.quote-source{
+	font-size:1em;
+	font-style:normal;
+}
+ #MainContent .pull-quote p:last-child{
+	margin:0;
+}
+
+/*  ********************************   */
+/* 	        Clickable Asset            */
+/*  ********************************   */
+ #MainContent .naep-panel .clickable-asset {
+	display:inline-block;
+	border:1px solid #c69214;
+	box-shadow:0 3px 6px rgba(0,0,0, .35);
+}
+ #MainContent .naep-panel .clickable-asset:link,
+ #MainContent .naep-panel .clickable-asset:visited {
+	color:#001871;
+	text-decoration:none;
+} 
+ #MainContent .naep-panel .clickable-asset:hover,
+ #MainContent .naep-panel .clickable-asset:focus {
+	color:#001871;
+	text-decoration:underline;
+	box-shadow:none;
+	background:none;
+} 
+ #MainContent .naep-panel .clickable-asset:hover:link,
+ #MainContent .naep-panel .clickable-asset:focus:link {
+	color:#001871;
+	text-decoration:underline;
+} 
+ #MainContent .naep-panel .box-shadow {
+	width:100%;
+	height:auto;
+}
+ #MainContent .naep-panel .clickable-asset > .shadow-box > img {
+	width:100%;
+	height:auto;
+	margin:0;
+	position:relative;
+	z-index:-2;
+	display:block;
+}
+
+ #MainContent .naep-panel .clickable-asset:hover .shadow-box,
+ #MainContent .naep-panel .clickable-asset:focus .shadow-box {
+	background: rgba(255,255,255,.2);
+	box-shadow:inset 0 3px 30px #000;
+	width:100%;
+}
+ #MainContent .naep-panel .clickable-asset > .clickable-asset-text {
+	display:block;
+	position:relative;
+	padding:15px 50px 15px 20px;
+	background: linear-gradient(#f6f6f6,#eee);	
+	font-size:1em;
+	margin:0;
+}
+ #MainContent .naep-panel .clickable-asset.external > .clickable-asset-text {
+	display:block;
+	position:relative;
+	padding:15px 55px 15px 20px;
+	background: linear-gradient(#f6f6f6,#eee);	
+	font-size:1em;
+	margin:0;
+}
+ #MainContent .naep-panel .clickable-asset:hover > .clickable-asset-text span,
+ #MainContent .naep-panel .clickable-asset:focus > .clickable-asset-text span{
+	text-decoration:underline;
+}
+ #MainContent .naep-panel .clickable-asset > .clickable-asset-text span {
+	display:inline-block;
+}
+ #MainContent .naep-panel .clickable-asset.external > .clickable-asset-text span {
+	display:inline-block;
+}
+ #MainContent .naep-panel .clickable-asset.pdf > .clickable-asset-text span {
+	display:inline-block;
+}
+ #MainContent .naep-panel .clickable-asset > .clickable-asset-text:after {
+	content: url('https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/Chevron_Related_Info.png');
+	right:20px;
+    position: absolute;
+    display: block;
+	width:10px;
+	height:18px;
+	margin-left:20px;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -moz-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+ #MainContent .naep-panel .clickable-asset.external > .clickable-asset-text:after {
+	content: url('../images/External_Link.png');
+	width:15px;
+}
+/*  ********************************   */
+/* 	          Video Asset              */
+/*  ********************************   */
+ #MainContent .video-asset {
+	position:relative;
+	width:80%;
+	height:0;
+	padding-bottom:55%;
+	box-shadow:0 3px 6px rgba(54,54,54, .15);
+	border:none;
+	margin:20px auto;
+}
+/*  ********************************   */
+/* 	       Table Download Link         */
+/*  ********************************   */
+ #MainContent a.table-download-link {
+	color:#001871;
+	border-left:2px solid #001871;
+	font-size:14px;
+	text-decoration:underline;
+	font-style:italic;
+	margin-left:5px;
+	padding:2px 5px;
+}
+/*  ********************************   */
+/* 	       Table Download Link         */
+/*  ********************************   */
+ #MainContent .card-asset{
+	width:100%;
+	display:flex;
+	flex-flow:row nowrap;
+}
+ #MainContent .card-asset .card-focal {
+	width:25%;
+	display:flex;
+	flex-flow:row nowrap;
+	justify-content:center;
+}
+ #MainContent .card-asset .card-text {
+	width:75%;
+}
+
+/* NAEP 2016 Public Site Design: Sitewide Content Styling ----------------------------
+	(Styles for the overall page shell is in naep2016-shell.css; naep2016-supp.css covers
+	supplemental, special-purpose, and legacy styles.) */
+#PageBody #MainContent #ContentArea_base {
+	width:100%;
+}
+	
+	
+#PageBody #MainContent h1 {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 36px;
+	line-height: 36px;
+	color: #363636;
+	font-weight: normal;
+	margin-bottom: 24px;
+
+}
+
+#PageBody #MainContent h2 {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 30px;
+	line-height: 30px;
+	color: #363636;
+	font-weight: normal;
+	margin-bottom:20px;
+}
+
+#PageBody #MainContent h3 {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 24px;
+	line-height:24px;
+	color: #363636;
+	font-weight: normal;
+	margin-bottom: 10px;	
+}
+#PageBody #MainContent h4 {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 20px;
+	line-height:20px
+	color: #363636;
+	font-weight: normal;
+}
+#PageBody #MainContent p {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 16px;
+	line-height: 27px;
+	color: #363636;
+	font-weight: normal;
+}
+
+#PageBody #MainContent h1:first-child,
+#PageBody #MainContent h2:first-child,
+#PageBody #MainContent h3:first-child,
+#PageBody #MainContent p:first-child {
+	margin-top: 0;
+}
+
+#PageBody #MainContent li {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 16px;
+	line-height: 27px;
+	color: #363636;
+	font-weight: normal;
+}
+
+#PageBody #MainContent table,
+#PageBody #MainContent table p,
+#PageBody #MainContent table li,
+#PageBody #MainContent caption {
+	font-family: "Open Sans", Verdana, sans-serif;
+	font-size: 14px;
+	line-height: 21px;
+	color: #363636;
+	font-weight: normal;
+}
+
+#PageBody #MainContent caption {
+	font-weight: bold;
+/*	margin-top: 1em; */ /* Commented 1/12/2017, probably only needed in old design when the table appeared directly under an H2 without a bottom margin. */
+}
+
+#PageBody #MainContent .pageupdated, 
+#PageBody #MainContent .pageupdated  span {
+	font-family: "Open Sans", Verdana, sans-serif;
+	color: #666666;
+	font-size: 12px;
+	font-style: italic;
+	margin-top: 12px ;
+	padding-bottom:22px;
+	clear: both;
+	}
+#PageBody #MainContent .pageupdated hr{
+		margin-top:50px;
+		margin-bottom:10px;
+		border:0 none;
+		background-color:#a7a9ac;
+		height:1px;
+	}
+
+#PageBody #MainContent table td p:first-child {
+	margin-top: 0;
+}
+
+#PageBody #MainContent a:link,
+#PageBody #MainContent a:visited {
+	color: #004c97;
+	text-decoration: underline;
+}
+
+#PageBody #MainContent a:focus,
+#PageBody #MainContent a:hover,
+#PageBody #MainContent a:active {
+
+	text-decoration: none;	
+}
+
+/* heading-prefix: for prefixes on main headings to identify the publication to which the page belongs
+       Usage: <h1><span class="heading-prefix">2015 Blah Report</span><br />Page Heading</h1>
+       Usage: <caption><span class="heading-prefix">2015 Blah Report</span><br />Page Heading</caption>
+*/
+#PageBody #MainContent span.heading-prefix {
+       font-size: 20px;
+       text-transform: uppercase;
+       display: block;
+	   color:#001871;
+}
+
+#PageBody #MainContent caption span.heading-prefix {
+       font-weight: normal;
+       margin-bottom: 0.5em;
+}
+
+/* Style for the graphical headings on some of the landing pages. */
+#PageBody #MainContent .graphical-heading {
+	text-align: center;
+}
+
+#PageBody #MainContent a.glossary_link:link,
+#PageBody #MainContent a.glossary_link:visited,
+#PageBody #MainContent a.ref_link:link,
+#PageBody #MainContent a.ref_link:visited {
+	color: #0078c8;
+	text-decoration:none;
+	border-bottom:1px dashed #0077c8;
+	line-height:1.1em;
+}
+#PageBody #MainContent a:not([href]) {
+	color:#363636;
+}
+#PageBody #MainContent a:hover {
+	background-color:#f2ede2;
+}
+/* The following scroll-wrapper classes apply only to divs that are generated automatically
+	by the adjustTableDimensions function. Do not apply these classes to elements explicitly.
+	
+	DW: removed max-width:880px;    19 Dec 2017
+*/
+#PageBody #MainContent .scroll-wrapper {
+	overflow: auto;
+	width: 100%;
+
+	height: 35em;
+}
+
+#PageBody #MainContent .scroll-wrapper-vertical {
+	overflow-y: auto;
+	width: 100%;
+
+	height: 35em;
+}
+
+#PageBody #MainContent .scroll-wrapper-horizontal {
+	overflow-x: auto;
+	width: 100%;
+	
+}
+
+.BackToTop
+{
+	width: 100%;
+	text-align: right;
+}
+
+.BackToTop a
+{
+	padding-left: 15px;
+	background: url(/icons/UpArrow.gif) no-repeat left;
+}
+
+.BackToTop a:visited
+{
+	color: blue ! important;
+}
+
+.BackToTop a:hover
+{
+	color: red ! important;
+}
+
+#PageBody #MainContent .accordion-panel{
+	margin-bottom:20px;
+	transition: transform .4s ease-out;
+	width:880px;
+	position:relative;
+}
+#PageBody #MainContent .accordion-panel input {
+	  position: absolute;
+	  opacity: 0;
+	  z-index: -1;
+}
+/* Style the buttons that are used to open and close the accordion panel */
+#PageBody #MainContent .accordion-panel label.tab-index {
+  position: relative;
+  display: block;
+  padding: 0 0 0 1em;
+  background: #dbe2e9;
+  color:#363636;
+  font-size: 24px;
+  line-height: 2em;
+  text-transform:uppercase;
+  cursor: pointer;
+  border: 1px solid #8e9fbc;
+  -webkit-transition: all 0.4s;
+  -o-transition: all 0.4s;
+  transition: all 0.4s;
+}
+#PageBody #MainContent .accordion-panel label:before,
+#PageBody #MainContent .accordion-panel label:after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  background-color: white;
+  transition: transform 0.25s ease-out, visibility .25s ease-out;
+}
+
+#PageBody #MainContent .accordion-panel label:before {
+  top: 15px;
+  right: 25px;
+  width: 2px;
+  height: 20px;
+  background: #363636;
+}
+
+#PageBody #MainContent .accordion-panel label:after {
+  top: 50%;
+  right: 15px;
+  width: 23px;
+  height: 2px;
+  background: #363636;
+}
+
+#PageBody #MainContent .accordion-panel input[type=checkbox]:focus + label {
+	position:relative;
+	outline:3px solid #c69214;
+
+}
+#PageBody #MainContent .accordion-panel input[type=checkbox]:checked + label,
+#PageBody #MainContent .accordion-panel input[type=checkbox] + label:hover  {
+  background-color:#8e9fbc;
+}
+#PageBody #MainContent .accordion-panel input[type=checkbox]:checked + label:before {
+  transform: rotate(90deg);
+  visibility: hidden;
+}
+
+#PageBody #MainContent .accordion-panel input[type=checkbox]:checked + label:after {
+  transform: rotate(180deg);
+
+}
+
+#PageBody #MainContent .accordion-panel input[type=checkbox] + label.link:after,
+#PageBody #MainContent .accordion-panel input[type=checkbox] + label.link:before {
+  display: none;
+}
+/* Style the accordion panel. Note: hidden by default */
+#PageBody #MainContent .accordion-panel .tab-content {
+    border: 1px solid #8e9fbc;
+    display: block;
+	padding-left:20px;          
+	overflow-y: hidden;
+	-webkit-transition: max-height 0.4s ease-in-out;
+	-moz-transition: max-height 0.4s ease-in-out;
+	-o-transition: max-height 0.4s ease-in-out;
+	transition: max-height 0.4s ease-in-out;
+	-webkit-box-sizing:border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;	
+}
+#PageBody #MainContent .accordion-panel .tab-content {
+	width:880px;
+}
+
+/* The "show" class is added to the accordion panel when the user clicks on one of the buttons. This will show the panel content */
+#PageBody #MainContent .accordion-panel .tab-content.closed {
+	max-height:0 !important;
+}
+#PageBody #MainContent .accordion-panel .tab-content.hidden {
+	display:none;
+}
+#PageBody #MainContent .accordion-panel .tab-content ul {
+	list-style-type:none;
+	padding:0;
+	margin-left:0px;
+
+}
+#PageBody #MainContent .accordion-panel .tab-content li{
+	font-size:18px;
+	color:#363636;
+	margin-bottom:15px;
+}
+#PageBody #MainContent .accordion-panel .tab-content ul ul li{
+	font-size:14px;
+	color:#363636;
+	padding-left:10px;
+	margin-bottom:0px;
+	line-height:25px;
+}
+#PageBody #MainContent .accordion-panel .tab-content li a,
+#PageBody #MainContent .accordion-panel .tab-content li a:link,
+#PageBody #MainContent .accordion-panel .tab-content li a:active,
+#PageBody #MainContent .accordion-panel .tab-content li a:visited{
+	text-decoration:none;
+	color:#363636;
+}
+#PageBody #MainContent .accordion-panel .tab-content li a:hover {
+	text-decoration:underline;
+	color:#001871;
+}
+#PageBody #MainContent .accordion-panel .tab-content li a:focus {
+	outline:3px solid #c69214;
+}
+#PageBody #MainContent .accordion h2{
+	background-image:none !important;
+	background-color:#dbe2e9 !important;
+}
+#PageBody #MainContent .accordion h2:focus,
+#PageBody #MainContent .accordion:hover h2,
+#PageBody #MainContent .accordion:active h2 {
+	background-image:none !important;
+	background-color:#8e9fbc !important;
+}
+
+/* Width changed for responsive viewports.  DW */
+#PageBody #MainContent .flex-viewport {
+	width:780px;
+	width:100%;
+}
+
+.fancybox-opened {
+	overflow: visible ! important;
+}
+#PageBody #MainContent .ui-widget-content {
+	color: #363636;
+}
+
+/* Parents Letter */
+#PageBody #MainContent .tab_header{
+	width:100%;
+	background-color:#c5e09b;
+	border-top:1px solid #00a950;
+	border-bottom:1px solid #00a950;
+	color:#687e5f;
+	font-family:arial, helvetica, clean, sans-serif;
+
+	height:24px;
+}
+#PageBody #MainContent .tab_outer {
+	display:inline-block;
+	background:url(../images/ncestab/tab-divider.png) transparent no-repeat right 3px;
+	height:20px;
+	padding-top:5px;
+	padding-right:10px;
+	font-weight:bold;	
+	font-size:14px;
+}
+#PageBody #MainContent .tab_outer .TabLabelSelectedStyle{
+	background:url(../images/ncestab/tab-arrow.png) transparent no-repeat 0px 3px;
+}
+#PageBody #MainContent .tab_outer .TabLabelDefaultStyle{
+	padding-right:3px;
+}
+#PageBody #MainContent .tab_outer a:hover{
+	color:#051300;
+}
+#PageBody #MainContent a.tabnormal{
+	color:#687e5f;
+	padding-left:12px;
+}
+#PageBody #MainContent a.tabnormal:link{	
+	text-decoration:none;
+}
+#PageBody #MainContent a.tabhighlighted{
+	padding-left:12px;
+	color:#1b5a00;		
+}
+#PageBody #MainContent a.tabhighlighted:link {
+	text-decoration:none;	
+}
+
+@media screen and (max-width: 767px){
+
+}
+}
+
+
+
+
+
+.flex-nav-prev:before {
+    left: 0;
+    background: rgba(54,54,54,.15) url(https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/slider_chevron_left.png) no-repeat center center;
+	content:"";
+}
+
+
+ .slider .flex-next {
+    right: 0;
+    background: rgba(54,54,54,.15) url(https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/slider_chevron_right.png) no-repeat center center;
+}
+.slider .flex-prev{
+	left: 0;
+    background: rgba(54,54,54,.15) url(https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/slider_chevron_left.png) no-repeat center center;
+}
+ .slider .flex-prev:hover {
+	 	left: 0;
+    background:rgba(54,54,54,.3)) url(
+https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/slider_chevron_right_hover.png) no-repeat center center;
+
+ }
+  .slider .flex-next:hover {
+    right: 0;
+    background:rgba(54,54,54,.3)) url(
+https://nces.ed.gov/nationsreportcard/adminonly/design2017/images/slider_chevron_right_hover.png) no-repeat center center;
+
+ }
+.slider .flex-direction-nav {
+    list-style: none;
+    position: absolute;
+ top: 210px;
+     width: 100%;
+}
+.slider .flex-direction-nav a {
+    width: 50px !important;
+    height: 95px !important;
+    padding: 20px;
+}
+ .slider .flex-prev {
+    float: left;
+    width: 50%;
+    height: 123px;
+    padding-top: 29px;
+}
+  .slider .flex-next {
+    float: right;
+}
+#MainContent .first-row-attractor:nth-child(3) {
+    border-left: 1px solid #c3c4d5;
+    border-right: 1px solid #c3c4d5;
+}
+.link-icon i {
+    text-align: center;
+    color: white;
+    font-size: 36px;
+    padding-top: 25px;
+}
+
+.link-icon{
+    text-align: center;
+}
+.flex-control-nav {
+    width: 100%;
+    position: absolute;
+    bottom: -40px;
+    text-align: center;
+}
+
+/*
+ * jQuery FlexSlider v2.7.0
+ * http://www.woothemes.com/flexslider/
+ *
+ * Copyright 2012 WooThemes
+ * Free to use under the GPLv2 and later license.
+ * http://www.gnu.org/licenses/gpl-2.0.html
+ *
+ * Contributing author: Tyler Smith (@mbmufffin)
+ *
+ */
+/* ====================================================================================================================
+ * FONT-FACE
+ * ====================================================================================================================*/
+@font-face {
+  font-family: 'flexslider-icon';
+  src: url('../fonts/webfonts/flexslider-icon.eot');
+  src: url('../fonts/webfonts/flexslider-icon.eot?#iefix') format('embedded-opentype'), url('../fonts/webfonts/flexslider-icon.woff') format('woff'), url('../fonts/webfonts/flexslider-icon.ttf') format('truetype'), url('../fonts/webfonts/flexslider-icon.svg#flexslider-icon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+/* ====================================================================================================================
+ * RESETS
+ * ====================================================================================================================*/
+.flex-container a:hover,
+.flex-slider a:hover {
+  outline: none;
+}
+.slides,
+.slides > li,
+.flex-control-nav,
+.flex-direction-nav {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.flex-pauseplay span {
+  text-transform: capitalize;
+}
+/* ====================================================================================================================
+ * BASE STYLES
+ * ====================================================================================================================*/
+.flexslider {
+  margin: 0;
+  padding: 0;
+}
+.flexslider .slides > li {
+  display: none;
+  -webkit-backface-visibility: hidden;
+}
+.flexslider .slides img {
+  width: 100%;
+  display: block;
+}
+.flexslider .slides:after {
+  content: "\0020";
+  display: block;
+  clear: both;
+  visibility: hidden;
+  line-height: 0;
+  height: 0;
+}
+html[xmlns] .flexslider .slides {
+  display: block;
+}
+* html .flexslider .slides {
+  height: 1%;
+}
+.no-js .flexslider .slides > li:first-child {
+  display: block;
+}
+/* ====================================================================================================================
+ * DEFAULT THEME
+ * ====================================================================================================================*/
+.flexslider {
+ 
+  background: #fff;
+  border: 4px solid #fff;
+  position: relative;
+  zoom: 1;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  -webkit-box-shadow: '' 0 1px 4px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: '' 0 1px 4px rgba(0, 0, 0, 0.2);
+  -o-box-shadow: '' 0 1px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: '' 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.flexslider .slides {
+  zoom: 1;
+}
+.flexslider .slides img {
+  height: auto;
+  -moz-user-select: none;
+}
+.flex-viewport {
+  max-height: 2000px;
+  -webkit-transition: all 1s ease;
+  -moz-transition: all 1s ease;
+  -ms-transition: all 1s ease;
+  -o-transition: all 1s ease;
+  transition: all 1s ease;
+}
+.loading .flex-viewport {
+  max-height: 300px;
+}
+.carousel li {
+  margin-right: 5px;
+}
+.flex-direction-nav {
+  *height: 0;
+}
+.flex-direction-nav a {
+  text-decoration: none;
+  display: block;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0;
+  position: absolute;
+  top: 50%;
+  z-index: 10;
+  overflow: hidden;
+  opacity: 0;
+  cursor: pointer;
+  color: rgba(0, 0, 0, 0.8);
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
+  -webkit-transition: all 0.3s ease-in-out;
+  -moz-transition: all 0.3s ease-in-out;
+  -ms-transition: all 0.3s ease-in-out;
+  -o-transition: all 0.3s ease-in-out;
+  transition: all 0.3s ease-in-out;
+}
+.flex-direction-nav a:before {
+  font-family: "flexslider-icon";
+  font-size: 40px;
+  display: inline-block;
+  content: '\f001';
+  color: rgba(0, 0, 0, 0.8);
+  text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
+}
+.flex-direction-nav a.flex-next:before {
+  content: '\f002';
+}
+.flex-direction-nav .flex-prev {
+  left: -50px;
+}
+.flex-direction-nav .flex-next {
+  right: -50px;
+  text-align: right;
+}
+.flexslider:hover .flex-direction-nav .flex-prev {
+  opacity: 0.7;
+  left: 10px;
+}
+.flexslider:hover .flex-direction-nav .flex-prev:hover {
+  opacity: 1;
+}
+.flexslider:hover .flex-direction-nav .flex-next {
+  opacity: 0.7;
+  right: 10px;
+}
+.flexslider:hover .flex-direction-nav .flex-next:hover {
+  opacity: 1;
+}
+.flex-direction-nav .flex-disabled {
+  opacity: 0!important;
+  filter: alpha(opacity=0);
+  cursor: default;
+  z-index: -1;
+}
+.flex-pauseplay a {
+    display: block;
+    width: 20px;
+    height: 20px;
+    position: absolute!important;
+    bottom: 30px;
+    left: 10px;
+    opacity: 0.8;
+    z-index: 10;
+    overflow: hidden;
+    cursor: pointer;
+    color: #000;
+    width: 100%!important;
+}
+.flex-pauseplay a:before {
+    font-size: 20px;
+    display: inline-block;
+    content: '\f004';
+   
+    width: 45px;
+    position: absolute;
+}
+.flex-pauseplay a:hover {
+  opacity: 1;
+}
+
+.flex-pauseplay a.flex-play:before {
+    content: '\f04b ';
+    font-family: FontAwesome;
+    background: black;
+    color: white;
+ padding: 6px 8px 3px 8px;
+}
+.flex-pauseplay a.flex-pause:before {
+    content: '\f04c  ';
+    font-family: FontAwesome;
+    background: black;
+    color: white;
+    padding: 6px 8px 3px 8px;
+}
+.flex-control-nav {
+  width: 100%;
+  position: absolute;
+  bottom: -40px;
+  text-align: center;
+}
+.flex-control-nav li {
+  margin: 0 6px;
+  display: inline-block;
+  zoom: 1;
+  *display: inline;
+}
+.flex-control-paging li a {
+  width: 11px;
+  height: 11px;
+  display: block;
+  background: #666;
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  text-indent: -9999px;
+  -webkit-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
+  -moz-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
+  -o-box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.3);
+  -webkit-border-radius: 20px;
+  -moz-border-radius: 20px;
+  border-radius: 20px;
+}
+.flex-control-paging li a:hover {
+  background: #333;
+  background: rgba(0, 0, 0, 0.7);
+}
+.flex-control-paging li a.flex-active {
+  background: #000;
+  background: rgba(0, 0, 0, 0.9);
+  cursor: default;
+}
+.flex-control-thumbs {
+  margin: 5px 0 0;
+  position: static;
+  overflow: hidden;
+}
+.flex-control-thumbs li {
+  width: 25%;
+  float: left;
+  margin: 0;
+}
+.flex-control-thumbs img {
+  width: 100%;
+  height: auto;
+  display: block;
+  opacity: .7;
+  cursor: pointer;
+  -moz-user-select: none;
+  -webkit-transition: all 1s ease;
+  -moz-transition: all 1s ease;
+  -ms-transition: all 1s ease;
+  -o-transition: all 1s ease;
+  transition: all 1s ease;
+}
+.flex-control-thumbs img:hover {
+  opacity: 1;
+}
+.flex-control-thumbs .flex-active {
+  opacity: 1;
+  cursor: default;
+}
+/* ====================================================================================================================
+ * RESPONSIVE
+ * ====================================================================================================================*/
+@media screen and (max-width: 860px) {
+  .flex-direction-nav .flex-prev {
+    opacity: 1;
+    left: 10px;
+  }
+  .flex-direction-nav .flex-next {
+    opacity: 1;
+    right: 10px;
+  }
+}
+
+
+
+
+
+/* Center website */
+.span12 .main {
+  max-width: 1000px;
+  margin: auto;
+}
+
+.span12 h1 {
+  font-size: 50px;
+  word-break: break-all;
+}
+
+.span12 .row {
+  margin: 10px -16px;
+}
+
+/* Add padding BETWEEN each column */
+.span12 .row,
+.row > .column {
+  padding: 8px;
+}
+
+/* Create three equal columns that floats next to each other */
+.span12 .column {
+  float: left;
+  width:25%;
+
+}
+
+/* Clear floats after rows */ 
+.span12 .row:after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+/* Content */
+.span12 .content {
+  background-color: white;
+  padding: 10px;
+}
+
+/* The "show" class is added to the filtered elements */
+.span12 .show {
+  display: block;
+}
+
+/* Style the buttons */
+.span12 .btn {
+  border: none;
+  outline: none;
+  padding: 12px 16px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.span12 .btn:hover {
+  background-color: #ddd;
+}
+
+.span12 .btn.active {
+  background-color: #666;
+  color: white;
+}
+#container {
+    width: 100%;
+}
+#MainContent .naep-panel H2 {
+    padding-left: 21px;
+}
+.pageupdated span {
+    padding-left: 14px;
+}
+
+
+
+.abhi-k .para {
+    padding-top: 15px;
+}
+
+
+.carousel-item .headingg {
+    text-align: center;
+}
+
+.kfg {
+    
+    padding: 35px 0;
+    border-bottom: 1px solid #cbc9c9;
+}
+
+.evnt {
+    display: inline-flex;
+    padding-bottom: 5px;
+    line-height: 17px;
+}
+
+.evnt:hover {
+    box-shadow: 0 0 7px 2px grey;
+}
+
+.evnt .img {
+    width: 30%;
+    padding: 8px;
+}
+
+.evnt .head {
+    width: 40%;
+    padding-top: 3px;
+}
+
+.evnt .date {
+    width: 30%;
+    padding: 5px;
+}
+
+.kiuj {
+	padding-left: 0!important
+}
+
+.lkj {
+    margin-bottom: 50px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 20px;
+	display: none;
+}
+
+.evnt .head span {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.evnt .head p {
+    padding-top: 5px;
+}
+
+.evnt .date p {
+       font-size: 15px;
+    
+}
+
+.abhi-k .para p {
+    text-align: justify;
+}
+
+.headinggg h2 {
+    padding-left: 0!important;
+}
+
+.kfg .col-md-5 {
+    box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+}
+
+.abhii-j img {
+    box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+}
+.abhii-j {
+    text-align: center;
+    padding-bottom: 15px;
+}
+
+.kjh {
+    text-align: center;
+    box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+.kjh hr {
+    width: 68%;
+    position: relative;
+    left: 83px;
+    bottom: 5px;
+}
+
+.fhy {
+    width: 50%;
+    margin: 0 auto;
+    border: 1px solid #ddd;
+}
+
+.headin {
+    background: black;
+    color: #fff;
+    padding: 12px;
+}
+
+.headin h4 span {
+    font-size: 17px;
+    font-weight: 300;
+}
+
+.dohu h1 {
+    font-size: 47px;
+}
+
+.dohu h1 span {
+    font-size: 19px;
+}
+
+.dohu {
+    padding: 38px;
+}
+
+.naep-video-gallery {
+	display:none;
+}
+
+.subscribe-newsflash {
+    display: none;
+}
+
+.main-navbar {
+    margin-bottom: 0!important;
+}
+
+.dld {
+    box-shadow: 0px 0px 5px 0px rgba(0,0,0,.5);
+    padding: 1px 40px;
+}
+
+.abhi-k {
+    box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+    padding: 20px;
+}
+
+.fgd {
+    box-shadow: 0 1px 1px rgba(49,49,49, 0.15);
+    padding: 20px;
+}
+
+.kfg .naep-panel {
+    border-bottom: none!important;
+}
+
+.merge-bottom {
+    border-top: 1px solid #ddd!important;
+    padding-top: 30px!important;
+}
+
+.cf {
+    margin-bottom: 10px;
+}
+
+.hgi {
+    overflow-y: scroll;
+	height:609px;
+}
+
+.hgii {
+    height: 557px;
+	overflow-y: scroll;
+}    
+
+
+
+.panel-body.naep-icon-link-panel  a:link {
+    display: contents;
+}
+
+.abhi-jee {
+	
+	    padding-top: 45px;
+}

@@ -1,0 +1,286 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Administrator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+<link href="http://rdxshop.com/skool/skool/assets/css/final.css" rel="stylesheet" type="text/css" />
+<link href="assets/css/pak-page.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+function del(url)
+{  
+	if(	confirm('Really want to delete this.') )
+	{
+		window.location=url;
+	}
+}
+</script>
+<style>
+.alert-error {
+	color: #a94442;
+	background-color: #f2dede;
+	border-color: #ebccd1;
+}
+.table>caption+thead>tr:first-child>td, .table>caption+thead>tr:first-child>th, .table>colgroup+thead>tr:first-child>td, .table>colgroup+thead>tr:first-child>th, .table>thead:first-child>tr:first-child>td, .table>thead:first-child>tr:first-child>th {
+    border-bottom: none!important;
+	border-top: none!important;
+}
+</style>
+</head>
+<body class="fixed-left">
+<div id="wrapper">
+  <div class="topbar">
+	<div class="topbar-left">
+		<div class="text-center"> <img src="../uploads/dezven-logo.png" alt="user-img" class="img-circle" style="border:none!important; visibility:hidden"> </div>
+	</div>
+	<div class="navbar navbar-default" role="navigation">
+    <div class="container">
+		<div class="">
+		
+		<div class="pull-left taugl">
+		<div class="row">
+		<div class="col-md-3">
+				<button class="button-menu-mobile open-left"><i class="fa fa-bars"></i></button>
+				<span class="clearfix"></span> 
+				</div>
+				<div class="col-md-9">
+				<h2 class="ven">Dezven</h2>
+				</div>
+				</div>
+			</div>
+			
+			<ul class="nav navbar-nav navbar-right pull-right">
+			
+				<li class="dropdown"> <a class="dropdown-toggle profile" data-toggle="dropdown" aria-expanded="true"> <img src="../image/user.png">  </a>
+               <ul class="dropdown-menu">
+						<li><a href="http://rdxshop.com/skool/admin/login_pass.php"><i class="ti-user m-r-5"></i>Change Password</a></li>
+						<li><a href="http://rdxshop.com/skool/admin/logout.php"><i class="ti-power-off m-r-5"></i> Logout</a></li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+	</div>
+	</div>
+</div>  <div class="left side-menu">
+	<div class="sidebar-inner slimscrollleft">
+		<div class="user-details">
+			<div class="pull-left raju"> 
+				<img src="../uploads/" style="height:50px;"> 
+			</div>
+			<div class="user-info">
+				<div class="dropdown"> 
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> School</a>
+               <ul class="dropdown-menu">
+						<li><a href="http://rdxshop.com/skool/skool/settings.php"><i class="md md-settings"></i> Settings</a></li>
+						<li><a href="javascript:void(0)"><i class="md md-lock"></i> Lock screen</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<div id="sidebar-menu">
+			<ul>
+				<li class="text-muted menu-title"></li>
+				<li><a href="http://rdxshop.com/skool/skool/home.php" class="waves-effect "><i class="ti-home"></i> <span> Home </span> </a></li>
+				
+				<li><a href="http://rdxshop.com/skool/skool/dashboard.php" class="waves-effect "><i class="fa fa-th-large" aria-hidden="true"></i><span> Dashboard </span> </a></li>
+				
+				<li><a href="http://rdxshop.com/skool/skool/form.php" class="waves-effect "><i class="fa fa-bars" aria-hidden="true"></i> <span> Applications </span> </a></li>
+				
+				<li><a href="applicants.php" class="waves-effect active"><i class="fa fa-users" aria-hidden="true"></i> <span> Applicants </span> </a></li>
+				
+				<li><a href="configuration.php" class="waves-effect "><i class="fa fa-cog" aria-hidden="true"></i> <span> Configuration </span> </a></li>
+				
+				<li><a href="transcation-history.php" class="waves-effect "><i class="fa fa-rebel" aria-hidden="true"></i> <span> Transactions </span> </a></li>
+				
+				<li><a href="douments.php" class="waves-effect "><i class="fa fa-folder" aria-hidden="true"></i> <span>Document</span> </a></li>
+				
+				<li class=""> <a href="view_admission.php" class="waves-effect "><i class="fa fa-star"></i> <span>View Admission</span> </a></li>
+				
+
+				<li class=""> <a href="logout.php" class="waves-effect "><i class="fa fa-sign-out"></i> <span>Logout</span> </a></li>
+			</ul>
+			<div class="clearfix"></div>
+		</div>
+		<div class="clearfix"></div>
+	</div>
+</div>  <div class="content-page">
+    <!-- Start content -->
+    <div class="content">
+      <div class="container">
+       <div class="pak-page">
+	   <main class="page-wrapper">
+   
+   <div class="secxl"><a style="cursor: pointer;"><i class="fa fa-arrow-left" aria-hidden="true"></i></a></div>
+   <div class="grey lighten-3 z-depth-0 secxl" >
+      <div class="nav-wrapper">
+       <a class="" style="cursor: pointer; font-weight: bold;"><span>LOGOUT</span></a>
+         <div class="clearfix"></div>
+      </div>
+   </div>
+   <div>
+      <div>
+         <div class="row">
+            <div class="s12 m12 l12 col">
+			<div class="s34">
+               <div class="row">
+                  <div class="s12 m12 l2 col-sm-2"><img src="https://s3.amazonaws.com/skoolsresources.com/skools/510/logos/510" class="responsive-img" style="width: 100%; margin-top: 60px;"></div>
+                  <div class="s12 m12 l10 col-sm-10">
+                     <div class="teal-text" style="font-size: 0.4em; font-weight: bold;">
+                        <h4 style="font-weight: 300; margin-top: 60px;">DEZVEN</h4>
+                        <p></p>
+                     </div>
+                  </div>
+               </div>
+               
+			   </div>
+			   
+			   <div class="row">
+                  <div class="s12   m6 l6 col-sm-6">
+                     <div class="row">
+                        <div class="z-depth-0 card">
+                           <div class="card-content">
+                              <span class="material-label"></span>
+                              <div class="canc " style="margin-top: 10px;"><span class="col s2 m2 l2 teal-text material-label" style="font-size: 0.8em; font-weight: bold;">Address:</span><span class="col m10 l10 s10 black-text material-label" style="margin-bottom: 10px; font-size: 0.8em;">This is address line is just a sample</span><span class="col s2 m2 l2 teal-text material-label" style="font-size: 0.8em; font-weight: bold;">Contact:</span><span class="col s9  m9 l9 black-text material-label" style="margin-bottom: 20px; font-size: 0.8em; font-weight: bold;">788599996</span></div>
+                           </div>
+                           <div class="card-action"><a style="cursor: pointer;"><span class="icon-att"><i class="fa fa-paperclip" aria-hidden="true"></i></span><span>Visit Website</span></a></div>
+                        </div>
+                     </div>
+                  </div>
+                  <div class="s12 m12 l6 col-sm-6">
+                     <div>
+                        <span class="green-text material-label" style="font-size: 0.8em; font-weight: bold;">STEPS ON HOW TO APPLY.</span>
+                        <div class="stepper">
+                           <div class="step active">
+                              <div>
+                                 <div class="circle">1</div>
+                                 <div class="line"></div>
+                              </div>
+                              <div>
+                                 <div class="title">SELECT ADMISSION SECTION</div>
+                                 <div></div>
+                                 <div class="body"><span class="material-label">1. Select any of the open admission section</span><span class="material-label">2. Click the apply button to proceed</span></div>
+                              </div>
+                           </div>
+                           <div class="step inactive">
+                              <div>
+                                 <div class="circle">2</div>
+                                 <div class="line"></div>
+                              </div>
+                              <div>
+                                 <div class="title">CREATE ACCOUNT</div>
+                                 <div></div>
+                                 <div class="body"><span class="material-label">1. Fill out sign up page</span><span class="material-label">3. An email will be sent to you, click on the link in the email to verify</span></div>
+                              </div>
+                           </div>
+                           <div class="step inactive">
+                              <div>
+                                 <div class="circle">3</div>
+                                 <div class="line"></div>
+                              </div>
+                              <div>
+                                 <div class="title">EMAIL VERIFICATION</div>
+                                 <div></div>
+                                 <div class="body"><span class="material-label">1. Email verification successful</span><span class="material-label">2. Click the proceed to payment button</span></div>
+                              </div>
+                           </div>
+                           <div class="step inactive">
+                              <div>
+                                 <div class="circle">4</div>
+                                 <div class="line"></div>
+                              </div>
+                              <div>
+                                 <div class="title">MAKE PAYMENT</div>
+                                 <div></div>
+                                 <div class="body"><span class="material-label">1. Select payment method</span><span class="material-label">2. If you selected scratch card, enter pin and serial number of scratch card you acquired from school</span><span class="material-label">3. If you selected online, click pay now to make payment with your ATM card</span><span class="material-label">4. Successful payments will direct you to the application form</span></div>
+                              </div>
+                           </div>
+                           <div class="step inactive">
+                              <div>
+                                 <div class="circle">5</div>
+                                 <div class="line"></div>
+                              </div>
+                              <div>
+                                 <div class="title">FILL OUT FORM</div>
+                                 <div></div>
+                                 <div class="body"><span class="material-label">Fill out all information on application form</span><span class="material-label">1. After filling out form, preview to verify information</span><span class="material-label">2. Click on the submit button</span><span class="material-label">3. Await response from the school</span><span class="material-label">1. After filling out form, preview to verify information</span><span class="material-label">2. Click on the submit button</span><span class="material-label">3. Await response from the school</span></div>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col">
+                     <div class="teal-text" style="margin-top: 60px;">
+                        <h4 style="font-weight: 300; margin-top: 60px;">ADMISSIONS</h4>
+                        <p>Select any of the available admission</p>
+                     </div>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="s12 l12 m12 col-sm-12">
+                     <div class="z-depth-0 card">
+                        <div class="black-text card-content">
+                           <span class="card-title activator" style="font-size: 1.5em;"><span>Demo</span></span><span class="col s12 l12 m12 material-label"></span>
+                           <div class="row">
+                              <div class="s4 col"><span class="col s12 teal-text material-label" style="font-size: 1.2em;">Deadline</span><span class="col s12 material-label" style="font-size: 1em;">2019 Jan 19 - 2019 Jan 30</span></div>
+                              <div class="s2 col"><span class="col s12 teal-text material-label" style="font-size: 1.2em;">Form Fees</span><span class="col s12 material-label" style="font-size: 0.8em;">₦10252</span></div>
+                              <div class="s6 col">
+                                 <span class="teal-text material-label" style="font-size: 1.2em;">Available Class</span>
+                                 <div class="left chip" style="margin: 4px;"><span>Nursery</span></div>
+                              </div>
+                           </div>
+                        </div>
+                        <div class="card-action">
+                           <div style=""><a class="blue-text" href="" style="cursor: pointer;"><span>Admission Requirements</span></a><button type="button" class="btn-flat green-text disabled" aria-hidden="true" disabled="" data-delay="350" data-position="bottom" data-tooltip-id="7f67bbb7-3cd9-e87a-754f-27d738790612" data-tooltip="You are logged in as  school admin." style="cursor: pointer; margin-right: 30px; font-weight: bolder; display: none;"><span>APPLY NOW</span></button></div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <footer class="grey lighten-3 page-footer">
+      <div class="container">
+         <div class="row secl">
+            <div class="offset-l4 offset- offset-m3 s12 m6 l4 col"><img class="logo responsive-img" aria-hidden="true" src="" style="display: none;"></div>
+            <div class="offset-l4 offset- offset-m3 s12 m6 l4 col"><span class="center-align grey-text text-darken-2 material-label">Powered by</span></div>
+            <div class="offset-l4 offset- offset-m3 center-align s12 m6 l4 col"><img src="img/flexisaf.png" class="responsive-img"></div>
+         </div>
+      </div>
+   </footer>
+</main>
+	   </div>
+	</div>
+  </div>
+   <footer class="footer shubham"> 2018 © dezven Software ERP.</footer></div>
+</div>
+<script>
+var resizefunc = [];
+</script>
+<script src="http://rdxshop.com/skool/skool/assets/js/final.js"></script>
+<script type="text/javascript" src="http://rdxshop.com/skool/skool/assets/js/bootstrap-datepicker.min.js"></script>
+<link rel="stylesheet" href="http://rdxshop.com/skool/skool/assets/css/bootstrap-datepicker3.css"/>
+<script>
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();   
+});
+</script>
+<script>
+$(document).ready(function() {
+   	
+	$('#datatable').DataTable({});
+	$('#datatable1').DataTable({});
+
+	jQuery('.datepicker').datepicker({
+		autoclose: true,
+		format: "yyyy-mm-dd",
+		todayHighlight: true
+    });
+});
+</script>
+</body>
+</html>

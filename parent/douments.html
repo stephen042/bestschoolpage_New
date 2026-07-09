@@ -1,0 +1,355 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Administrator</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<META NAME="ROBOTS" CONTENT="NOINDEX, NOFOLLOW">
+<link href="http://rdxshop.com/skool/skool/assets/css/final.css" rel="stylesheet" type="text/css" />
+<link href="assets/css/pak-page.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript">
+function del(url)
+{  
+	if(	confirm('Really want to delete this.') )
+	{
+		window.location=url;
+	}
+}
+</script>
+<style>
+.alert-error {
+	color: #a94442;
+	background-color: #f2dede;
+	border-color: #ebccd1;
+}
+.table>caption+thead>tr:first-child>td, .table>caption+thead>tr:first-child>th, .table>colgroup+thead>tr:first-child>td, .table>colgroup+thead>tr:first-child>th, .table>thead:first-child>tr:first-child>td, .table>thead:first-child>tr:first-child>th {
+    border-bottom: none!important;
+	border-top: none!important;
+}
+</style>
+</head>
+<body class="fixed-left">
+<div id="wrapper">
+  <div class="topbar">
+	<div class="topbar-left">
+		<div class="text-center"> <img src="../uploads/dezven-logo.png" alt="user-img" class="img-circle" style="border:none!important; visibility:hidden"> </div>
+	</div>
+	<div class="navbar navbar-default" role="navigation">
+    <div class="container">
+		<div class="">
+		
+		<div class="pull-left taugl">
+		<div class="row">
+		<div class="col-md-3">
+				<button class="button-menu-mobile open-left"><i class="fa fa-bars"></i></button>
+				<span class="clearfix"></span> 
+				</div>
+				<div class="col-md-9">
+				<h2 class="ven">Dezven</h2>
+				</div>
+				</div>
+			</div>
+			
+			<ul class="nav navbar-nav navbar-right pull-right">
+			
+				<li class="dropdown"> <a class="dropdown-toggle profile" data-toggle="dropdown" aria-expanded="true"> <img src="../image/user.png">  </a>
+					<ul class="dropdown-menu">
+						<li><a href="http://rdxshop.com/skool/admin/login_profile.php"><i class="ti-user m-r-5"></i> Update Profile</a></li>
+						<li><a href="http://rdxshop.com/skool/admin/login_pass.php"><i class="ti-user m-r-5"></i>Change Password</a></li>
+						<li><a href="http://rdxshop.com/skool/admin/logout.php"><i class="ti-power-off m-r-5"></i> Logout</a></li>
+					</ul>
+				</li>
+			</ul>
+		</div>
+	</div>
+	</div>
+</div>  <div class="left side-menu">
+	<div class="sidebar-inner slimscrollleft">
+		<div class="user-details">
+			<div class="pull-left raju"> 
+				<img src="../uploads/" style="height:50px;"> 
+			</div>
+			<div class="user-info">
+				<div class="dropdown"> 
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown" aria-expanded="false"> School</a>
+					<ul class="dropdown-menu">
+						<li>
+							<a href="http://rdxshop.com/skool/skool/login_profile.php"><i class="md md-face-unlock"></i> Profile
+							<div class="ripple-wrapper"></div></a>
+						</li>
+						<li><a href="http://rdxshop.com/skool/skool/settings.php"><i class="md md-settings"></i> Settings</a></li>
+						<li><a href="javascript:void(0)"><i class="md md-lock"></i> Lock screen</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+		<div id="sidebar-menu">
+			<ul>
+				<li class="text-muted menu-title"></li>
+				<li><a href="http://rdxshop.com/skool/skool/home.php" class="waves-effect "><i class="ti-home"></i> <span> Home </span> </a></li>
+				
+				<li><a href="http://rdxshop.com/skool/skool/dashboard.php" class="waves-effect "><i class="fa fa-th-large" aria-hidden="true"></i><span> Dashboard </span> </a></li>
+				
+				<li><a href="http://rdxshop.com/skool/skool/form.php" class="waves-effect "><i class="fa fa-bars" aria-hidden="true"></i> <span> Applications </span> </a></li>
+				
+				<li><a href="applicants.php" class="waves-effect active"><i class="fa fa-users" aria-hidden="true"></i> <span> Applicants </span> </a></li>
+				
+				<li><a href="configuration.php" class="waves-effect "><i class="fa fa-cog" aria-hidden="true"></i> <span> Configuration </span> </a></li>
+				
+				<li><a href="login_profile.php" class="waves-effect "><i class="fa fa-user" aria-hidden="true"></i> <span> Profile </span> </a></li>
+				
+				<li><a href="transcation-history.php" class="waves-effect "><i class="fa fa-rebel" aria-hidden="true"></i> <span> Transactions </span> </a></li>
+				
+				<li><a href="douments.php" class="waves-effect "><i class="fa fa-folder" aria-hidden="true"></i> <span>Document</span> </a></li>
+				
+				<li class=""> <a href="view_admission.php" class="waves-effect "><i class="fa fa-star"></i> <span>View Admission</span> </a></li>
+				
+
+				<li class=""> <a href="logout.php" class="waves-effect "><i class="fa fa-sign-out"></i> <span>Logout</span> </a></li>
+			</ul>
+			<div class="clearfix"></div>
+		</div>
+		<div class="clearfix"></div>
+	</div>
+</div>  <div class="content-page">
+    <!-- Start content -->
+    <div class="content">
+      <div class="container">
+       <div class="pak-page">
+	    <div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog">
+    
+      <!-- Modal content-->
+      <div class="modal-content man">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          <h4 class="modal-title">Upload Document/Report Template</h4>
+        </div>
+        <div class="modal-body">
+          <div class="modal-content  ">
+   
+   <div class="row">
+      <div class="l8 s12 m12 col">
+         <div class="input-field" style="margin-top: 30px;">
+            <div class="select-wrapper gwt-ListBox">
+               
+			   
+			   <div class="dropdown">
+  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">DEMO
+  <span class="caret"></span></button>
+  <ul class="dropdown-menu kan">
+    <li><a href="#">DEMO</a></li>
+  
+  </ul>
+</div>
+            </div>
+            <label>Select Application</label><span class="material-label"></span>
+         </div>
+      </div>
+      <div class="s12 m12 l4 col">
+         <div class="input-field" style="margin-top: 30px;">
+            <div class="select-wrapper gwt-ListBox">
+               
+						   <div class="dropdown kal">
+  <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">DEMO
+  <span class="caret"></span></button>
+  <ul class="dropdown-menu">
+    <li class=" active selected"><span>APPLICATION_FORM</span></li>
+                  <li class=""><span>ADMISSION_LETTER</span></li>
+                  <li class=""><span>OTHER_DOCUMENTS</span></li>
+                  <li class=""><span>EXAM_RESULT</span></li>
+                  <li class=""><span>SCRATCH_CARDS</span></li>
+                  <li class=""><span>ADMISSION_REQUIREMENT</span></li>
+                  <li class=""><span>APPLICANT_LIST</span></li>
+  
+  </ul>
+</div>
+			
+			
+			
+			</div>
+            <label>Choose Document Type</label><span class="material-label"></span>
+         </div>
+      </div>
+      <div aria-hidden="true" class="s12 l12 m12 col" style="display: none;">
+         <div class="input-field"><input type="text" class="gwt-TextBox" id="gwt-uid-2"><label for="gwt-uid-2">Enter document description.</label><span aria-hidden="true" class="material-label" style="display: none;"></span></div>
+      </div>
+   </div>
+   <div class="row">
+      <div class="sectio-select">
+      <button type="button" class="white btn-flat right teal-text" style="cursor: pointer; margin-top: 20px;" data-toggle="modal" data-target="#myModal"><span class="scetion"><i class="fa fa-cloud-upload" aria-hidden="true"></i></span><span>Choose Document</span></button>
+   </div>
+   </div>
+</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+
+	   
+	   <div class="page-wrapper-big">
+   <div class="row">
+      <div class="l7 s12 m12 col-sm-6">
+         <div class="manin" style="font-size: 1.2em; font-weight: bolder;">
+            <h4 style="font-weight: 300; margin-top: 60px;">REPORT TEMPLATE CONFIGURATION</h4>
+            <p>Upload word document</p>
+         </div>
+      </div>
+      <div class="l5 s12 m12 col-sm-6" style="margin-top: 30px;">
+	  <div class="scetion-net">
+	  <button type="button" class="white btn-flat right teal-text" style="cursor: pointer; margin-top: 20px;"data-toggle="modal" data-target="#myModal"><span>New Document</span><span class="scetion"><i class="fa fa-cloud-upload" aria-hidden="true"></i></span></button>
+	  </div>
+	  </div>
+   </div>
+   <div class="row">
+      <div class="s12 m12 l12 col">
+         <div class="white">
+            <div class="page-wrapper">
+               <div class="grey lighten-3 grey-text valign-wrapper empty-state center-align" style="height: 40vh;">
+                  <div class="valign center" style="width: 100%;">
+                     <div>
+					 <span class="whiet-spe">
+                        <i class="fa fa-file" aria-hidden="true"></i>
+						</span>
+                        <h4 style="font-weight: 300; margin-top: 60px;">Document/Reports Empty</h4>
+                        <p>Please wait while loading your information</p>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <div class="modal" style="z-index: 1003; display: none; opacity: 0; transform: scaleX(0.7); top: 0px;">
+      <div class="modal-content">
+         <span class="green-text material-label" style="margin-bottom: 20px; font-size: 22px;">Upload Document/Report Template</span>
+         <div class="row">
+            <div class="l8 s12 m12 col">
+               <div class="input-field" style="margin-top: 30px;">
+                  <div class="select-wrapper gwt-ListBox">
+                     <span class="caret">▼</span><input type="text" class="select-dropdown" readonly="true" data-activates="select-options-a0100876-d737-e896-4693-0d6722c014f5" value="Demo">
+                     <ul id="select-options-a0100876-d737-e896-4693-0d6722c014f5" class="dropdown-content select-dropdown ">
+                        <li class=""><span>Demo</span></li>
+                     </ul>
+                     <select class="gwt-ListBox initialized">
+                        <option value="Demo">Demo</option>
+                     </select>
+                  </div>
+                  <label>Select Application</label><span class="material-label"></span>
+               </div>
+            </div>
+            <div class="s12 m12 l4 col">
+               <div class="input-field" style="margin-top: 30px;">
+                  <div class="select-wrapper gwt-ListBox">
+                     <span class="caret">▼</span><input type="text" class="select-dropdown" readonly="true" data-activates="select-options-0fd8bac5-1172-74bf-1cb7-1827fefe43b5" value="APPLICATION_FORM">
+                     <ul id="select-options-0fd8bac5-1172-74bf-1cb7-1827fefe43b5" class="dropdown-content select-dropdown ">
+                        <li class=""><span>APPLICATION_FORM</span></li>
+                        <li class=""><span>ADMISSION_LETTER</span></li>
+                        <li class=""><span>OTHER_DOCUMENTS</span></li>
+                        <li class=""><span>EXAM_RESULT</span></li>
+                        <li class=""><span>SCRATCH_CARDS</span></li>
+                        <li class=""><span>ADMISSION_REQUIREMENT</span></li>
+                        <li class=""><span>APPLICANT_LIST</span></li>
+                     </ul>
+                     <select class="gwt-ListBox initialized">
+                        <option value="APPLICATION_FORM">APPLICATION_FORM</option>
+                        <option value="ADMISSION_LETTER">ADMISSION_LETTER</option>
+                        <option value="OTHER_DOCUMENTS">OTHER_DOCUMENTS</option>
+                        <option value="EXAM_RESULT">EXAM_RESULT</option>
+                        <option value="SCRATCH_CARDS">SCRATCH_CARDS</option>
+                        <option value="ADMISSION_REQUIREMENT">ADMISSION_REQUIREMENT</option>
+                        <option value="APPLICANT_LIST">APPLICANT_LIST</option>
+                     </select>
+                  </div>
+                  <label>Choose Document Type</label><span class="material-label"></span>
+               </div>
+            </div>
+            <div aria-hidden="true" class="s12 l12 m12 col" style="display: none;">
+               <div class="input-field"><input type="text" class="gwt-TextBox" id="gwt-uid-36"><label for="gwt-uid-36">Enter document description.</label><span aria-hidden="true" class="material-label" style="display: none;"></span></div>
+            </div>
+         </div>
+         <div class="row">
+            <div>
+               <div>
+                  <div id="zdrop" class="fileuploader" style="height: 0px;">
+                     <div class="preview-container">
+                        <div class="header">
+                           <span id="no-uploaded-files"></span><i id="upload-close" class="circle waves-effect waves-default material-icons" style="cursor: pointer;">close</i><i id="upload-colaps" class="circle waves-effect waves-default material-icons" style="cursor: pointer;">keyboard_arrow_down</i>
+                           <div id="total-upload-progress" class="progress" style="margin: 0px;">
+                              <div class="determinate"></div>
+                           </div>
+                        </div>
+                        <ul class="previews card collection" id="gwt-uid-44">
+                           <li id="" class="clearhack valign-wrapper item-template collection-item">
+                              <div class="left pv zdrop-info" data-dz-thumbnail="">
+                                 <div><span class="truncate" data-dz-name="" style="width: 200px;"></span><span data-dz-size=""></span></div>
+                                 <i class="left preview-icon material-icons" style="cursor: pointer;">insert_drive_file</i>
+                                 <div class="progress" style="margin: 0px;">
+                                    <div class="determinate" data-dz-uploadprogress="" style="width: 0%;"></div>
+                                 </div>
+                                 <div class="dz-error-message"><span data-dz-errormessage="" id="error-message"></span></div>
+                              </div>
+                              <a class="secondary-content"><button type="button" class="btn-floating transparent z-depth-0 circle white-text ph" id="dz-remove" data-dz-remove="" style="cursor: pointer;"><i class="left material-icons" style="cursor: pointer;">clear</i></button></a>
+                           </li>
+                        </ul>
+                     </div>
+                     <div class="row">
+                        <div class="l12 m12 s12 col"><button type="button" class="teal btn-flat right dz-clickable" id="uploader" style="cursor: pointer;"><i class="left white-text material-icons" style="cursor: pointer;">cloud_upload</i><span>Choose Document</span></button></div>
+                     </div>
+                     <div class="row">
+                        <div class="l12 m12 s12 col">
+                           <div aria-hidden="true" class="progress" style="margin: 0px; display: none; position: absolute; left: 0px; bottom: 0px;">
+                              <div class="determinate" style="width: 0%;"></div>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <div class="modal-footer"><button type="button" class="btn-flat" style="cursor: pointer;"><span>Cancel</span></button></div>
+   </div>
+</div>
+	  
+
+	  </div>
+	</div>
+  </div>
+   <footer class="footer shubham"> 2018 © dezven Software ERP.</footer></div>
+</div>
+<script>
+var resizefunc = [];
+</script>
+<script src="http://rdxshop.com/skool/skool/assets/js/final.js"></script>
+<script type="text/javascript" src="http://rdxshop.com/skool/skool/assets/js/bootstrap-datepicker.min.js"></script>
+<link rel="stylesheet" href="http://rdxshop.com/skool/skool/assets/css/bootstrap-datepicker3.css"/>
+<script>
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();   
+});
+</script>
+<script>
+$(document).ready(function() {
+   	
+	$('#datatable').DataTable({});
+	$('#datatable1').DataTable({});
+
+	jQuery('.datepicker').datepicker({
+		autoclose: true,
+		format: "yyyy-mm-dd",
+		todayHighlight: true
+    });
+});
+</script>
+<script>
+
+</script>
+</body>
+</html>

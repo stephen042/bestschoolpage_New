@@ -1,0 +1,5 @@
+uploads/
+*.zip
+*.sql
+skool/whatsapp_config.php
+config.php

@@ -1,0 +1,91 @@
+<?php
+error_reporting(0);
+
+
+// ini_set('display_errors', 1);
+// ini_set('display_startup_errors', 1);
+// error_reporting(E_ALL);
+
+session_start();
+if($_SERVER['HTTP_HOST']=='localhost' || $_SERVER['HTTP_HOST']=='127.0.0.1')
+	{
+/*--------------------------------------------------------------Just Change the Database Name of your project------------------------------------*/
+$dbName = "skooling";
+$user =   "root";
+$pass =   "";
+$host = "localhost";
+/*--------------------------------------------------------------Just Change the Database Name of your project------------------------------------*/
+/*-------------------------------------------------------------Just change the folder name Of your PRoject------------------------------------*/
+define("SITE_URL","http://127.0.0.1/skool/");
+define("ADMIN_URL","http://127.0.0.1/skool/admin/");
+define("LIVE_URL","http://127.0.0.1/skool/");
+define("SKOOL_URL","http://127.0.0.1/skool/skool/");
+define("PARENT_URL","http://127.0.0.1/skool/parent/");
+/*--------------------------------------------------------------Just change the folder name Of your PRoject------------------------------------*/
+	} 
+elseif($_SERVER['HTTP_HOST']=='dezven.com')
+	{
+$dbName = "schoolnig";
+$user =   "schoolniger";
+$pass =   "tYr&lJQF?A.$";
+$host = "localhost";
+/*--------------------------------------------------------------Just Change the Database Name of your project------------------------------------*/
+/*-------------------------------------------------------------Just change the folder name Of your PRoject------------------------------------*/
+define("SITE_URL","https://www.dezven.com/project/skool/");
+define("ADMIN_URL","https://www.dezven.com/project/skool/admin/");
+define("LIVE_URL","https://www.dezven.com/project/skool/");
+define("SKOOL_URL","https://www.dezven.com/project/skool/skool/");
+define("PARENT_URL","https://www.dezven.com/project/skool/parent/");
+/*--------------------------------------------------------------Just change the folder name Of your PRoject------------------------------------*/	
+if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === "off") {
+			$location = 'https://www.' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+			header('HTTP/1.1 301 Moved Permanently');
+			header('Location: ' . $location);
+			exit;
+		}	
+
+	
+	} 	else {
+/*--------------------------------------------------------------Just Change the Database Name of your project------------------------------------*/
+$dbName = "bestsotj_skooling";
+$user =   "bestsotj_skolshl";
+$pass =   "WXw^g?.s,hMY";
+$host = "localhost";
+/*--------------------------------------------------------------Just Change the Database Name of your project------------------------------------*/
+/*-------------------------------------------------------------Just change the folder name Of your PRoject------------------------------------*/
+define("SITE_URL","https://www.bestschoolpage.com.ng/");
+define("ADMIN_URL","https://www.bestschoolpage.com.ng/admin/");
+define("LIVE_URL","https://www.bestschoolpage.com.ng/");
+define("SKOOL_URL","https://www.bestschoolpage.com.ng/skool/");
+define("PARENT_URL","https://www.bestschoolpage.com.ng/parent/");
+/*--------------------------------------------------------------Just change the folder name Of your PRoject------------------------------------*/
+if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === "off") {
+	$location = 'https://www.' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+	header('HTTP/1.1 301 Moved Permanently');
+	header('Location: ' . $location);
+	exit;
+}	
+
+	}
+	
+define("DS",DIRECTORY_SEPARATOR);
+define("PATH_ROOT",dirname(__FILE__));
+define("PATH_LIB",PATH_ROOT.DS."library".DS);
+define("PATH_IMAGES",PATH_ROOT.DS.'images'.DS);
+define("PATH_UPLOAD",PATH_ROOT.DS."uploads".DS);
+define("URL_ADMIN_SOFTWARE_MODULE",PATH_ROOT.DS."modules".DS);
+define("URL_ADMIN_SOFTWARE_WITHOUT_MODULE",PATH_ROOT.DS);
+define("URL_IMG",URL_ROOT."images/");
+define("URL_CSS",URL_ROOT."css/");
+define("URL_JS",URL_ROOT."js/");
+define("SELF",basename($_SERVER['PHP_SELF']));
+require_once(PATH_LIB."class.database.php");
+require_once(PATH_LIB."validations.php");
+$db=new MySqlDb($host,$user,$pass,$dbName);
+$db->query("SET NAMES 'utf8'");
+require_once(PATH_LIB."functions.php");
+date_default_timezone_set('Asia/Kolkata');
+$iSettingDetail=$db->getRow("select * from settings where id='1'");
+$iHomeSettingDetails=$db->getRow("select * from home_content where id='1'");
+$iCurrentFileName = basename($_SERVER['PHP_SELF']);
+?>

@@ -1,0 +1,7 @@
+[08-Oct-2022 12:18:26 UTC] PHP Warning:  include(../config.php): failed to open stream: No such file or directory in /home/bestsch3/public_html/admin/index.php on line 2
+[08-Oct-2022 12:18:26 UTC] PHP Warning:  include(../config.php): failed to open stream: No such file or directory in /home/bestsch3/public_html/admin/index.php on line 2
+[08-Oct-2022 12:18:26 UTC] PHP Warning:  include(): Failed opening '../config.php' for inclusion (include_path='.:/opt/alt/php74/usr/share/pear') in /home/bestsch3/public_html/admin/index.php on line 2
+[08-Oct-2022 12:18:26 UTC] PHP Fatal error:  Uncaught Error: Class 'Validation' not found in /home/bestsch3/public_html/admin/index.php:3
+Stack trace:
+#0 {main}
+  thrown in /home/bestsch3/public_html/admin/index.php on line 3
