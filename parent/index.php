@@ -273,7 +273,7 @@ $sliders = db_get_rows("SELECT * FROM plogin_slider ORDER BY id DESC");
             min-height: 46vh;
             display: flex;
             align-items: center;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            background: linear-gradient(135deg, #2c5f21 0%, #37733b 50%, #1d4e1b 100%);
             overflow: hidden;
         }
 
@@ -289,9 +289,9 @@ $sliders = db_get_rows("SELECT * FROM plogin_slider ORDER BY id DESC");
             position: absolute;
             inset: 0;
             background: linear-gradient(135deg,
-                    rgba(15, 23, 42, 0.92) 0%,
-                    rgba(30, 41, 59, 0.85) 50%,
-                    rgba(15, 23, 42, 0.92) 100%);
+                    rgba(20, 42, 15, 0.92) 0%,
+                    rgba(30, 59, 38, 0.85) 50%,
+                    rgba(20, 42, 15, 0.92) 100%);
             z-index: 1;
         }
 
