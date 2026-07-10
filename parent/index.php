@@ -459,7 +459,7 @@ $sliders = db_get_rows("SELECT * FROM plogin_slider ORDER BY id DESC");
                             <p class="login-caption mb-5">Use your Parent ID or registered email and password.</p>
 
                             <div class="tip-box">
-                                <strong>Tip:</strong> Parent ID format can be like <span style="font-weight:700;">JOS/0001/2026</span>.
+                                <strong>Tip:</strong> Parent ID <span style="font-weight:700;">INPUT THEM BELOW</span>.
                             </div>
 
                             <?= showMessage($stat) ?>
