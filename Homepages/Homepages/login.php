@@ -1,5 +1,4 @@
 <?php
-
 /**
  * School Login Page - Complete Fix with Password Migration
  */
@@ -37,7 +36,7 @@ $success_message = '';
 if (isset($_POST['login'])) {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
-
+    
     // Validation
     if (empty($username)) {
         $error_message = "Username is required";
@@ -52,13 +51,13 @@ if (isset($_POST['login'])) {
             // Login by username
             $user = db_get_row("SELECT * FROM school_register WHERE username = ?", array($username));
         }
-
+        
         // Check if user exists
         if (!empty($user)) {
             // Verify password
             $storedPassword = $user['password'] ?? '';
             $passwordValid = false;
-
+            
             // Check if stored password is hashed (starts with $2y$)
             if (strpos($storedPassword, '$2y$') === 0) {
                 // Already hashed - use password_verify
@@ -66,22 +65,22 @@ if (isset($_POST['login'])) {
             } else {
                 // Old plain text password - direct comparison
                 $passwordValid = ($storedPassword === $password);
-
+                
                 // ============================================================
                 // MIGRATION: Convert plain text password to hash on successful login
                 // ============================================================
                 if ($passwordValid) {
                     $newHash = password_hash($password, PASSWORD_DEFAULT);
                     db_update("school_register", ['password' => $newHash], "id = ?", array($user['id']));
-
+                    
                     // Optional: Log the migration (for debugging)
                     error_log("Migrated password for user: " . $user['username'] . " (ID: " . $user['id'] . ")");
                 }
             }
-
+            
             // Also check status - make sure user is not blocked
             $userStatus = $user['status'] ?? '1';
-
+            
             if ($passwordValid) {
                 if ($userStatus == '0') {
                     $error_message = "Your account has been blocked. Please contact the administrator.";
@@ -97,10 +96,10 @@ if (isset($_POST['login'])) {
                         $sessionCreateBy = (int)$user['id'];
                     }
                     $_SESSION['create_by_userid'] = $sessionCreateBy;
-
+                    
                     // Update last login time
                     db_update("school_register", array('last_login' => date('Y-m-d H:i:s')), "id = ?", array($user['id']));
-
+                    
                     redirect(SKOOL_URL);
                     exit;
                 }
@@ -118,7 +117,6 @@ $savedUsername = $_COOKIE['school_username'] ?? '';
 ?>
 <!DOCTYPE html>
 <html>
-
 <head>
     <?php include('inc.meta-new.php'); ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -127,9 +125,7 @@ $savedUsername = $_COOKIE['school_username'] ?? '';
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
+        * { font-family: 'Inter', sans-serif; }
 
         body {
             background: #f8fafc;
@@ -172,9 +168,10 @@ $savedUsername = $_COOKIE['school_username'] ?? '';
             position: absolute;
             inset: 0;
             background: linear-gradient(135deg,
-                    rgba(15, 23, 42, 0.92) 0%,
-                    rgba(30, 41, 59, 0.85) 50%,
-                    rgba(15, 23, 42, 0.92) 100%);
+                rgba(15, 23, 42, 0.92) 0%,
+                rgba(30, 41, 59, 0.85) 50%,
+                rgba(15, 23, 42, 0.92) 100%
+            );
             z-index: 1;
         }
 
@@ -198,9 +195,7 @@ $savedUsername = $_COOKIE['school_username'] ?? '';
             padding: 34px;
         }
 
-        .form-group {
-            margin-bottom: 18px;
-        }
+        .form-group { margin-bottom: 18px; }
 
         .form-control {
             width: 100%;
@@ -288,92 +283,83 @@ $savedUsername = $_COOKIE['school_username'] ?? '';
         }
 
         @media (max-width: 768px) {
-            .login-form {
-                padding: 22px;
-                border-radius: 18px;
-            }
-
-            .login-card-wrap {
-                margin-top: -45px;
-                margin-bottom: 55px;
-            }
+            .login-form { padding: 22px; border-radius: 18px; }
+            .login-card-wrap { margin-top: -45px; margin-bottom: 55px; }
         }
     </style>
 </head>
-
 <body>
-    <div id="page" class="site">
-        <?php include('inc.header-new.php'); ?>
-        <div id="content" class="site-content">
-            <section class="login-hero">
-                <div class="login-hero-overlay"></div>
-                <div class="container mx-auto px-4 login-hero-content">
-                    <div class="max-w-4xl mx-auto text-center">
-                        <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-full border border-indigo-500/20 mb-5">
-                            <i class="fas fa-right-to-bracket"></i>
-                            School Portal
-                        </span>
-                        <h1 class="text-white text-4xl md:text-5xl font-extrabold mb-3">Welcome Back</h1>
-                        <p class="text-slate-300">Sign in to manage your school operations with ease.</p>
-                    </div>
+<div id="page" class="site">
+    <?php include('inc.header-new.php'); ?>
+    <div id="content" class="site-content">
+        <section class="login-hero">
+            <div class="login-hero-overlay"></div>
+            <div class="container mx-auto px-4 login-hero-content">
+                <div class="max-w-4xl mx-auto text-center">
+                    <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-full border border-indigo-500/20 mb-5">
+                        <i class="fas fa-right-to-bracket"></i>
+                        School Portal
+                    </span>
+                    <h1 class="text-white text-4xl md:text-5xl font-extrabold mb-3">Welcome Back</h1>
+                    <p class="text-slate-300">Sign in to manage your school operations with ease.</p>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section class="login-card-wrap">
-                <div class="container mx-auto px-4">
-                    <div class="max-w-2xl mx-auto">
-                        <form action="" method="post" class="login-form">
-                            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1">Login to Your School Account</h2>
-                            <p class="login-caption mb-5">Use your registered username or email and password.</p>
+        <section class="login-card-wrap">
+            <div class="container mx-auto px-4">
+                <div class="max-w-2xl mx-auto">
+                    <form action="" method="post" class="login-form">
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1">Login to Your School Account</h2>
+                        <p class="login-caption mb-5">Use your registered username or email and password.</p>
 
-                            <div class="admin-note">
-                                <strong>Site Administrator?</strong><br>
-                                If you are a site admin/super admin, please
-                                <a href="<?php echo ADMIN_URL; ?>login.php" class="link-muted" style="font-weight:700; color:#312e81;">login here</a>.
-                            </div>
+                        <div class="admin-note">
+                            <strong>Site Administrator?</strong><br>
+                            If you are a site admin/super admin, please
+                            <a href="<?php echo ADMIN_URL; ?>login.php" class="link-muted" style="font-weight:700; color:#312e81;">login here</a>.
+                        </div>
 
-                            <?php if (!empty($error_message)): ?>
-                                <div class="alert alert-danger"><?php echo htmlspecialchars($error_message); ?></div>
-                            <?php endif; ?>
-                            <?php if (!empty($success_message)): ?>
-                                <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
-                            <?php endif; ?>
+                        <?php if (!empty($error_message)): ?>
+                            <div class="alert alert-danger"><?php echo htmlspecialchars($error_message); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($success_message)): ?>
+                            <div class="alert alert-success"><?php echo htmlspecialchars($success_message); ?></div>
+                        <?php endif; ?>
 
-                            <div class="form-group">
-                                <input autocomplete="off" class="form-control" name="username"
-                                    value="<?php echo htmlspecialchars($_POST['username'] ?? $savedUsername); ?>"
-                                    placeholder="Username or Email Address *" type="text" required>
-                            </div>
+                        <div class="form-group">
+                            <input autocomplete="off" class="form-control" name="username"
+                                   value="<?php echo htmlspecialchars($_POST['username'] ?? $savedUsername); ?>"
+                                   placeholder="Username or Email Address *" type="text" required>
+                        </div>
 
-                            <div class="form-group">
-                                <input autocomplete="off" class="form-control" name="password"
-                                    placeholder="Password *" type="password" required>
-                            </div>
+                        <div class="form-group">
+                            <input autocomplete="off" class="form-control" name="password"
+                                   placeholder="Password *" type="password" required>
+                        </div>
 
-                            <div class="form-group" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                                <a href="<?php echo SITE_URL; ?>forgot-password.php" class="link-muted">
-                                    <i class="fa fa-question-circle"></i> Forgot Password?
-                                </a>
-                                <button class="btn-primary" style="max-width: 180px;" type="submit" name="login">
-                                    <i class="fa fa-sign-in"></i> Log In
-                                </button>
-                            </div>
+                        <div class="form-group" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                            <a href="<?php echo SITE_URL; ?>forgot-password.php" class="link-muted">
+                                <i class="fa fa-question-circle"></i> Forgot Password?
+                            </a>
+                            <button class="btn-primary" style="max-width: 180px;" type="submit" name="login">
+                                <i class="fa fa-sign-in"></i> Log In
+                            </button>
+                        </div>
 
-                            <hr style="border:none; border-top:1px solid #e2e8f0; margin:20px 0;">
-                            <p style="text-align:center; color:#475569; margin:0;">
-                                Don't have a school account?
-                                <a href="<?php echo SITE_URL; ?>registration.php" class="link-muted" style="font-weight:700; color:#4338ca;">
-                                    <i class="fa fa-registered"></i> Register School
-                                </a>
-                            </p>
-                        </form>
-                    </div>
+                        <hr style="border:none; border-top:1px solid #e2e8f0; margin:20px 0;">
+                        <p style="text-align:center; color:#475569; margin:0;">
+                            Don't have a school account?
+                            <a href="<?php echo SITE_URL; ?>registration.php" class="link-muted" style="font-weight:700; color:#4338ca;">
+                                <i class="fa fa-registered"></i> Register School
+                            </a>
+                        </p>
+                    </form>
                 </div>
-            </section>
-        </div>
-        <?php include('inc.footer-new.php'); ?>
+            </div>
+        </section>
     </div>
-    <?php include('inc.js-new.php'); ?>
+    <?php include('inc.footer-new.php'); ?>
+</div>
+<?php include('inc.js-new.php'); ?>
 </body>
-
 </html>

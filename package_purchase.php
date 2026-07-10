@@ -1,472 +1,311 @@
 <?php
-require_once('config.php');
-//include('inc.session-create.php');
+include('config.php');
+include('skool/inc.session-create.php');
 
-$PageTitle = "Packages";
-$FileName = 'package_purchase.php';
-$validate = new Validation();
+$token = trim((string)($_GET['token'] ?? ''));
+$action = trim((string)($_GET['action'] ?? ''));
 
-if (empty($_SESSION['userid'])) {
-    redirect(LIVE_URL . 'login.php');
+$iPayment = [];
+if ($token !== '') {
+    $iPayment = db_get_row("SELECT * FROM school_purchased_pacakage WHERE success_token = ?", [$token]);
 }
 
-if (isset($_POST['pakages'])) {
-    try {
-        // Get plan details using PDO
-        $iPlan = db_get_row("SELECT * FROM package WHERE id = ?", [$_POST['plan_id']]);
+$isApproved = (!empty($iPayment) && (string)($iPayment['status'] ?? '0') === '1');
 
-        if (empty($iPlan)) {
-            echo "<script>alert('Invalid package selected.');</script>";
-            exit;
-        }
+$reference = trim((string)($_GET['reference'] ?? ''));
 
-        // Check if user already has an active package
-        $exdate = date('Y-m-d');
-        $rSchool_Pakage = db_get_row(
-            "SELECT id FROM school_purchased_pacakage WHERE userid = ? AND exp_date > ?",
-            [$_SESSION['userid'], $exdate]
-        );
+$statusType = 'invalid';
+if ($isApproved || $action === 'success') {
+    $statusType = 'success';
+} elseif ($action === 'cancel') {
+    $statusType = 'cancel';
+}
 
-        $success_token = randomFix(15);
-        $cancel_token = randomFix(15);
+$statusTitle = 'Invalid URL';
+$statusMessage = 'We could not validate this payment link. Please try again from your dashboard.';
 
-        if (empty($rSchool_Pakage)) {
-            $date = date('Y-m-d');
-            $days = $iPlan['no_of_days'];
-            $expDate = date('Y-m-d', strtotime($date . " + " . $days . " days"));
-
-            $aryData = array(
-                'plan_id' => $iPlan['id'],
-                'plan_name' => $iPlan['title'],
-                'price' => $iPlan['price'],
-                'no_of_days' => $iPlan['no_of_days'],
-                'exp_date' => $expDate,
-                'usertype' => $_SESSION['usertype'],
-                'userid' => $_SESSION['userid'],
-                'success_token' => $success_token,
-                'cancel_token' => $cancel_token,
-                'create_at' => date('Y-m-d H:i:s'),
-                'status' => 0,
-            );
-
-            $flgIn = db_insert("school_purchased_pacakage", $aryData);
-
-            if ($flgIn !== false) {
-                $_SESSION['payment_id'] = db_last_id();
-                redirect(LIVE_URL . 'package_vogupay.php');
-                exit;
-            } else {
-                echo "<script>alert('Failed to process package. Please try again.');</script>";
-            }
-        } else {
-            echo "<script>alert('You Have Already Purchased A Plan');</script>";
-        }
-    } catch (PDOException $e) {
-        error_log("Package purchase error: " . $e->getMessage());
-        echo "<script>alert('A database error occurred. Please try again later.');</script>";
-    }
+if ($statusType === 'success') {
+    $statusTitle = 'Payment Completed Successfully';
+    $statusMessage = 'Your package purchase has been confirmed and your account has been updated.';
+} elseif ($statusType === 'cancel') {
+    $statusTitle = 'Payment Was Cancelled Or Failed';
+    $statusMessage = 'No charge was applied to your package. You can retry payment at any time.';
 }
 ?>
+
 <!DOCTYPE html>
-<html lang="en-US" prefix="#">
-<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<html>
 
 <head>
-    <?php //include('inc.meta.php'); ?>
+    <?php include('inc.meta-new.php'); ?>
+    <title>Package Payment Status - Best School Page</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        .price-table .services {
-            height: 515px;
+        * {
+            font-family: 'Inter', sans-serif;
         }
 
-        .vijju {
-            padding-bottom: 30px;
-            background: #cecece82;
+        body {
+            background: #f8fafc;
+            overflow-x: hidden;
         }
 
-        .main-navbar {
-            margin-bottom: 0;
+        .glass-header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
         }
 
-        .price-table {
-            margin: 0px 143px 0px 143px;
-            padding: 13px 0 10px 0;
+        .glass-header.scrolled {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
-        .vijju .price-table .sec1-head span {
-            font-size: 27px;
-            font-family: arial;
+        .status-hero {
+            position: relative;
+            min-height: 44vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            overflow: hidden;
+        }
+
+        .status-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('images/home-slider.png') center/cover no-repeat;
+            opacity: 0.2;
+        }
+
+        .status-hero-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg,
+                    rgba(15, 23, 42, 0.92) 0%,
+                    rgba(30, 41, 59, 0.85) 50%,
+                    rgba(15, 23, 42, 0.92) 100%);
+            z-index: 1;
+        }
+
+        .status-hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .status-wrap {
+            margin-top: -70px;
+            margin-bottom: 80px;
+            position: relative;
+            z-index: 3;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.97);
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .status-icon {
+            width: 68px;
+            height: 68px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7rem;
+        }
+
+        .status-icon.success {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-icon.cancel {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .status-icon.invalid {
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .meta-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .meta-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            background: #f8fafc;
+        }
+
+        .meta-label {
+            font-size: 0.78rem;
             font-weight: 700;
-            color: #1B3058;
-            margin-left: 101px;
-            cursor: default;
+            letter-spacing: 0.03em;
+            color: #64748b;
+            text-transform: uppercase;
         }
 
-        .price-table h2 {
-            text-align: center;
-            font-family: 'Open Sans', sans-serif;
-            font-size: 32px;
-            font-weight: bold;
-            color: tomato;
+        .meta-value {
+            margin-top: 4px;
+            font-weight: 600;
+            color: #0f172a;
+            word-break: break-word;
         }
 
-        .price-table .tables-rj {
-            margin: 20px 100px 0px 100px;
+        .btn-primary-custom {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 16px;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: #fff;
+            font-weight: 700;
+            text-decoration: none;
         }
 
-        .price-table .table-vj {
-            text-align: center;
-            padding-bottom: 12px;
-            background: white;
-            box-shadow: 0px 0px 6px 1px #f8f4f4;
-            transition: transform .5s;
-            box-shadow: 0px 0px 1px 0px grey;
+        .btn-primary-custom:hover {
+            color: #fff;
+            text-decoration: none;
         }
 
-        .price-table .table-vj hr {
-            margin: 0;
+        .btn-muted-custom {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 11px 16px;
+            background: #fff;
+            color: #334155;
+            font-weight: 700;
+            text-decoration: none;
         }
 
-        .price-table .basic {
-            background: #d39d05;
-            padding: 5px;
+        .btn-muted-custom:hover {
+            color: #1e293b;
+            text-decoration: none;
         }
 
-        .price-table .basic h3 {
-            font-family: calibri;
-            color: #ffffffd9;
-            font-size: 35px;
-            margin: 5px;
-        }
-
-        .price-table .basic-price {
-            background: #ebb413;
-            border-bottom: 1px solid black;
-        }
-
-        .price-table .basic-price h1 {
-            font-family: sans-serif;
-            font-size: 40px;
-            color: #ffffffe8;
-        }
-
-        .price-table .basic-price p {
-            color: #ffffffd1;
-            font-size: 15px;
-            font-family: Microsoft JhengHei UI heavy;
-            padding-bottom: 2px;
-        }
-
-        .price-table .standard- {
-            background: #7d1e4a;
-            padding: 5px;
-        }
-
-        .price-table .standard- h3 {
-            font-family: calibri;
-            color: #ffffffd9;
-            font-size: 35px;
-            margin: 5px;
-        }
-
-        .price-table .standard-price {
-            background: #97285b;
-            border-bottom: 1px solid black;
-        }
-
-        .price-table .standard-price h1 {
-            font-family: sans-serif;
-            font-size: 40px;
-            color: #ffffffe8;
-        }
-
-        .price-table .standard-price p {
-            color: #ffffffd1;
-            font-size: 15px;
-            font-family: Microsoft JhengHei UI heavy;
-            padding-bottom: 2px;
-        }
-
-        .price-table .premium {
-            background: #14646d;
-            padding: 5px;
-        }
-
-        .price-table .premium h3 {
-            font-family: calibri;
-            color: #ffffffd9;
-            font-size: 35px;
-            margin: 5px;
-        }
-
-        .price-table .premium-price {
-            background: #2d818b;
-            border-bottom: 1px solid black;
-        }
-
-        .price-table .premium-price h1 {
-            font-family: sans-serif;
-            font-size: 40px;
-            color: #ffffffe8;
-        }
-
-        .price-table .premium-price p {
-            color: #ffffffd1;
-            font-size: 15px;
-            font-family: Microsoft JhengHei UI heavy;
-            padding-bottom: 2px;
-        }
-
-        .price-table .services {
-            padding: 20px 0 0 0;
-            background: white;
-            line-height: 30px;
-        }
-
-        .price-table .services p {
-            font-size: 15px;
-            color: #0000009e;
-            font-family: 'Fira Sans Condensed', sans-serif;
-        }
-
-        .price-table .sing-up-1 {
-            padding-top: 20px;
-        }
-
-        .price-table .sing-up-2 {
-            padding-top: 20px;
-        }
-
-        .price-table .sing-up-3 {
-            padding-top: 20px;
-        }
-
-        .price-table .sing-up-1 button {
-            padding: 10px 20px 10px 20px;
-            border: 0px solid;
-            background: #ebb413;
-            font-weight: 800;
-            border-radius: 4px;
-            color: white;
-            font-size: 12px;
-            font-family: Microsoft JhengHei UI heavy;
-        }
-
-        .price-table .sing-up-2 button {
-            padding: 10px 20px 10px 20px;
-            border: 0px solid;
-            background: #97285b;
-            font-weight: 800;
-            color: white;
-            border-radius: 4px;
-            font-size: 12px;
-            font-family: Microsoft JhengHei UI heavy;
-        }
-
-        .price-table .sing-up-3 button {
-            padding: 10px 20px 10px 20px;
-            border: 0px solid;
-            background: #2d818b;
-            font-weight: 800;
-            border-radius: 4px;
-            color: white;
-            font-size: 12px;
-            font-family: Microsoft JhengHei UI heavy;
-        }
-
-        .price-table .table-vj:hover {
-            transform: scale(1.1);
-        }
-
-        @media (max-width:767px) {
-            .price-table {
-                width: 100%;
-                padding: 0;
-                margin: 0;
+        @media (max-width: 768px) {
+            .status-wrap {
+                margin-top: -45px;
+                margin-bottom: 55px;
             }
 
-            .vijju .price-table .sec1-head {
-                padding-bottom: 20px;
-            }
-
-            .price-table .tables-rj {
-                margin: 0;
-            }
-
-            .price-table .table-vj {
-                margin-bottom: 60px;
-                border: 4px solid #817d7d4a;
-            }
-
-            .price-table .table-vj:hover {
-                transform: scale(1);
-            }
-        }
-
-        @media (min-width:768px) and (max-width:1024px) {
-            .price-table {
-                width: 100%;
-                padding: 0;
-                margin: 0;
-            }
-
-            .price-table .tables-rj {
-                margin: 0;
-            }
-
-            .price-table .services {
-                line-height: 15px;
-            }
-
-            .vijju .price-table .sec1-head span {
-                margin: 0;
-            }
-
-            .vijju .price-table .sec1-head {
-                padding-bottom: 20px;
+            .status-card {
+                padding: 20px;
+                border-radius: 18px;
             }
         }
     </style>
 </head>
 
-<body data-rsssl=1 class="home page-template page-template-page-templates page-template-home page-template-page-templateshome-php page page-id-5780 woocommerce-no-js tribe-no-js">
+<body class="home page-template page-template-tpl-home page-template-tpl-home-php page page-id-14">
+    <div id="page" class="site">
+        <?php include('inc.header-new.php'); ?>
+        <div id="content" class="site-content">
+            <section class="status-hero">
+                <div class="status-hero-overlay"></div>
+                <div class="container mx-auto px-4 status-hero-content">
+                    <div class="max-w-4xl mx-auto text-center">
+                        <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-full border border-indigo-500/20 mb-5">
+                            <i class="fas fa-credit-card"></i>
+                            Package Payment
+                        </span>
+                        <h1 class="text-white text-4xl md:text-5xl font-extrabold mb-3">Payment Status</h1>
+                        <p class="text-slate-300">Review your package purchase result below.</p>
+                    </div>
+                </div>
+            </section>
 
-    <div id="container">
-        <?php //include('inc.header.php'); ?>
+            <section class="status-wrap">
+                <div class="container mx-auto px-4">
+                    <div class="max-w-3xl mx-auto status-card">
+                        <div class="text-center">
+                            <span class="status-icon <?= $statusType === 'success' ? 'success' : ($statusType === 'cancel' ? 'cancel' : 'invalid') ?>">
+                                <?php if ($statusType === 'success') { ?>
+                                    <i class="fas fa-check"></i>
+                                <?php } elseif ($statusType === 'cancel') { ?>
+                                    <i class="fas fa-xmark"></i>
+                                <?php } else { ?>
+                                    <i class="fas fa-triangle-exclamation"></i>
+                                <?php } ?>
+                            </span>
 
-        <div class="vijju">
-            <section class="price-table">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="sec1-head">
-                                <span> Packages </span>
+                            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mt-4 mb-2"><?= e($statusTitle) ?></h2>
+                            <p class="text-slate-600 text-base md:text-lg"><?= e($statusMessage) ?></p>
+                        </div>
+
+                        <div class="meta-row">
+                            <div class="meta-item">
+                                <div class="meta-label">Payment Reference</div>
+                                <div class="meta-value"><?= e($reference !== '' ? $reference : 'N/A') ?></div>
+                            </div>
+
+                            <div class="meta-item">
+                                <div class="meta-label">Plan</div>
+                                <div class="meta-value"><?= e($iPayment['plan_name'] ?? 'N/A') ?></div>
+                            </div>
+
+                            <div class="meta-item">
+                                <div class="meta-label">Amount</div>
+                                <div class="meta-value">N<?= number_format((float)($iPayment['price'] ?? 0), 2) ?></div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="tables-rj">
-                        <div class="row">
-                            <?php
-                            $i = 0;
-                            // Get packages using PDO
-                            try {
-                                $aryDetail = db_get_rows("SELECT * FROM package WHERE status != 0 ORDER BY id ASC");
-                            } catch (PDOException $e) {
-                                $aryDetail = array();
-                                error_log("Failed to load packages: " . $e->getMessage());
-                            }
-
-                            foreach ($aryDetail as $ilist) {
-                                $i++;
-                            ?>
-                                <div class="col-md-4 col-sm-4 col-xs-12">
-                                    <div class="table-vj" style="text-align:center;">
-                                        <div class="<?php if ($i == '1') {
-                                                        echo "basic";
-                                                    } elseif ($i == '2') {
-                                                        echo "standard-";
-                                                    } elseif ($i == '3') {
-                                                        echo "premium";
-                                                    } else {
-                                                        echo "basic";
-                                                    } ?>">
-                                            <div class="row">
-                                                <div class="col-md-12">
-                                                    <h3><?= e($ilist['title']); ?></h3>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="<?php if ($i == '1') {
-                                                        echo "basic";
-                                                    } elseif ($i == '2') {
-                                                        echo "standard";
-                                                    } elseif ($i == '3') {
-                                                        echo "premium";
-                                                    } else {
-                                                        echo "basic";
-                                                    } ?>-price">
-                                            <div class="row">
-                                                <div class="col-md-12">
-                                                    <h1>₦ <?= e($ilist['price_yearly']); ?></h1>
-                                                    <p></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <hr>
-                                        <div class="services">
-                                            <div class="row">
-                                                <div class="col-md-12">
-                                                    <?php if ($ilist['create_custom_forms'] == '1'): ?>
-                                                        <p>Create custom forms</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['report_templates'] == '1'): ?>
-                                                        <p>Report Templates</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['online_and_bank_payment'] == '1'): ?>
-                                                        <p>Online Bank Payment</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['dashboard'] == '1'): ?>
-                                                        <p>Dashboard</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['exam_feature'] == '1'): ?>
-                                                        <p>Exam Feature</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['sms_alert'] == '1'): ?>
-                                                        <p>Sms Alert</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['email_notification'] == '1'): ?>
-                                                        <p>Email Notification</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['document_upload'] == '1'): ?>
-                                                        <p>Document Upload</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['sms_campaigns'] == '1'): ?>
-                                                        <p>Sms campaigns</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['email_campaigns'] == '1'): ?>
-                                                        <p>Email Campaigns</p>
-                                                    <?php endif; ?>
-                                                    <?php if (!empty($ilist['report_and_data_export'])): ?>
-                                                        <p>Report and data export(<?= e($ilist['report_and_data_export']); ?>)</p>
-                                                    <?php endif; ?>
-                                                    <?php if ($ilist['attendance_module'] == '1'): ?>
-                                                        <p>Attendance Module</p>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="sing-up-1">
-                                            <div class="row">
-                                                <div class="col-md-12">
-                                                    <form action="" method="post">
-                                                        <input type="hidden" name="plan_id" value="<?= e($ilist['id']); ?>">
-                                                        <button style="background-color:<?php if ($i == '1') {
-                                                                                            echo "#ebb313;";
-                                                                                        } elseif ($i == '2') {
-                                                                                            echo "#96285a;";
-                                                                                        } elseif ($i == '3') {
-                                                                                            echo "#35818b;";
-                                                                                        } else {
-                                                                                            echo "#ebb313;";
-                                                                                        } ?>" type="submit" name="pakages">Buy Now</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php } ?>
+                        <div class="mt-6" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+                            <a href="<?= SITE_URL ?>package.php" class="btn-primary-custom">
+                                <i class="fas fa-layer-group"></i>
+                                Back To Pricing
+                            </a>
+                            <a href="<?= SKOOL_URL ?>" class="btn-muted-custom">
+                                <i class="fas fa-gauge"></i>
+                                Go To Dashboard
+                            </a>
                         </div>
                     </div>
                 </div>
             </section>
         </div>
-
-        <!-- Footer content here... -->
-
+        <?php include('inc.footer-new.php'); ?>
     </div>
+    <?php include('inc.js-new.php'); ?>
+    <script>
+        (function() {
+            var header = document.querySelector('.glass-header');
+            if (header) {
+                window.addEventListener('scroll', function() {
+                    if (window.scrollY > 50) {
+                        header.classList.add('scrolled');
+                    } else {
+                        header.classList.remove('scrolled');
+                    }
+                });
+            }
+        })();
+    </script>
 </body>
 
 </html>
