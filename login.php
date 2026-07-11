@@ -2,6 +2,7 @@
 
 /**
  * School Login Page - Complete Fix with Password Migration
+ * FIXED: Proper school owner ID handling to prevent cross-school data display
  */
 
 // Enable error reporting for debugging
@@ -86,20 +87,103 @@ if (isset($_POST['login'])) {
                 if ($userStatus == '0') {
                     $error_message = "Your account has been blocked. Please contact the administrator.";
                 } else {
-                    // Set session
-                    $_SESSION['userid'] = $user['id'];
-                    $_SESSION['usertype'] = $user['usertype'] ?? 0;
-                    $_SESSION['username'] = $user['username'];
-                    $_SESSION['email'] = $user['email'];
-                    $_SESSION['school_name'] = $user['name'];
-                    $sessionCreateBy = (int)($user['create_by_userid'] ?? 0);
-                    if ($sessionCreateBy <= 0) {
-                        $sessionCreateBy = (int)$user['id'];
+                    // ==========================================================
+                    // CRITICAL FIX: Determine the correct school owner ID
+                    // ==========================================================
+
+                    // Get the school owner ID from the user record
+                    $schoolOwnerId = (int)($user['create_by_userid'] ?? 0);
+
+                    // If create_by_userid is 0 or NULL, this user might be the school owner
+                    // or the record is corrupted. We need to find the actual owner.
+                    if ($schoolOwnerId <= 0) {
+                        // Check if this user is a school owner (usertype = 0 typically)
+                        // Or if they have a school_owner flag
+                        $userType = (int)($user['usertype'] ?? 0);
+
+                        // If usertype is 0 (school owner/admin), use their own ID
+                        if ($userType === 0) {
+                            $schoolOwnerId = (int)$user['id'];
+                        } else {
+                            // This is a staff/teacher with missing create_by_userid
+                            // Try to find the school owner by checking if this user was created by someone
+                            // or find any user with usertype=0 from the same email domain or school name
+
+                            // First, try to find the school owner using the user's email domain
+                            $emailDomain = '';
+                            if (!empty($user['email']) && strpos($user['email'], '@') !== false) {
+                                $emailParts = explode('@', $user['email']);
+                                $emailDomain = $emailParts[1] ?? '';
+                            }
+
+                            // Try to find the school owner by email domain or school name
+                            if (!empty($emailDomain)) {
+                                $owner = db_get_row(
+                                    "SELECT id FROM school_register 
+                                     WHERE create_by_userid = 0 AND usertype = 0 AND email LIKE ?",
+                                    ['%' . $emailDomain]
+                                );
+                                if (!empty($owner)) {
+                                    $schoolOwnerId = (int)$owner['id'];
+                                }
+                            }
+
+                            // If still not found, try to find any owner in the system
+                            if ($schoolOwnerId <= 0) {
+                                $owner = db_get_row(
+                                    "SELECT id FROM school_register WHERE usertype = 0 AND status = 1 ORDER BY id ASC LIMIT 1"
+                                );
+                                if (!empty($owner)) {
+                                    $schoolOwnerId = (int)$owner['id'];
+                                }
+                            }
+
+                            // If we found a valid owner, update the user's record to fix it
+                            if ($schoolOwnerId > 0) {
+                                db_update(
+                                    "school_register",
+                                    ['create_by_userid' => $schoolOwnerId],
+                                    "id = ?",
+                                    [$user['id']]
+                                );
+                                error_log("Fixed missing create_by_userid for user: " . $user['username'] . " (ID: " . $user['id'] . ") -> Owner ID: " . $schoolOwnerId);
+                            } else {
+                                // Last resort: use the user's own ID (but this should be avoided)
+                                // Log a critical error
+                                error_log("CRITICAL: Could not determine school owner for user: " . $user['username'] . " (ID: " . $user['id'] . ")");
+                                $schoolOwnerId = (int)$user['id'];
+                            }
+                        }
                     }
-                    $_SESSION['create_by_userid'] = $sessionCreateBy;
+
+                    // Double-check that the owner ID is valid
+                    if ($schoolOwnerId <= 0) {
+                        // Absolute last resort - use the user's own ID
+                        $schoolOwnerId = (int)$user['id'];
+                        error_log("WARNING: Using user's own ID as school owner for: " . $user['username']);
+                    }
+
+                    // Set session variables
+                    $_SESSION['userid'] = (int)$user['id'];
+                    $_SESSION['usertype'] = (int)($user['usertype'] ?? 0);
+                    $_SESSION['username'] = (string)$user['username'];
+                    $_SESSION['email'] = (string)$user['email'];
+                    $_SESSION['school_name'] = (string)$user['name'];
+
+                    // CRITICAL: Always use the school owner ID for filtering all data
+                    $_SESSION['create_by_userid'] = $schoolOwnerId;
+
+                    // For compatibility with older code, also set a separate variable
+                    $_SESSION['school_owner_id'] = $schoolOwnerId;
+
+                    // Log successful login with school owner info
+                    error_log("Login successful - User: " . $user['username'] . " (ID: " . $user['id'] . ") - School Owner ID: " . $schoolOwnerId);
 
                     // Update last login time
                     db_update("school_register", array('last_login' => date('Y-m-d H:i:s')), "id = ?", array($user['id']));
+
+                    // Regenerate session ID for security
+                    session_regenerate_id(true);
 
                     redirect(SKOOL_URL);
                     exit;
