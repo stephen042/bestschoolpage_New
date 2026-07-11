@@ -1,16 +1,10 @@
-<?php
-
+<?php 
 /**
  * School Registration Page - Rebuilt for PHP 8.x
  * Allows new schools to register with secure password hashing
  */
 
 require_once('config.php');
-
-function pageUrl(string $string) {
-    // Convert to lowercase, replace spaces with hyphens, and remove special characters
-    return strtolower(preg_replace('/[^a-z0-9]+/', '-', trim($string)));
-}
 
 // ============================================================================
 // INITIALIZATION
@@ -43,10 +37,10 @@ if (isset($_POST['submit'])) {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
     $confirmPass = $_POST['confirm_pass'] ?? '';
-
+    
     // Validation
     $errors = [];
-
+    
     if (empty($schoolName)) $errors[] = "School name is required";
     if (empty($location)) $errors[] = "Location is required";
     if (empty($stateId)) $errors[] = "State is required";
@@ -59,13 +53,13 @@ if (isset($_POST['submit'])) {
     if (empty($password)) $errors[] = "Password is required";
     if (strlen($password) < 6) $errors[] = "Password must be at least 6 characters";
     if ($password !== $confirmPass) $errors[] = "Passwords do not match";
-
+    
     if (empty($errors)) {
         // Check for duplicates
         $existingEmail = db_get_val("SELECT id FROM school_register WHERE email = ?", [$email]);
         $existingUsername = db_get_val("SELECT id FROM school_register WHERE username = ?", [$username]);
         $existingContact = db_get_val("SELECT id FROM school_register WHERE contact_no = ?", [$contactNo]);
-
+        
         if (!empty($existingEmail)) {
             $stat['error'] = "This email address is already registered.";
         } elseif (!empty($existingUsername)) {
@@ -78,10 +72,10 @@ if (isset($_POST['submit'])) {
             $newId = $lastId + 1;
             $randomId = randomFix(20) . '-' . $newId;
             $pageUrl = PageUrl($schoolName) . '-' . $newId;
-
+            
             // Hash the password
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
+            
             // Insert new school
             $data = [
                 'usertype' => 0,
@@ -102,19 +96,26 @@ if (isset($_POST['submit'])) {
                 'create_by_usertype' => 0,
                 'walletamount' => 0,
             ];
-
-            $newSchoolId = db_insert("school_register", $data);
-
-            if ($newSchoolId) {
+            
+            $inserted = db_insert("school_register", $data);
+            
+            if ($inserted) {
+                $newSchoolId = (int)db_last_id();
+                if ($newSchoolId <= 0) {
+                    $stat['error'] = "Registration completed, but the new school ID could not be resolved. Please sign in manually.";
+                } else {
                 // Set session and redirect
                 $_SESSION['userid'] = $newSchoolId;
                 $_SESSION['usertype'] = 0;
                 $_SESSION['username'] = $username;
+                $_SESSION['email'] = $email;
                 $_SESSION['school_name'] = $schoolName;
+                $_SESSION['create_by_userid'] = $newSchoolId;
                 $_SESSION['success'] = "Your school has been registered successfully! Please complete the package selection.";
-
+                
                 redirect(SITE_URL . 'package.php');
                 exit;
+                }
             } else {
                 $stat['error'] = "Registration failed. Please try again later.";
             }
@@ -132,7 +133,6 @@ $schoolTypes = db_get_rows("SELECT * FROM school_type ORDER BY school_type ASC")
 ?>
 <!DOCTYPE html>
 <html>
-
 <head>
     <?php include('inc.meta-new.php'); ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -141,9 +141,7 @@ $schoolTypes = db_get_rows("SELECT * FROM school_type ORDER BY school_type ASC")
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
+        * { font-family: 'Inter', sans-serif; }
 
         body {
             background: #f8fafc;
@@ -186,9 +184,10 @@ $schoolTypes = db_get_rows("SELECT * FROM school_type ORDER BY school_type ASC")
             position: absolute;
             inset: 0;
             background: linear-gradient(135deg,
-                    rgba(15, 23, 42, 0.92) 0%,
-                    rgba(30, 41, 59, 0.85) 50%,
-                    rgba(15, 23, 42, 0.92) 100%);
+                rgba(15, 23, 42, 0.92) 0%,
+                rgba(30, 41, 59, 0.85) 50%,
+                rgba(15, 23, 42, 0.92) 100%
+            );
             z-index: 1;
         }
 
@@ -212,9 +211,7 @@ $schoolTypes = db_get_rows("SELECT * FROM school_type ORDER BY school_type ASC")
             padding: 34px;
         }
 
-        .form-group {
-            margin-bottom: 18px;
-        }
+        .form-group { margin-bottom: 18px; }
 
         .form-control {
             width: 100%;
@@ -304,57 +301,49 @@ $schoolTypes = db_get_rows("SELECT * FROM school_type ORDER BY school_type ASC")
         }
 
         @media (max-width: 768px) {
-            .learnpro-register-form {
-                padding: 22px;
-                border-radius: 18px;
-            }
-
-            .register-card-wrap {
-                margin-top: -45px;
-                margin-bottom: 55px;
-            }
+            .learnpro-register-form { padding: 22px; border-radius: 18px; }
+            .register-card-wrap { margin-top: -45px; margin-bottom: 55px; }
         }
     </style>
 </head>
-
 <body class="home page-template page-template-tpl-home page-template-tpl-home-php page page-id-14">
-    <div id="page" class="site">
-        <?php include('inc.header-new.php'); ?>
-        <div id="content" class="site-content">
-            <section class="register-hero">
-                <div class="register-hero-overlay"></div>
-                <div class="container mx-auto px-4 register-hero-content">
-                    <div class="max-w-4xl mx-auto text-center">
-                        <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-full border border-indigo-500/20 mb-5">
-                            <i class="fas fa-school"></i>
-                            School Onboarding
-                        </span>
-                        <h1 class="text-white text-4xl md:text-5xl font-extrabold mb-3">Register Your School</h1>
-                        <p class="text-slate-300">Create your account and start managing your institution in minutes.</p>
-                    </div>
+<div id="page" class="site">
+    <?php include('inc.header-new.php'); ?>
+    <div id="content" class="site-content">
+        <section class="register-hero">
+            <div class="register-hero-overlay"></div>
+            <div class="container mx-auto px-4 register-hero-content">
+                <div class="max-w-4xl mx-auto text-center">
+                    <span class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-full border border-indigo-500/20 mb-5">
+                        <i class="fas fa-school"></i>
+                        School Onboarding
+                    </span>
+                    <h1 class="text-white text-4xl md:text-5xl font-extrabold mb-3">Register Your School</h1>
+                    <p class="text-slate-300">Create your account and start managing your institution in minutes.</p>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section class="register-card-wrap">
-                <div class="container mx-auto px-4">
-                    <div class="max-w-3xl mx-auto">
-                        <form action="" method="POST" class="learnpro-register-form">
-                            <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1">Register Your School</h2>
-                            <p class="register-caption mb-5">Fill in your school details and admin credentials to get started.</p>
-
-                            <?= showMessage($stat) ?>
-
+        <section class="register-card-wrap">
+            <div class="container mx-auto px-4">
+                <div class="max-w-3xl mx-auto">
+                    <form action="" method="POST" class="learnpro-register-form">
+                        <h2 class="text-2xl md:text-3xl font-extrabold text-slate-900 mb-1">Register Your School</h2>
+                        <p class="register-caption mb-5">Fill in your school details and admin credentials to get started.</p>
+                            
+                        <?= showMessage($stat) ?>
+                            
                             <!-- School Basic Information -->
                             <div class="form-group">
-                                <input autocomplete="off" class="form-control" placeholder="School Name *"
-                                    value="<?= e($_POST['school_name'] ?? '') ?>" name="school_name" type="text" required>
+                                <input autocomplete="off" class="form-control" placeholder="School Name *" 
+                                       value="<?= e($_POST['school_name'] ?? '') ?>" name="school_name" type="text" required>
                             </div>
-
+                            
                             <div class="form-group">
-                                <input autocomplete="off" class="form-control" placeholder="Location *"
-                                    value="<?= e($_POST['location'] ?? '') ?>" name="location" type="text" required>
+                                <input autocomplete="off" class="form-control" placeholder="Location *" 
+                                       value="<?= e($_POST['location'] ?? '') ?>" name="location" type="text" required>
                             </div>
-
+                            
                             <div class="form-group">
                                 <div class="row">
                                     <div class="col-md-4">
@@ -368,18 +357,18 @@ $schoolTypes = db_get_rows("SELECT * FROM school_type ORDER BY school_type ASC")
                                         </select>
                                     </div>
                                     <div class="col-md-8">
-                                        <input class="required form-control" placeholder="Email *" name="email"
-                                            type="email" value="<?= e($_POST['email'] ?? '') ?>" required>
+                                        <input class="required form-control" placeholder="Email *" name="email" 
+                                               type="email" value="<?= e($_POST['email'] ?? '') ?>" required>
                                     </div>
                                 </div>
                             </div>
-
+                            
                             <div class="form-group">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <input autocomplete="off" class="required form-control" name="contact_no"
-                                            value="<?= e($_POST['contact_no'] ?? '') ?>" placeholder="Contact No. *"
-                                            type="tel" required>
+                                        <input autocomplete="off" class="required form-control" name="contact_no" 
+                                               value="<?= e($_POST['contact_no'] ?? '') ?>" placeholder="Contact No. *" 
+                                               type="tel" required>
                                     </div>
                                     <div class="col-md-6">
                                         <select class="required form-control" name="school_type" required>
@@ -393,51 +382,50 @@ $schoolTypes = db_get_rows("SELECT * FROM school_type ORDER BY school_type ASC")
                                     </div>
                                 </div>
                             </div>
-
+                            
                             <!-- Admin Login Details -->
                             <div class="admin">
                                 <span>Admin Login Details</span>
                             </div>
-
+                            
                             <div class="form-group">
-                                <input class="required form-control" placeholder="Username *"
-                                    value="<?= e($_POST['username'] ?? '') ?>" name="username" type="text" required>
+                                <input class="required form-control" placeholder="Username *" 
+                                       value="<?= e($_POST['username'] ?? '') ?>" name="username" type="text" required>
                             </div>
-
+                            
                             <div class="form-group">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <input class="required form-control" name="password" placeholder="Password *"
-                                            type="password" required>
+                                        <input class="required form-control" name="password" placeholder="Password *" 
+                                               type="password" required>
                                         <small class="text-muted">Minimum 6 characters</small>
                                     </div>
                                     <div class="col-md-6">
-                                        <input class="required form-control" name="confirm_pass"
-                                            placeholder="Confirm Password *" type="password" required>
+                                        <input class="required form-control" name="confirm_pass" 
+                                               placeholder="Confirm Password *" type="password" required>
                                     </div>
                                 </div>
                             </div>
-
+                            
                             <!-- Login Link -->
                             <div class="form-group" style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:6px;">
                                 <p style="margin:0; color:#475569;">Already have a school account?</p>
                                 <a class="link-muted" href="<?= SITE_URL ?>login.php" style="font-weight:700; color:#4338ca;">Login here <i class="fa fa-arrow-right"></i></a>
                             </div>
-
+                            
                             <!-- Submit Button -->
                             <div class="form-group" style="margin-bottom:0;">
                                 <button type="submit" name="submit" class="btn-primary">
                                     <i class="fa fa-check-circle"></i> Register School
                                 </button>
                             </div>
-                        </form>
-                    </div>
+                    </form>
                 </div>
-            </section>
-        </div>
-        <?php include('inc.footer-new.php'); ?>
+            </div>
+        </section>
     </div>
-    <?php include('inc.js-new.php'); ?>
+    <?php include('inc.footer-new.php'); ?>
+</div>
+<?php include('inc.js-new.php'); ?>
 </body>
-
 </html>

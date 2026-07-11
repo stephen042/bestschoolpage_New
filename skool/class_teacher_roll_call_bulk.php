@@ -246,7 +246,7 @@ function getTermName($id) {
                     <p>Real-time attendance entry with automatic calculations</p>
                 </div>
                 
-                <?= msg($stat) ?>
+                
                 
                 <!-- Layout -->
                 <div class="layout">

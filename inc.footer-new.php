@@ -1,3 +1,30 @@
+<style>
+    /* ============================================================
+    FOOTER STYLES
+    ============================================================ */
+    .footer-modern {
+        background: #0f172a;
+        color: #94a3b8;
+        padding: 60px 0 30px;
+    }
+
+    .footer-modern h5 {
+        color: white;
+        font-weight: 700;
+        margin-bottom: 20px;
+        font-size: 1.1rem;
+    }
+
+    .footer-modern a {
+        color: #94a3b8;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .footer-modern a:hover {
+        color: #818cf8;
+    }
+</style>
 <footer class="footer-modern">
     <div class="container mx-auto px-4">
         <div class="max-w-6xl mx-auto">
@@ -46,15 +73,15 @@
                     <ul class="space-y-3 text-sm">
                         <li class="flex items-start gap-3">
                             <i class="fas fa-phone text-indigo-400 mt-1"></i>
-                            <span><?= e($homeContent['call_number'] ?? '+1 (555) 123-4567') ?></span>
+                            <span><?= e($homeContent['call_number'] ?? '') ?></span>
                         </li>
                         <li class="flex items-start gap-3">
                             <i class="fas fa-envelope text-indigo-400 mt-1"></i>
-                            <span><?= e($homeContent['email'] ?? 'info@schoolpro.com') ?></span>
+                            <span><?= e($homeContent['contact_email'] ?? '') ?></span>
                         </li>
                         <li class="flex items-start gap-3">
                             <i class="fas fa-map-marker-alt text-indigo-400 mt-1"></i>
-                            <span>123 Education St, City, State 12345</span>
+                            <span><?= e($homeContent['contact_address'] ?? '') ?></span>
                         </li>
                     </ul>
                 </div>

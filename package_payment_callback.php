@@ -1,7 +1,13 @@
 <?php
+// ============================================================================
+// PACKAGE PAYMENT CALLBACK
+// ============================================================================
+// Handles Paystack payment verification and status update
+// ============================================================================
+
 require_once('config.php');
 
-// Paystack secret reused from existing project payment flows.
+// Paystack secret key
 define('PAYSTACK_SECRET_KEY', 'sk_test_53777abc4825089709409bf6c3ec86e9c76b5803');
 
 $reference = trim((string)($_GET['reference'] ?? $_POST['reference'] ?? ''));
@@ -12,6 +18,7 @@ if ($reference === '') {
     exit;
 }
 
+// Verify payment with Paystack
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, 'https://api.paystack.co/transaction/verify/' . rawurlencode($reference));
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -46,20 +53,21 @@ if ($httpCode === 200 && isset($result['data']['status']) && $result['data']['st
         $token = trim((string)($metadata['token'] ?? ''));
     }
 
+    // Update payment status using PDO
     if ($paymentId > 0) {
         db_update('school_purchased_pacakage', ['status' => 1], 'id = ?', [$paymentId]);
+        $_SESSION['success'] = 'Plan payment completed successfully.';
+        redirect(SKOOL_URL);
+        exit;
     } elseif ($token !== '') {
         db_update('school_purchased_pacakage', ['status' => 1], 'success_token = ?', [$token]);
+        $_SESSION['success'] = 'Plan payment completed successfully.';
+        redirect(SKOOL_URL);
+        exit;
     }
-
-    $target = SITE_URL . 'package_succuess.php?action=success&reference=' . urlencode($reference);
-    if ($token !== '') {
-        $target .= '&token=' . urlencode($token);
-    }
-    redirect($target);
-    exit;
 }
 
+// Payment failed or verification failed
 $target = SITE_URL . 'package_succuess.php?action=cancel&reference=' . urlencode($reference);
 if ($token !== '') {
     $target .= '&token=' . urlencode($token);

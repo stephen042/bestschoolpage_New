@@ -48,7 +48,7 @@ if (isset($_POST['contactus1'])) {
     }
 
     if (empty($errors)) {
-        // Save to database
+        // Save to database using PDO
         $data = [
             'name' => $fullName,
             'email' => $email,
@@ -161,11 +161,12 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
            ============================================================ */
         .contact-hero {
             position: relative;
-            min-height: 50vh;
+            min-height: 40vh;
             display: flex;
             align-items: center;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
             overflow: hidden;
+            padding: 40px 0;
         }
 
         .contact-hero::before {
@@ -203,7 +204,7 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
         }
 
         .contact-hero-title {
-            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-size: clamp(2rem, 5vw, 3.5rem);
             font-weight: 900;
             line-height: 1.1;
         }
@@ -219,9 +220,11 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
         .breadcrumb-modern {
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+            gap: 8px;
             color: #94a3b8;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
         }
 
         .breadcrumb-modern a {
@@ -247,14 +250,14 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
            CONTACT FORM SECTION
            ============================================================ */
         .contact-form-section {
-            padding: 80px 0;
+            padding: 60px 0;
             background: #f8fafc;
         }
 
         .form-card {
             background: white;
-            padding: 50px 40px;
-            border-radius: 24px;
+            padding: 30px 24px;
+            border-radius: 20px;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
             border: 1px solid #f1f5f9;
             transition: all 0.3s ease;
@@ -265,26 +268,27 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
         }
 
         .form-title {
-            font-size: 1.75rem;
+            font-size: clamp(1.3rem, 2.5vw, 1.75rem);
             font-weight: 800;
             color: #0f172a;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .form-subtitle {
             color: #64748b;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
+            font-size: clamp(0.9rem, 1.2vw, 1rem);
         }
 
         .form-group-modern {
-            margin-bottom: 24px;
+            margin-bottom: 18px;
         }
 
         .form-group-modern label {
             display: block;
             font-weight: 600;
             color: #0f172a;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             font-size: 0.9rem;
         }
 
@@ -295,13 +299,15 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
 
         .form-control-modern {
             width: 100%;
-            padding: 14px 18px;
+            padding: 12px 16px;
             border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            font-size: 1rem;
+            border-radius: 10px;
+            font-size: 0.95rem;
             transition: all 0.3s ease;
             background: #fafbfc;
             color: #0f172a;
+            -webkit-appearance: none;
+            appearance: none;
         }
 
         .form-control-modern:focus {
@@ -322,26 +328,26 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
 
         textarea.form-control-modern {
             resize: vertical;
-            min-height: 150px;
+            min-height: 120px;
         }
 
         /* Submit Button */
         .btn-submit {
             display: inline-flex;
             align-items: center;
-            gap: 12px;
-            padding: 16px 48px;
+            justify-content: center;
+            gap: 10px;
+            padding: 14px 32px;
             background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
             color: white;
             font-weight: 700;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 4px 20px rgba(79, 70, 229, 0.4);
-            font-size: 1rem;
+            font-size: 0.95rem;
             width: 100%;
-            justify-content: center;
         }
 
         .btn-submit:hover {
@@ -358,33 +364,37 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
            ============================================================ */
         .info-card {
             background: white;
-            padding: 30px;
-            border-radius: 20px;
+            padding: 20px 18px;
+            border-radius: 16px;
             border: 1px solid #f1f5f9;
             transition: all 0.3s ease;
-            height: 100%;
             display: flex;
             align-items: flex-start;
-            gap: 16px;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .info-card:last-child {
+            margin-bottom: 0;
         }
 
         .info-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
             border-color: rgba(79, 70, 229, 0.2);
         }
 
         .info-icon {
-            width: 52px;
-            height: 52px;
-            min-width: 52px;
-            border-radius: 14px;
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: linear-gradient(135deg, #eef2ff, #e0e7ff);
             color: #4f46e5;
-            font-size: 22px;
+            font-size: 18px;
             transition: all 0.3s ease;
         }
 
@@ -394,11 +404,16 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
             transform: scale(1.05) rotate(-5deg);
         }
 
+        .info-content {
+            flex: 1;
+            min-width: 0;
+        }
+
         .info-content h4 {
             font-weight: 700;
             color: #0f172a;
-            margin-bottom: 4px;
-            font-size: 1.05rem;
+            margin-bottom: 3px;
+            font-size: 0.95rem;
         }
 
         .info-content p,
@@ -406,30 +421,73 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
             color: #64748b;
             text-decoration: none;
             transition: color 0.3s ease;
-            font-size: 0.95rem;
-            line-height: 1.6;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-break: break-word;
         }
 
         .info-content a:hover {
             color: #4f46e5;
         }
 
+        .social-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .social-link {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .social-link:hover {
+            color: #4f46e5;
+            border-color: #4f46e5;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Social card special styling */
+        .info-card-social {
+            background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+            border-color: rgba(79, 70, 229, 0.2);
+        }
+
+        .info-card-social .info-icon {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+        }
+
         /* ============================================================
            ALERT MESSAGES
            ============================================================ */
         .alert-modern {
-            padding: 16px 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            gap: 10px;
             border: 1px solid transparent;
+            font-size: 0.9rem;
         }
 
         .alert-modern i {
-            font-size: 20px;
+            font-size: 18px;
             margin-top: 2px;
+            flex-shrink: 0;
         }
 
         .alert-modern.success {
@@ -453,18 +511,18 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
         }
 
         /* ============================================================
-           MAP SECTION (Optional - Add if you have Google Maps)
+           MAP SECTION
            ============================================================ */
         .map-section {
-            padding: 0 0 80px 0;
+            padding: 0 0 60px 0;
         }
 
         .map-container {
-            border-radius: 24px;
+            border-radius: 20px;
             overflow: hidden;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
             border: 1px solid #f1f5f9;
-            height: 400px;
+            height: 280px;
             background: #e2e8f0;
             position: relative;
         }
@@ -486,9 +544,9 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
         }
 
         .map-placeholder i {
-            font-size: 48px;
+            font-size: 36px;
             color: #4f46e5;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
 
         /* ============================================================
@@ -496,8 +554,8 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
            ============================================================ */
         .reveal {
             opacity: 0;
-            transform: translateY(40px);
-            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(30px);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .reveal.visible {
@@ -522,47 +580,6 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
         }
 
         /* ============================================================
-           RESPONSIVE TWEAKS
-           ============================================================ */
-        @media (max-width: 768px) {
-            .contact-hero {
-                min-height: 40vh;
-            }
-
-            .form-card {
-                padding: 30px 20px;
-            }
-
-            .info-card {
-                padding: 20px;
-            }
-
-            .btn-submit {
-                padding: 14px 32px;
-                font-size: 0.95rem;
-            }
-
-            .map-container {
-                height: 250px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .contact-hero-title {
-                font-size: 2rem;
-            }
-
-            .form-title {
-                font-size: 1.4rem;
-            }
-
-            .form-control-modern {
-                padding: 12px 16px;
-                font-size: 0.95rem;
-            }
-        }
-
-        /* ============================================================
            SCROLL PROGRESS BAR
            ============================================================ */
         .scroll-progress {
@@ -574,6 +591,207 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
             z-index: 10000;
             transition: width 0.1s ease;
             width: 0%;
+        }
+
+        /* ============================================================
+           RESPONSIVE BREAKPOINTS
+           ============================================================ */
+        /* Tablet and below */
+        @media (max-width: 1023px) {
+            .contact-form-section {
+                padding: 40px 0;
+            }
+
+            .form-card {
+                padding: 24px 20px;
+            }
+
+            .info-card {
+                padding: 16px 14px;
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 767px) {
+            .contact-hero {
+                min-height: 30vh;
+                padding: 30px 0;
+            }
+
+            .contact-hero-title {
+                font-size: clamp(1.8rem, 6vw, 2.5rem);
+            }
+
+            .contact-form-section {
+                padding: 30px 0;
+            }
+
+            .form-card {
+                padding: 20px 16px;
+                border-radius: 16px;
+            }
+
+            .form-title {
+                font-size: 1.3rem;
+            }
+
+            .form-subtitle {
+                font-size: 0.9rem;
+            }
+
+            .form-group-modern {
+                margin-bottom: 14px;
+            }
+
+            .form-control-modern {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+                border-radius: 8px;
+            }
+
+            .btn-submit {
+                padding: 12px 24px;
+                font-size: 0.9rem;
+                border-radius: 8px;
+            }
+
+            .info-card {
+                padding: 14px 12px;
+                border-radius: 12px;
+                gap: 10px;
+            }
+
+            .info-icon {
+                width: 38px;
+                height: 38px;
+                min-width: 38px;
+                font-size: 16px;
+                border-radius: 10px;
+            }
+
+            .info-content h4 {
+                font-size: 0.85rem;
+            }
+
+            .info-content p,
+            .info-content a {
+                font-size: 0.85rem;
+            }
+
+            .social-link {
+                width: 32px;
+                height: 32px;
+                font-size: 12px;
+            }
+
+            .map-container {
+                height: 200px;
+                border-radius: 16px;
+            }
+
+            .alert-modern {
+                padding: 12px 14px;
+                font-size: 0.85rem;
+                border-radius: 8px;
+            }
+
+            .breadcrumb-modern {
+                font-size: 0.8rem;
+                gap: 6px;
+            }
+        }
+
+        /* Small mobile */
+        @media (max-width: 480px) {
+            .contact-hero {
+                min-height: 25vh;
+                padding: 20px 0;
+            }
+
+            .contact-hero-title {
+                font-size: 1.8rem;
+            }
+
+            .form-card {
+                padding: 16px 12px;
+            }
+
+            .form-title {
+                font-size: 1.1rem;
+            }
+
+            .form-control-modern {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+
+            .btn-submit {
+                padding: 10px 20px;
+                font-size: 0.85rem;
+            }
+
+            .info-card {
+                padding: 12px 10px;
+                border-radius: 10px;
+                gap: 8px;
+            }
+
+            .info-icon {
+                width: 34px;
+                height: 34px;
+                min-width: 34px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+
+            .map-container {
+                height: 160px;
+            }
+
+            .grid.md\:grid-cols-2 {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Large screens (desktop) */
+        @media (min-width: 1280px) {
+            .contact-form-section {
+                padding: 80px 0;
+            }
+
+            .form-card {
+                padding: 50px 45px;
+                border-radius: 28px;
+            }
+
+            .info-card {
+                padding: 24px 22px;
+                border-radius: 18px;
+            }
+
+            .map-container {
+                height: 350px;
+                border-radius: 24px;
+            }
+        }
+
+        /* Extra large screens */
+        @media (min-width: 1536px) {
+            .contact-form-section {
+                padding: 100px 0;
+            }
+
+            .form-card {
+                padding: 60px 55px;
+            }
+
+            .info-card {
+                padding: 28px 26px;
+            }
+
+            .map-container {
+                height: 400px;
+            }
         }
     </style>
 </head>
@@ -601,18 +819,18 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                 <div class="container mx-auto px-4 contact-hero-content">
                     <div class="max-w-4xl mx-auto text-center">
                         <!-- Badge -->
-                        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-full border border-indigo-500/20 mb-6 reveal">
+                        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-300 text-sm font-semibold rounded-full border border-indigo-500/20 mb-4 reveal">
                             <i class="fas fa-envelope"></i>
                             <span>Get In Touch</span>
                         </div>
 
                         <!-- Title -->
-                        <h1 class="contact-hero-title text-white mb-4 reveal reveal-delay-1">
+                        <h1 class="contact-hero-title text-white mb-3 reveal reveal-delay-1">
                             <span>Contact</span> Us
                         </h1>
 
                         <!-- Breadcrumb -->
-                        <div class="breadcrumb-modern justify-center reveal reveal-delay-2">
+                        <div class="breadcrumb-modern reveal reveal-delay-2">
                             <a href="<?= SITE_URL ?>">Home</a>
                             <span class="separator"><i class="fas fa-chevron-right text-xs"></i></span>
                             <span class="current">Contact Us</span>
@@ -627,7 +845,7 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
             <section class="contact-form-section">
                 <div class="container mx-auto px-4">
                     <div class="max-w-6xl mx-auto">
-                        <div class="grid lg:grid-cols-5 gap-8">
+                        <div class="grid lg:grid-cols-5 gap-6">
 
                             <!-- Form Column (3/5) -->
                             <div class="lg:col-span-3 reveal">
@@ -647,7 +865,7 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                                                     class="form-control-modern"
                                                     id="fname"
                                                     name="fname"
-                                                    placeholder="Enter first name"
+                                                    placeholder="First name"
                                                     value="<?= e($_POST['fname'] ?? '') ?>"
                                                     required>
                                             </div>
@@ -658,7 +876,7 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                                                     class="form-control-modern"
                                                     id="lname"
                                                     name="lname"
-                                                    placeholder="Enter last name"
+                                                    placeholder="Last name"
                                                     value="<?= e($_POST['lname'] ?? '') ?>">
                                             </div>
                                         </div>
@@ -671,7 +889,7 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                                                 class="form-control-modern"
                                                 id="email"
                                                 name="email"
-                                                placeholder="Enter your email"
+                                                placeholder="your@email.com"
                                                 value="<?= e($_POST['email'] ?? '') ?>"
                                                 required>
                                         </div>
@@ -684,7 +902,7 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                                                 class="form-control-modern"
                                                 id="subject"
                                                 name="subject"
-                                                placeholder="Enter subject"
+                                                placeholder="What is this regarding?"
                                                 value="<?= e($_POST['subject'] ?? '') ?>"
                                                 required>
                                         </div>
@@ -696,7 +914,7 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                                             <textarea class="form-control-modern"
                                                 id="message"
                                                 name="message"
-                                                rows="5"
+                                                rows="4"
                                                 placeholder="Write your message here..."
                                                 required><?= e($_POST['message'] ?? '') ?></textarea>
                                         </div>
@@ -710,7 +928,7 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                             </div>
 
                             <!-- Info Cards Column (2/5) -->
-                            <div class="lg:col-span-2 space-y-4">
+                            <div class="lg:col-span-2">
                                 <!-- Office Address -->
                                 <div class="info-card reveal reveal-delay-1">
                                     <div class="info-icon">
@@ -720,63 +938,71 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                                         <h4>Visit Us</h4>
                                         <p><?= e($contactAddress) ?></p>
                                     </div>
-                                    <!-- Phone -->
-                                    <div class="info-card reveal reveal-delay-2">
-                                        <div class="info-icon">
-                                            <i class="fas fa-phone"></i>
-                                        </div>
-                                        <div class="info-content">
-                                            <h4>Call Us</h4>
-                                            <a href="tel:<?= e($contactPhone) ?>"><?= e($contactPhone) ?></a>
-                                        </div>
+                                </div>
+
+                                <!-- Phone -->
+                                <div class="info-card reveal reveal-delay-2">
+                                    <div class="info-icon">
+                                        <i class="fas fa-phone"></i>
                                     </div>
-                                    <!-- Email -->
-                                    <div class="info-card reveal reveal-delay-3">
-                                        <div class="info-icon">
-                                            <i class="fas fa-envelope"></i>
-                                        </div>
-                                        <div class="info-content">
-                                            <h4>Email Us</h4>
-                                            <a href="mailto:<?= e($contactEmail) ?>"><?= e($contactEmail) ?></a>
-                                        </div>
+                                    <div class="info-content">
+                                        <h4>Call Us</h4>
+                                        <a href="tel:<?= e($contactPhone) ?>"><?= e($contactPhone) ?></a>
                                     </div>
-                                    <!-- Hours -->
-                                    <div class="info-card reveal reveal-delay-4">
-                                        <div class="info-icon">
-                                            <i class="fas fa-clock"></i>
-                                        </div>
-                                        <div class="info-content">
-                                            <h4>Working Hours</h4>
-                                            <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                                        </div>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="info-card reveal reveal-delay-3">
+                                    <div class="info-icon">
+                                        <i class="fas fa-envelope"></i>
                                     </div>
-                                    <!-- Social Media Quick Links -->
-                                    <div class="info-card reveal reveal-delay-4" style="background: linear-gradient(135deg, #eef2ff, #e0e7ff); border-color: rgba(79, 70, 229, 0.2);">
-                                        <div class="info-icon" style="background: linear-gradient(135deg, #4f46e5, #6366f1); color: white;">
-                                            <i class="fas fa-share-nodes"></i>
-                                        </div>
-                                        <div class="info-content">
-                                            <h4>Connect With Us</h4>
-                                            <div class="flex gap-3 mt-2">
-                                                <a href="#" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-600 hover:text-indigo-600 hover:shadow-md transition-all">
-                                                    <i class="fab fa-facebook-f"></i>
-                                                </a>
-                                                <a href="#" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-600 hover:text-indigo-600 hover:shadow-md transition-all">
-                                                    <i class="fab fa-twitter"></i>
-                                                </a>
-                                                <a href="#" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-600 hover:text-indigo-600 hover:shadow-md transition-all">
-                                                    <i class="fab fa-linkedin-in"></i>
-                                                </a>
-                                                <a href="#" class="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-600 hover:text-indigo-600 hover:shadow-md transition-all">
-                                                    <i class="fab fa-youtube"></i>
-                                                </a>
-                                            </div>
+                                    <div class="info-content">
+                                        <h4>Email Us</h4>
+                                        <a href="mailto:<?= e($contactEmail) ?>"><?= e($contactEmail) ?></a>
+                                    </div>
+                                </div>
+
+                                <!-- Hours -->
+                                <div class="info-card reveal reveal-delay-4">
+                                    <div class="info-icon">
+                                        <i class="fas fa-clock"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <h4>Working Hours</h4>
+                                        <p>Mon - Fri: 9:00 AM - 6:00 PM</p>
+                                    </div>
+                                </div>
+
+                                <!-- Social Media Quick Links -->
+                                <div class="info-card info-card-social reveal reveal-delay-4">
+                                    <div class="info-icon">
+                                        <i class="fas fa-share-nodes"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <h4>Connect With Us</h4>
+                                        <div class="social-links">
+                                            <a href="#" class="social-link" aria-label="Facebook">
+                                                <i class="fab fa-facebook-f"></i>
+                                            </a>
+                                            <a href="#" class="social-link" aria-label="Twitter">
+                                                <i class="fab fa-twitter"></i>
+                                            </a>
+                                            <a href="#" class="social-link" aria-label="LinkedIn">
+                                                <i class="fab fa-linkedin-in"></i>
+                                            </a>
+                                            <a href="#" class="social-link" aria-label="YouTube">
+                                                <i class="fab fa-youtube"></i>
+                                            </a>
+                                            <a href="#" class="social-link" aria-label="Instagram">
+                                                <i class="fab fa-instagram"></i>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
             </section>
 
             <!-- ============================================================
@@ -788,10 +1014,14 @@ $contactEmail = $iHomeSettingDetails['contact_email'] ?? 'info@bestschoolpage.co
                         <div class="map-container">
                             <!-- Replace the src with your actual Google Maps embed URL -->
                             <iframe
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3963.952912260219!2d3.375292414770767!3d6.524381645278529!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x103b8b2ae68280c1%3A0xdc9e87a367c3d9cb!2sLagos%2C%20Nigeria!5e0!3m2!1sen!2s!4v1644234567890!5m2!1sen!2s"
+                                src="https://www.google.com/maps?q=Suite+B30-31+Mu'umin+Plaza,+Hajj+Camp,+Kano,+Nigeria&output=embed"
+                                width="100%"
+                                height="450"
+                                style="border:0;"
                                 allowfullscreen=""
                                 loading="lazy"
-                                referrerpolicy="no-referrer-when-downgrade">
+                                referrerpolicy="no-referrer-when-downgrade"
+                                title="Google Maps location - Suite B30-31 Mu'umin Plaza, Hajj Camp, Kano">
                             </iframe>
                         </div>
                     </div>
@@ -899,7 +1129,6 @@ SCRIPTS
 
                     if (!isValid) {
                         e.preventDefault();
-                        // Show a simple alert (or you can create a custom toast)
                         alert('Please fill in all required fields correctly.');
                     }
                 });

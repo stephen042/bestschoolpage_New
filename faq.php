@@ -1,4 +1,19 @@
-<?php include('config.php'); ?>
+<?php
+// ============================================================================
+// FAQ PAGE
+// ============================================================================
+// This file displays frequently asked questions
+// ============================================================================
+
+include('config.php');
+
+// Get all FAQ entries using PDO
+try {
+	$aryList = db_get_rows("SELECT * FROM faq ORDER BY id ASC");
+} catch (Exception $e) {
+	$aryList = array();
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -88,6 +103,11 @@
 			background: #fff;
 			margin-bottom: 12px;
 			overflow: hidden;
+			transition: border-color 0.2s ease;
+		}
+
+		.faq-item:hover {
+			border-color: #c7d2fe;
 		}
 
 		.accordion {
@@ -104,6 +124,7 @@
 			justify-content: space-between;
 			gap: 16px;
 			transition: background-color 0.2s ease;
+			cursor: pointer;
 		}
 
 		.accordion:hover {
@@ -114,6 +135,7 @@
 			color: #64748b;
 			font-size: 0.9rem;
 			transition: transform 0.2s ease;
+			flex-shrink: 0;
 		}
 
 		.accordion.active {
@@ -129,13 +151,26 @@
 		.panel {
 			max-height: 0;
 			overflow: hidden;
-			transition: max-height 0.25s ease;
+			transition: max-height 0.3s ease;
 		}
 
 		.panel-content {
 			padding: 0 18px 18px;
 			color: #334155;
 			line-height: 1.7;
+		}
+
+		/* No FAQ message */
+		.no-faq-message {
+			text-align: center;
+			padding: 40px 20px;
+			color: #64748b;
+		}
+
+		.no-faq-message i {
+			font-size: 3rem;
+			color: #cbd5e1;
+			margin-bottom: 16px;
 		}
 
 		@media (max-width: 768px) {
@@ -147,6 +182,26 @@
 			.faq-wrap {
 				margin-top: -45px;
 				margin-bottom: 55px;
+			}
+
+			.accordion {
+				font-size: 0.95rem;
+				padding: 14px 16px;
+			}
+
+			.panel-content {
+				font-size: 0.92rem;
+				padding: 0 16px 16px;
+			}
+		}
+
+		@media (max-width: 480px) {
+			.faq-hero {
+				min-height: 35vh;
+			}
+
+			.faq-hero h1 {
+				font-size: 2rem;
 			}
 		}
 	</style>
@@ -173,20 +228,27 @@
 			<section class="faq-wrap">
 				<div class="container mx-auto px-4">
 					<div class="max-w-4xl mx-auto faq-card">
-						<?php
-						$aryList = $db->getRows("select * from faq");
-						foreach ($aryList as $iList) {
-						?>
-							<div class="faq-item">
-								<button class="accordion" type="button">
-									<span><?php echo $iList['question']; ?></span>
-									<i class="fas fa-chevron-down icon"></i>
-								</button>
-								<div class="panel">
-									<div class="panel-content"><?php echo $iList['answer']; ?></div>
+						<?php if (!empty($aryList)): ?>
+							<?php foreach ($aryList as $iList): ?>
+								<div class="faq-item">
+									<button class="accordion" type="button" aria-expanded="false">
+										<span><?php echo e($iList['question'] ?? 'Untitled Question'); ?></span>
+										<i class="fas fa-chevron-down icon" aria-hidden="true"></i>
+									</button>
+									<div class="panel" role="region">
+										<div class="panel-content">
+											<?php echo nl2br(e($iList['answer'] ?? '')); ?>
+										</div>
+									</div>
 								</div>
+							<?php endforeach; ?>
+						<?php else: ?>
+							<div class="no-faq-message">
+								<i class="fas fa-comment-slash" aria-hidden="true"></i>
+								<h3 class="text-xl font-semibold text-slate-700 mb-2">No FAQs Available</h3>
+								<p class="text-slate-500">We're currently updating our FAQ section. Please check back soon for answers to your questions.</p>
 							</div>
-						<?php } ?>
+						<?php endif; ?>
 					</div>
 				</div>
 			</section>
@@ -196,6 +258,7 @@
 	<?php include('inc.js-new.php'); ?>
 	<script>
 		(function() {
+			// Header scroll effect
 			var header = document.querySelector('.glass-header');
 			if (header) {
 				window.addEventListener('scroll', function() {
@@ -207,20 +270,50 @@
 				});
 			}
 
+			// FAQ Accordion functionality
 			var acc = document.getElementsByClassName('accordion');
-			var i;
 
-			for (i = 0; i < acc.length; i++) {
+			for (var i = 0; i < acc.length; i++) {
 				acc[i].addEventListener('click', function() {
+					var isActive = this.classList.contains('active');
+
+					// Close all other accordion items (optional - comment out for multiple open)
+					var allAccordions = document.getElementsByClassName('accordion');
+					for (var j = 0; j < allAccordions.length; j++) {
+						if (allAccordions[j] !== this && allAccordions[j].classList.contains('active')) {
+							allAccordions[j].classList.remove('active');
+							var otherPanel = allAccordions[j].nextElementSibling;
+							if (otherPanel && otherPanel.classList.contains('panel')) {
+								otherPanel.style.maxHeight = null;
+								otherPanel.previousElementSibling.setAttribute('aria-expanded', 'false');
+							}
+						}
+					}
+
+					// Toggle current accordion
 					this.classList.toggle('active');
 					var panel = this.nextElementSibling;
-					if (panel.style.maxHeight) {
-						panel.style.maxHeight = null;
-					} else {
-						panel.style.maxHeight = panel.scrollHeight + 'px';
+
+					if (panel && panel.classList.contains('panel')) {
+						if (panel.style.maxHeight) {
+							panel.style.maxHeight = null;
+							this.setAttribute('aria-expanded', 'false');
+						} else {
+							panel.style.maxHeight = panel.scrollHeight + 'px';
+							this.setAttribute('aria-expanded', 'true');
+						}
 					}
 				});
+
+				// Set initial aria-expanded state
+				acc[i].setAttribute('aria-expanded', 'false');
 			}
+
+			// Open first FAQ item by default (optional)
+			// Uncomment the lines below if you want the first FAQ item open by default
+			// if (acc.length > 0) {
+			// 	acc[0].click();
+			// }
 		})();
 	</script>
 </body>

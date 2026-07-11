@@ -1,72 +1,133 @@
-<?php include('config.php');
+<?php
+// ============================================================================
+// PACKAGE SELECTION PAGE
+// ============================================================================
+// This file handles package selection and purchase processing
+// ============================================================================
 
-if (!isset($_SESSION['userid'])) {
+include('config.php');
+
+// Check if user is logged in
+if (!isset($_SESSION['userid']) || empty($_SESSION['userid'])) {
   redirect(SITE_URL . 'login.php');
 }
 
-$iLoginUserDetail = $db->getRow("select * from school_register where id='" . $_SESSION['userid'] . "'");
+// Get current user details using PDO
+$iLoginUserDetail = db_get_row(
+  "SELECT * FROM school_register WHERE id = ?",
+  [$_SESSION['userid']]
+);
+
+// Determine user type and creator ID
 $create_by_usertype = is_array($iLoginUserDetail) ? ($iLoginUserDetail['create_by_usertype'] ?? '') : '';
 $loginCreateByUserId = is_array($iLoginUserDetail) ? (string)($iLoginUserDetail['create_by_userid'] ?? '0') : '0';
+
 if ($loginCreateByUserId === '0') {
-  $create_by_userid = $_SESSION['userid'];
+  $create_by_userid = (int)$_SESSION['userid'];
 } else {
-  $create_by_userid = $loginCreateByUserId;
+  $create_by_userid = (int)$loginCreateByUserId;
 }
 
+// ============================================================================
+// PROCESS PURCHASE FORM SUBMISSION
+// ============================================================================
 if (isset($_POST['addnewrecord'])) {
+  // Validate required fields
+  $plan_id = isset($_POST['plan_id']) ? (int)$_POST['plan_id'] : 0;
+  $yearly_terms = isset($_POST['yearly_terms']) ? (int)$_POST['yearly_terms'] : 1;
 
-
-  $ipackagePlan = $db->getRow("select * from package where id = '" . $_POST['plan_id'] . "'");
-  $iSuccessToken = randomFix(28);
-
-  $NewArray = array(
-    'create_custom_forms'              =>  $_POST['create_custom_forms'],
-    'report_templates'                =>  $_POST['report_templates'],
-    'online_and_bank_payment'            =>  $_POST['online_and_bank_payment'],
-    'dashboard'                    =>  $_POST['dashboard'],
-    'exam_feature'                  =>  $_POST['exam_feature'],
-    'sms_alert'                    =>  $_POST['sms_alert'],
-    'email_notification'              =>  $_POST['email_notification'],
-    'document_upload'                =>  $_POST['document_upload'],
-    /*'online_adverts'								=>	$_POST['online_adverts'],
-        'sms_campaigns'									=>	$_POST['sms_campaigns'],
-        'email_campaigns'								=>	$_POST['email_campaigns'],*/
-  );
-  $myJSON = json_encode($NewArray);
-
-
-
-  if ($_POST['yearly_terms'] == '1') {
-    $iPricePackage = $ipackagePlan['price_yearly'];
-    $iNoDaysPackage = $ipackagePlan['days_yearly'];
-  } else {
-
-    $iPricePackage = $ipackagePlan['price_term'];
-    $iNoDaysPackage = $ipackagePlan['days_term'];
+  if ($plan_id <= 0) {
+    $_SESSION['error'] = 'Invalid plan selected. Please try again.';
+    redirect(SITE_URL . 'package.php');
+    exit;
   }
 
-  $Date = date('Y-m-d');
-  $iExpDaTe =  date('Y-m-d', strtotime($Date . " + $iNoDaysPackage days"));
-
-
-  $aryData = array(
-    'plan_id'            =>  $ipackagePlan['id'],
-    'plan_name'            =>  $ipackagePlan['title'],
-    'price'              =>  $iPricePackage,
-    'no_of_days'          =>  $iNoDaysPackage,
-    'file_allow'          =>  $myJSON,
-    'exp_date'          =>  $iExpDaTe,
-    'status'            =>  0,
-    'usertype'            =>  0,
-    'success_token'          =>  $iSuccessToken,
-    'cancel_token'          =>  randomFix(28),
-    'create_at'            =>  date("Y-m-d H:i:s"),
-    'userid'            =>  $create_by_userid,
+  // Get plan details using PDO
+  $ipackagePlan = db_get_row(
+    "SELECT * FROM package WHERE id = ?",
+    [$plan_id]
   );
-  $flgIn = $db->insertAry("school_purchased_pacakage", $aryData);
-  redirect(SITE_URL . 'package_vogupay.php?token=' . $iSuccessToken);
+
+  // Check if plan exists
+  if (empty($ipackagePlan)) {
+    $_SESSION['error'] = 'Selected plan not found. Please try again.';
+    redirect(SITE_URL . 'package.php');
+    exit;
+  }
+
+  // Generate unique tokens
+  $iSuccessToken = randomFix(28);
+  $iCancelToken = randomFix(28);
+
+  // Build features JSON array
+  $featureArray = array(
+    'create_custom_forms'   => isset($_POST['create_custom_forms']) ? (int)$_POST['create_custom_forms'] : 0,
+    'report_templates'      => isset($_POST['report_templates']) ? (int)$_POST['report_templates'] : 0,
+    'online_and_bank_payment' => isset($_POST['online_and_bank_payment']) ? (int)$_POST['online_and_bank_payment'] : 0,
+    'dashboard'             => isset($_POST['dashboard']) ? (int)$_POST['dashboard'] : 0,
+    'exam_feature'          => isset($_POST['exam_feature']) ? (int)$_POST['exam_feature'] : 0,
+    'sms_alert'             => isset($_POST['sms_alert']) ? (int)$_POST['sms_alert'] : 0,
+    'email_notification'    => isset($_POST['email_notification']) ? (int)$_POST['email_notification'] : 0,
+    'document_upload'       => isset($_POST['document_upload']) ? (int)$_POST['document_upload'] : 0
+  );
+  $myJSON = json_encode($featureArray);
+
+  // Determine price and duration based on yearly or term selection
+  if ($yearly_terms == 1) {
+    $iPricePackage = (float)($ipackagePlan['price_yearly'] ?? 0);
+    $iNoDaysPackage = (int)($ipackagePlan['days_yearly'] ?? 365);
+  } else {
+    $iPricePackage = (float)($ipackagePlan['price_term'] ?? 0);
+    $iNoDaysPackage = (int)($ipackagePlan['days_term'] ?? 90);
+  }
+
+  // Calculate expiration date
+  $currentDate = date('Y-m-d');
+  $iExpDate = date('Y-m-d', strtotime($currentDate . " + {$iNoDaysPackage} days"));
+
+  // Prepare purchase data
+  $purchaseData = array(
+    'plan_id'           => (int)$ipackagePlan['id'],
+    'plan_name'         => (string)($ipackagePlan['title'] ?? 'Unknown Plan'),
+    'price'             => $iPricePackage,
+    'no_of_days'        => $iNoDaysPackage,
+    'file_allow'        => $myJSON,
+    'exp_date'          => $iExpDate,
+    'status'            => 0,
+    'usertype'          => 0,
+    'success_token'     => $iSuccessToken,
+    'cancel_token'      => $iCancelToken,
+    'create_at'         => date("Y-m-d H:i:s"),
+    'userid'            => $create_by_userid
+  );
+
+  // Insert purchase record using PDO
+  try {
+    $flgIn = db_insert("school_purchased_pacakage", $purchaseData);
+
+    if ($flgIn) {
+      // Redirect to payment page with token
+      redirect(SITE_URL . 'package_vogupay.php?token=' . $iSuccessToken);
+    } else {
+      $_SESSION['error'] = 'Failed to process your purchase. Please try again.';
+      redirect(SITE_URL . 'package.php');
+    }
+  } catch (Exception $e) {
+    $_SESSION['error'] = 'An error occurred while processing your request.';
+    redirect(SITE_URL . 'package.php');
+  }
+
+  exit;
 }
 
+// ============================================================================
+// GET AVAILABLE PACKAGES
+// ============================================================================
+try {
+  $aryList = db_get_rows("SELECT * FROM package ORDER BY id ASC");
+} catch (Exception $e) {
+  $aryList = array();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -111,6 +172,7 @@ if (isset($_POST['addnewrecord'])) {
       align-items: center;
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
       overflow: hidden;
+      margin-bottom: 80px;
     }
 
     .pricing-hero::before {
@@ -159,6 +221,7 @@ if (isset($_POST['addnewrecord'])) {
       color: #334155;
       font-weight: 700;
       transition: all 0.25s ease;
+      cursor: pointer;
     }
 
     .switcher-btn.active {
@@ -175,6 +238,8 @@ if (isset($_POST['addnewrecord'])) {
       box-shadow: 0 10px 28px rgba(2, 6, 23, 0.08);
       transition: all 0.3s ease;
       height: 100%;
+      display: flex;
+      flex-direction: column;
     }
 
     .plan-card:hover {
@@ -214,12 +279,16 @@ if (isset($_POST['addnewrecord'])) {
 
     .plan-body {
       padding: 20px 24px 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
 
     .feature-list {
       list-style: none;
       margin: 0;
       padding: 0;
+      flex: 1;
     }
 
     .feature-item {
@@ -256,11 +325,19 @@ if (isset($_POST['addnewrecord'])) {
       padding: 12px 14px;
       margin-top: 16px;
       transition: all 0.3s ease;
+      cursor: pointer;
     }
 
     .choose-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 22px rgba(79, 70, 229, 0.35);
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .pricing-wrap {
+        margin-top: -55px;
+      }
     }
 
     @media (max-width: 768px) {
@@ -272,6 +349,35 @@ if (isset($_POST['addnewrecord'])) {
       .plan-head,
       .plan-body {
         padding: 18px;
+      }
+
+      .plan-price {
+        font-size: 1.6rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .pricing-wrap {
+        margin-top: -35px;
+        margin-bottom: 40px;
+      }
+
+      .plan-head {
+        padding: 14px;
+      }
+
+      .plan-body {
+        padding: 14px;
+      }
+
+      .feature-item {
+        font-size: 0.85rem;
+        padding: 7px 0;
+      }
+
+      .choose-btn {
+        padding: 10px 12px;
+        font-size: 0.9rem;
       }
     }
   </style>
@@ -297,6 +403,24 @@ if (isset($_POST['addnewrecord'])) {
 
       <section class="pricing-wrap">
         <div class="container mx-auto px-4">
+          <?php if (!empty($_SESSION['error'])): ?>
+            <div class="max-w-3xl mx-auto mb-6">
+              <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                <?php echo e($_SESSION['error']); ?>
+              </div>
+            </div>
+            <?php $_SESSION['error'] = ''; ?>
+          <?php endif; ?>
+
+          <?php if (!empty($_SESSION['success'])): ?>
+            <div class="max-w-3xl mx-auto mb-6">
+              <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                <?php echo e($_SESSION['success']); ?>
+              </div>
+            </div>
+            <?php $_SESSION['success'] = ''; ?>
+          <?php endif; ?>
+
           <div class="text-center mb-8">
             <div class="switcher" role="group" aria-label="Pricing period switcher">
               <button type="button" id="btul1" class="switcher-btn active" onclick="yearlytermswise('1');">Yearly</button>
@@ -305,114 +429,64 @@ if (isset($_POST['addnewrecord'])) {
           </div>
 
           <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <?php
-            $i = 0;
-            $aryList = $db->getRows("select * from package");
-            foreach ($aryList as $iList) {
-              $i = $i + 1;
+            <?php if (!empty($aryList)):
+              $planCounter = 0;
+              foreach ($aryList as $iList):
+                $planCounter++;
+                $isFeatured = ($planCounter == 2);
             ?>
-              <div>
-                <form action="" method="post" class="h-full">
-                  <input type="hidden" value="1" name="yearly_terms" class="yearly_terms">
-                  <div class="plan-card <?php if ($i == '2') {
-                                          echo 'plan-featured';
-                                        } ?>">
-                    <div class="plan-head">
-                      <div class="plan-price pricesyearly"><span class="plan-currency">&#8358;</span><?php echo $iList['price_yearly']; ?></div>
-                      <div class="plan-price pricesterms" style="display:none;"><span class="plan-currency">&#8358;</span><?php echo $iList['price_term']; ?></div>
-                      <h3 class="plan-title"><?php echo $iList['title']; ?></h3>
+                <div>
+                  <form action="" method="post" class="h-full">
+                    <input type="hidden" value="1" name="yearly_terms" class="yearly_terms">
+                    <div class="plan-card <?php echo $isFeatured ? 'plan-featured' : ''; ?>">
+                      <div class="plan-head">
+                        <div class="plan-price pricesyearly"><span class="plan-currency">&#8358;</span><?php echo number_format((float)($iList['price_yearly'] ?? 0), 2); ?></div>
+                        <div class="plan-price pricesterms" style="display:none;"><span class="plan-currency">&#8358;</span><?php echo number_format((float)($iList['price_term'] ?? 0), 2); ?></div>
+                        <h3 class="plan-title"><?php echo e($iList['title'] ?? 'Untitled Plan'); ?></h3>
+                      </div>
+
+                      <div class="plan-body">
+                        <ul class="feature-list">
+                          <?php
+                          $features = array(
+                            'create_custom_forms' => 'Create custom forms',
+                            'report_templates' => 'Report templates',
+                            'online_and_bank_payment' => 'Online and Bank Payment',
+                            'dashboard' => 'Dashboard',
+                            'exam_feature' => 'Exam Feature',
+                            'sms_alert' => 'SMS Alerts',
+                            'email_notification' => 'E-mail Notifications',
+                            'document_upload' => 'Document Upload'
+                          );
+                          foreach ($features as $field => $label):
+                            $value = isset($iList[$field]) ? (int)$iList[$field] : 0;
+                          ?>
+                            <li class="feature-item">
+                              <?php if ($value == 1): ?>
+                                <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
+                              <?php else: ?>
+                                <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
+                              <?php endif; ?>
+                              <input type="hidden" name="<?php echo $field; ?>" value="<?php echo $value; ?>">
+                              <span><?php echo $label; ?></span>
+                            </li>
+                          <?php endforeach; ?>
+                        </ul>
+
+                        <input type="hidden" value="<?php echo (int)($iList['id'] ?? 0); ?>" name="plan_id">
+                        <button type="submit" class="choose-btn" name="addnewrecord" value="1">Choose Plan</button>
+                      </div>
                     </div>
-
-                    <div class="plan-body">
-                      <ul class="feature-list">
-                        <li class="feature-item">
-                          <?php if ($iList['create_custom_forms'] == "1") { ?>
-                            <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
-                          <?php } else { ?>
-                            <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
-                          <?php } ?>
-                          <input type="hidden" name="create_custom_forms" value="<?php echo $iList['create_custom_forms']; ?>">
-                          <span>Create custom forms</span>
-                        </li>
-
-                        <li class="feature-item">
-                          <?php if ($iList['report_templates'] == "1") { ?>
-                            <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
-                          <?php } else { ?>
-                            <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
-                          <?php } ?>
-                          <input type="hidden" name="report_templates" value="<?php echo $iList['report_templates']; ?>">
-                          <span>Report templates</span>
-                        </li>
-
-                        <li class="feature-item">
-                          <?php if ($iList['online_and_bank_payment'] == "1") { ?>
-                            <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
-                          <?php } else { ?>
-                            <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
-                          <?php } ?>
-                          <input type="hidden" name="online_and_bank_payment" value="<?php echo $iList['online_and_bank_payment']; ?>">
-                          <span>Online and Bank Payment</span>
-                        </li>
-
-                        <li class="feature-item">
-                          <?php if ($iList['dashboard'] == "1") { ?>
-                            <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
-                          <?php } else { ?>
-                            <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
-                          <?php } ?>
-                          <input type="hidden" name="dashboard" value="<?php echo $iList['dashboard']; ?>">
-                          <span>Dashboard</span>
-                        </li>
-
-                        <li class="feature-item">
-                          <?php if ($iList['exam_feature'] == "1") { ?>
-                            <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
-                          <?php } else { ?>
-                            <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
-                          <?php } ?>
-                          <input type="hidden" name="exam_feature" value="<?php echo $iList['exam_feature']; ?>">
-                          <span>Exam Feature</span>
-                        </li>
-
-                        <li class="feature-item">
-                          <?php if ($iList['sms_alert'] == "1") { ?>
-                            <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
-                          <?php } else { ?>
-                            <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
-                          <?php } ?>
-                          <input type="hidden" name="sms_alert" value="<?php echo $iList['sms_alert']; ?>">
-                          <span>SMS Alerts</span>
-                        </li>
-
-                        <li class="feature-item">
-                          <?php if ($iList['email_notification'] == "1") { ?>
-                            <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
-                          <?php } else { ?>
-                            <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
-                          <?php } ?>
-                          <input type="hidden" name="email_notification" value="<?php echo $iList['email_notification']; ?>">
-                          <span>E-mail Notifications</span>
-                        </li>
-
-                        <li class="feature-item">
-                          <?php if ($iList['document_upload'] == "1") { ?>
-                            <i class="fas fa-circle-check icon-yes" aria-hidden="true"></i>
-                          <?php } else { ?>
-                            <i class="fas fa-circle-xmark icon-no" aria-hidden="true"></i>
-                          <?php } ?>
-                          <input type="hidden" name="document_upload" value="<?php echo $iList['document_upload']; ?>">
-                          <span>Document Upload</span>
-                        </li>
-                      </ul>
-
-                      <input type="hidden" value="<?php echo $iList['id']; ?>" name="plan_id">
-                      <input type="submit" class="choose-btn" name="addnewrecord" value="Choose Plan">
-                    </div>
-                  </div>
-                </form>
+                  </form>
+                </div>
+              <?php
+              endforeach;
+            else:
+              ?>
+              <div class="col-span-full text-center py-12">
+                <p class="text-slate-500 text-lg">No packages available at the moment. Please check back later.</p>
               </div>
-            <?php } ?>
+            <?php endif; ?>
           </div>
         </div>
       </section>

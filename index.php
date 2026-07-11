@@ -642,32 +642,6 @@ if (!function_exists('e')) {
             object-fit: contain;
         }
         
-        /* ============================================================
-           FOOTER STYLES
-           ============================================================ */
-        .footer-modern {
-            background: #0f172a;
-            color: #94a3b8;
-            padding: 60px 0 30px;
-        }
-        
-        .footer-modern h5 {
-            color: white;
-            font-weight: 700;
-            margin-bottom: 20px;
-            font-size: 1.1rem;
-        }
-        
-        .footer-modern a {
-            color: #94a3b8;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-        
-        .footer-modern a:hover {
-            color: #818cf8;
-        }
-        
         .social-icon {
             display: inline-flex;
             align-items: center;
@@ -844,7 +818,7 @@ if (!function_exists('e')) {
                     <div class="flex flex-wrap gap-4 mb-12 reveal reveal-delay-3">
                         <a href="tel:<?= e($homeContent['call_number'] ?? '') ?>" class="btn-primary-hero">
                             <i class="fas fa-phone"></i>
-                            Call Now: <?= e($homeContent['call_number'] ?? '+1 (555) 123-4567') ?>
+                            Call Now: <?= e($homeContent['call_number'] ?? '') ?>
                         </a>
                         <a href="<?= SITE_URL ?>contact-us.php" class="btn-secondary-hero">
                             <i class="fas fa-play-circle"></i>
