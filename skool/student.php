@@ -5,7 +5,6 @@
  * Features: Auto Student ID generation, Sibling pairing (Add + Edit), Auto-create missing parent
  * NEW: Assign Parent from existing students
  * PARENT ACCOUNTS STORED IN student_guardian TABLE
- * Version: 4.0 (Fully Mobile Responsive)
  */
 
 require_once('../config.php');
@@ -15,27 +14,6 @@ $PageTitle = "Student Information";
 $FileName = 'student.php';
 
 // ============================================================================
-// FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
-// ============================================================================
-$create_by_userid = (int)($_SESSION['userid'] ?? 0);
-
-// If create_by_userid is not set in session, try to get it from the user record
-if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
-    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
-    if ($userData && !empty($userData['create_by_userid'])) {
-        $create_by_userid = (int)$userData['create_by_userid'];
-    }
-}
-
-// Fallback: if still 0, use the user's own ID
-if ($create_by_userid == 0) {
-    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
-}
-
-$create_by_usertype = (string)($_SESSION['usertype'] ?? '');
-$sessionUserId = (int)($_SESSION['userid'] ?? 0);
-
-// ============================================================================
 // INITIALIZATION
 // ============================================================================
 $stat = [];
@@ -43,14 +21,12 @@ $action = $_GET['action'] ?? '';
 $randomid = $_GET['randomid'] ?? '';
 $search_session = $_GET['session'] ?? '';
 $search_term = $_GET['term_id'] ?? '';
+$create_by_userid = (int)($_SESSION['create_by_userid'] ?? ($_SESSION['userid'] ?? 0));
+$create_by_usertype = $_SESSION['usertype'] ?? '';
 
 if (isset($_SESSION['success']) && $_SESSION['success'] != "") {
     $stat['success'] = $_SESSION['success'];
     unset($_SESSION['success']);
-}
-if (isset($_SESSION['error']) && $_SESSION['error'] != "") {
-    $stat['error'] = $_SESSION['error'];
-    unset($_SESSION['error']);
 }
 
 // Get school name for ID prefix
@@ -120,8 +96,7 @@ function generateStudentID($prefix, $year)
 // ============================================================================
 // FUNCTION: Generate Random String with Prefix
 // ============================================================================
-function randomFix($length = 15)
-{
+function randomFix($length = 15) {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $randomString = '';
     for ($i = 0; $i < $length; $i++) {
@@ -170,7 +145,7 @@ function createParentAccount($studentId, $firstName, $lastName, $email, $phone, 
 
     if (!$existingGuardian) {
         $randomId = randomFix(15) . '-' . time();
-
+        
         db_insert("student_guardian", [
             'student_id' => 0,
             'parent_id' => $studentId,
@@ -265,7 +240,7 @@ function assignParentFromStudent($targetStudentId, $sourceStudentId, $createByUs
         "SELECT student_id, parent_id FROM manage_student WHERE student_id = ? AND create_by_userid = ?",
         [$targetStudentId, $createByUserId]
     );
-
+    
     // Get the source student's parent_id
     $sourceStudent = db_get_row(
         "SELECT student_id, parent_id FROM manage_student WHERE student_id = ? AND create_by_userid = ?",
@@ -277,7 +252,7 @@ function assignParentFromStudent($targetStudentId, $sourceStudentId, $createByUs
     }
 
     $parentIdToAssign = $sourceStudent['parent_id'];
-
+    
     // Check if target already has this parent
     if ($targetCurrent && $targetCurrent['parent_id'] === $parentIdToAssign) {
         return ['success' => false, 'message' => 'This student already has this parent ID assigned.'];
@@ -600,11 +575,11 @@ if (isset($_POST['edit_student']) && !empty($randomid)) {
             $parentPhone = $phone;
 
             $parentCredentials = createParentAccount(
-                $resolvedParentId,
-                $firstName,
-                $lastName,
-                $parentEmail,
-                $parentPhone,
+                $resolvedParentId, 
+                $firstName, 
+                $lastName, 
+                $parentEmail, 
+                $parentPhone, 
                 $parentTitle,
                 $parentFirstName,
                 $parentLastName
@@ -792,90 +767,58 @@ function getTermName($id)
 
 <head>
     <?php include('inc.meta.php'); ?>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <style>
-        /* ============================================================
-        RESET & BASE - MOBILE FIRST
-        ============================================================ */
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
-        }
-
-        body {
-            background: #f0f2f5;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         .student-container {
             display: flex;
-            flex-direction: column;
-            gap: 20px;
-            padding: 15px;
+            gap: 25px;
+            padding: 20px;
             min-height: calc(100vh - 120px);
         }
 
-        /* ============================================================
-        SIDEBAR - MOBILE FIRST
-        ============================================================ */
         .student-sidebar {
-            width: 100%;
+            width: 32%;
             background: #fff;
             border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
             overflow: hidden;
             display: flex;
             flex-direction: column;
         }
 
+        .student-main {
+            width: 68%;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
         .sidebar-header {
-            padding: 16px;
+            padding: 20px;
             border-bottom: 1px solid #eee;
             background: #f8f9fa;
         }
 
-        .sidebar-header h4 {
-            margin: 0 0 10px;
-            font-size: 16px;
-            color: #1B3058;
-        }
-
         .sidebar-search {
             width: 100%;
-            padding: 10px 14px;
-            border: 2px solid #e0e0e0;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
             border-radius: 30px;
             font-size: 14px;
-            margin-bottom: 12px;
-            transition: all 0.2s;
-        }
-
-        .sidebar-search:focus {
-            outline: none;
-            border-color: #1B3058;
+            margin-bottom: 15px;
         }
 
         .filter-select {
             width: 100%;
             padding: 10px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
             margin-bottom: 10px;
             font-size: 13px;
-            background: white;
-            transition: all 0.2s;
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            background-size: 16px;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #1B3058;
         }
 
         .student-jump-wrap {
@@ -886,43 +829,31 @@ function getTermName($id)
         .student-jump-select {
             width: 100%;
             padding: 10px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
             font-size: 13px;
             margin-bottom: 8px;
-            transition: all 0.2s;
         }
 
         .student-jump-input:focus,
         .student-jump-select:focus {
             outline: none;
             border-color: #1B3058;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .btn-group .btn {
-            flex: 1;
-            min-width: 80px;
-            justify-content: center;
+            box-shadow: 0 0 0 3px rgba(27, 48, 88, 0.1);
         }
 
         .student-list {
             flex: 1;
             overflow-y: auto;
             padding: 10px;
-            max-height: 300px;
+            max-height: calc(100vh - 280px);
         }
 
         .student-card {
             display: flex;
             align-items: center;
-            padding: 12px;
-            margin-bottom: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s;
@@ -930,13 +861,10 @@ function getTermName($id)
             border: 1px solid #f0f0f0;
         }
 
-        .student-card:active {
-            transform: scale(0.98);
-        }
-
         .student-card:hover {
             background: #f8f9ff;
             border-color: #1B3058;
+            transform: translateX(3px);
         }
 
         .student-card.active {
@@ -945,25 +873,23 @@ function getTermName($id)
         }
 
         .student-card.active .student-name,
-        .student-card.active .student-details,
-        .student-card.active .student-id {
+        .student-card.active .student-details {
             color: white;
         }
 
         .student-avatar {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: #e8eef5;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 12px;
-            font-weight: 700;
+            margin-right: 14px;
+            font-weight: bold;
             color: #1B3058;
             overflow: hidden;
             flex-shrink: 0;
-            font-size: 18px;
         }
 
         .student-avatar img {
@@ -974,97 +900,69 @@ function getTermName($id)
 
         .student-info {
             flex: 1;
-            min-width: 0;
         }
 
         .student-name {
             font-weight: 600;
-            font-size: 14px;
+            font-size: 15px;
             color: #1a2a3a;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
         .student-details {
-            font-size: 11px;
+            font-size: 12px;
             color: #6c757d;
         }
 
         .student-id {
-            font-size: 10px;
+            font-size: 11px;
             color: #1B3058;
             font-weight: 500;
-            margin-top: 2px;
-        }
-
-        /* ============================================================
-        MAIN PANEL - MOBILE FIRST
-        ============================================================ */
-        .student-main {
-            width: 100%;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
+            margin-top: 3px;
         }
 
         .main-header {
-            padding: 16px 18px;
+            padding: 20px 25px;
             border-bottom: 1px solid #eee;
             background: #f8f9fa;
         }
 
         .main-header h2 {
-            margin: 0 0 4px;
-            font-size: 20px;
+            margin: 0 0 5px;
+            font-size: 22px;
             color: #1B3058;
         }
 
-        .main-header p {
-            margin: 0;
-            color: #666;
-            font-size: 13px;
-        }
-
         .main-content {
-            padding: 16px;
+            padding: 25px;
         }
 
-        /* ============================================================
-        FORM - MOBILE FIRST
-        ============================================================ */
         .form-grid {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 14px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
         .form-group {
-            margin-bottom: 0;
+            margin-bottom: 5px;
         }
 
         .form-group label {
             display: block;
-            font-weight: 600;
-            margin-bottom: 4px;
+            font-weight: 500;
+            margin-bottom: 6px;
             color: #333;
             font-size: 13px;
-        }
-
-        .form-group label small {
-            font-weight: 400;
-            color: #999;
-            font-size: 11px;
         }
 
         .form-control,
         .form-select {
             width: 100%;
             padding: 10px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
             font-size: 14px;
             transition: all 0.2s;
-            background: white;
         }
 
         .form-control:focus,
@@ -1075,24 +973,13 @@ function getTermName($id)
         }
 
         .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 10px 16px;
+            padding: 10px 18px;
             border: none;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            min-height: 44px;
-            touch-action: manipulation;
-        }
-
-        .btn:active {
-            transform: scale(0.97);
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
         }
 
         .btn-primary {
@@ -1110,7 +997,7 @@ function getTermName($id)
         }
 
         .btn-success:hover {
-            background: #218838;
+            background: #1e7e34;
         }
 
         .btn-danger {
@@ -1118,184 +1005,72 @@ function getTermName($id)
             color: white;
         }
 
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
         .btn-outline {
             background: transparent;
-            color: #1B3058;
-            border: 2px solid #1B3058;
-        }
-
-        .btn-outline:hover {
-            background: #1B3058;
-            color: white;
+            border: 1px solid #ddd;
         }
 
         .action-buttons {
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-            padding-top: 16px;
+            gap: 12px;
+            margin-top: 25px;
+            padding-top: 20px;
             border-top: 1px solid #eee;
-        }
-
-        .action-buttons .btn {
-            width: 100%;
+            flex-wrap: wrap;
         }
 
         .profile-preview {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             object-fit: cover;
             margin-top: 10px;
             border: 2px solid #1B3058;
         }
 
-        /* ============================================================
-        ALERTS - MOBILE FIRST
-        ============================================================ */
         .alert {
             padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .alert i {
-            font-size: 18px;
-            margin-top: 2px;
-            flex-shrink: 0;
+            border-radius: 10px;
+            margin-bottom: 20px;
         }
 
         .alert-success {
             background: #d4edda;
             color: #155724;
-            border-left: 4px solid #28a745;
+            border: 1px solid #c3e6cb;
         }
 
         .alert-danger {
             background: #f8d7da;
             color: #721c24;
-            border-left: 4px solid #dc3545;
+            border: 1px solid #f5c6cb;
         }
 
-        .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border-left: 4px solid #17a2b8;
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
-        /* ============================================================
-        SIBLING BOX - MOBILE FIRST
-        ============================================================ */
+        .btn-group .btn {
+            flex: 1;
+            min-width: 100px;
+        }
+
         .sibling-box {
             background: #f0f7ff;
             border: 1px solid #c5d5ea;
             border-radius: 12px;
-            padding: 14px;
-            margin-bottom: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
 
         .sibling-box label {
             font-weight: 600;
             color: #1B3058;
-            font-size: 13px;
         }
 
-        .sibling-box .form-select {
-            margin-top: 8px;
-        }
-
-        .sibling-box small {
-            display: block;
-            margin-top: 8px;
-            color: #666;
-            font-size: 12px;
-        }
-
-        /* ============================================================
-        ASSIGN PARENT BOX - MOBILE FIRST
-        ============================================================ */
-        .assign-parent-box {
-            background: #d9ffcd;
-            border: 2px solid #07ff7b;
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-            position: relative;
-        }
-
-        .assign-parent-box .badge-parent {
-            position: absolute;
-            top: -10px;
-            right: 12px;
-            background: #07ff3d;
-            color: #000;
-            padding: 2px 14px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-        }
-
-        .assign-parent-box h4 {
-            font-size: 15px;
-            margin: 0 0 8px;
-            color: #1B3058;
-        }
-
-        .current-parent-info {
-            background: #e8f4f8;
-            padding: 10px 14px;
-            border-radius: 8px;
-            margin: 10px 0;
-            border-left: 4px solid #1B3058;
-            font-size: 13px;
-        }
-
-        .current-parent-info strong {
-            color: #1B3058;
-        }
-
-        .current-parent-info span {
-            font-weight: 600;
-        }
-
-        .parent-assign-row {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            align-items: stretch;
-        }
-
-        .parent-assign-row .form-group {
-            flex: 1;
-        }
-
-        .inline-select-search {
-            width: 100%;
-            padding: 9px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 13px;
-            margin: 8px 0;
-            transition: all 0.2s;
-        }
-
-        .inline-select-search:focus {
-            outline: none;
-            border-color: #1B3058;
-        }
-
-        /* ============================================================
-        MODAL - MOBILE FIRST
-        ============================================================ */
         .modal {
             display: none;
             position: fixed;
@@ -1307,244 +1082,105 @@ function getTermName($id)
             z-index: 1000;
             justify-content: center;
             align-items: center;
-            padding: 20px;
         }
 
         .modal-content {
             background: white;
             border-radius: 24px;
             max-width: 450px;
-            width: 100%;
+            width: 90%;
             padding: 25px;
             text-align: center;
         }
 
-        .modal-content h3 {
-            font-size: 18px;
-            color: #1B3058;
-            margin-bottom: 12px;
-        }
-
         .modal-password {
             background: #f0f7ff;
-            padding: 16px;
+            padding: 20px;
             border-radius: 16px;
             font-family: monospace;
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 22px;
+            font-weight: bold;
             letter-spacing: 2px;
-            margin: 16px 0;
-            word-break: break-all;
+            margin: 20px 0;
         }
 
-        .modal-content p {
-            font-size: 13px;
-            color: #666;
-            margin-bottom: 16px;
+        /* Assign Parent Box */
+        .assign-parent-box {
+            background: #d9ffcd;
+            border: 2px solid #07ff7b;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
         }
 
-        .modal-content .btn {
-            width: 100%;
+        .assign-parent-box .badge-parent {
+            position: absolute;
+            top: -10px;
+            right: 15px;
+            background: #07ff3d;
+            color: #000;
+            padding: 2px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
         }
 
-        .modal-content .btn-outline {
+        .assign-parent-box select {
             margin-top: 8px;
         }
 
-        /* ============================================================
-        EMPTY STATE - MOBILE FIRST
-        ============================================================ */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #999;
+        .current-parent-info {
+            background: #e8f4f8;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #1B3058;
         }
 
-        .empty-state i {
-            font-size: 48px;
-            color: #ddd;
-            display: block;
-            margin-bottom: 12px;
+        .parent-assign-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex-wrap: wrap;
         }
 
-        .empty-state h3 {
-            color: #666;
-            font-size: 18px;
-            margin-bottom: 4px;
+        .parent-assign-row .form-group {
+            flex: 1;
+            min-width: 200px;
         }
 
-        .empty-state p {
+        .inline-select-search {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
             font-size: 13px;
-            margin-bottom: 12px;
+            margin: 8px 0;
         }
 
-        /* ============================================================
-        RESPONSIVE - TABLET (768px+)
-        ============================================================ */
-        @media (min-width: 768px) {
+        .inline-select-search:focus {
+            outline: none;
+            border-color: #1B3058;
+            box-shadow: 0 0 0 3px rgba(27, 48, 88, 0.1);
+        }
+
+        @media (max-width: 900px) {
             .student-container {
-                flex-direction: row;
-                gap: 25px;
-                padding: 20px;
+                flex-direction: column;
             }
 
-            .student-sidebar {
-                width: 35%;
-                max-width: 400px;
-            }
-
-            .student-list {
-                max-height: calc(100vh - 280px);
-            }
-
+            .student-sidebar,
             .student-main {
-                flex: 1;
+                width: 100%;
             }
 
             .form-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 18px;
-            }
-
-            .action-buttons {
-                flex-direction: row;
-                flex-wrap: wrap;
-            }
-
-            .action-buttons .btn {
-                width: auto;
+                grid-template-columns: 1fr;
             }
 
             .parent-assign-row {
-                flex-direction: row;
-                align-items: flex-end;
-            }
-
-            .main-header {
-                padding: 20px 25px;
-            }
-
-            .main-header h2 {
-                font-size: 24px;
-            }
-
-            .main-content {
-                padding: 25px;
-            }
-        }
-
-        /* ============================================================
-        RESPONSIVE - DESKTOP (1024px+)
-        ============================================================ */
-        @media (min-width: 1024px) {
-            .student-sidebar {
-                width: 30%;
-            }
-
-            .student-container {
-                padding: 25px;
-            }
-        }
-
-        /* ============================================================
-        RESPONSIVE - SMALL MOBILE (480px-)
-        ============================================================ */
-        @media (max-width: 480px) {
-            .student-container {
-                padding: 10px;
-                gap: 12px;
-            }
-
-            .sidebar-header {
-                padding: 12px;
-            }
-
-            .sidebar-header h4 {
-                font-size: 14px;
-            }
-
-            .student-card {
-                padding: 10px;
-            }
-
-            .student-avatar {
-                width: 36px;
-                height: 36px;
-                font-size: 14px;
-                margin-right: 10px;
-            }
-
-            .student-name {
-                font-size: 13px;
-            }
-
-            .student-details {
-                font-size: 10px;
-            }
-
-            .main-header {
-                padding: 12px 14px;
-            }
-
-            .main-header h2 {
-                font-size: 17px;
-            }
-
-            .main-content {
-                padding: 12px;
-            }
-
-            .form-control,
-            .form-select {
-                font-size: 13px;
-                padding: 8px 10px;
-            }
-
-            .btn {
-                font-size: 12px;
-                padding: 8px 14px;
-                min-height: 38px;
-            }
-
-            .modal-content {
-                padding: 20px;
-            }
-
-            .modal-password {
-                font-size: 16px;
-                padding: 12px;
-            }
-        }
-
-        /* ============================================================
-        PRINT STYLES
-        ============================================================ */
-        @media print {
-
-            .student-sidebar,
-            .btn,
-            .no-print {
-                display: none !important;
-            }
-
-            .student-main {
-                width: 100% !important;
-                box-shadow: none !important;
-                border: 1px solid #ddd;
-            }
-
-            .student-container {
-                padding: 0;
-            }
-
-            body {
-                background: white;
-            }
-
-            .main-header {
-                background: #f8f9fa !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                flex-direction: column;
             }
         }
     </style>
@@ -1561,10 +1197,10 @@ function getTermName($id)
                     <!-- LEFT SIDEBAR -->
                     <div class="student-sidebar">
                         <div class="sidebar-header">
-                            <h4><i class="fa fa-users"></i> Students</h4>
+                            <h4 style="margin:0 0 10px">Students</h4>
                             <input type="text" id="searchStudent" class="sidebar-search" placeholder="🔍 Search by name or ID...">
                             <div class="student-jump-wrap">
-                                <input type="text" id="studentDropdownSearch" class="student-jump-input" placeholder="Filter dropdown...">
+                                <input type="text" id="studentDropdownSearch" class="student-jump-input" placeholder="Filter dropdown by name or ID...">
                                 <select id="studentQuickSelect" class="student-jump-select">
                                     <option value="">Jump to a student...</option>
                                     <?php foreach ($students as $student): ?>
@@ -1590,8 +1226,8 @@ function getTermName($id)
                                 <input type="hidden" name="randomid" value="<?= htmlspecialchars($randomid) ?>">
                             </form>
                             <div class="btn-group">
-                                <a href="?action=add" class="btn btn-primary"><i class="fa fa-plus"></i> Add</a>
-                                <a href="?export=csv&session=<?= urlencode($search_session) ?>&term_id=<?= urlencode($search_term) ?>" class="btn btn-success" title="Download as CSV"><i class="fa fa-download"></i> CSV</a>
+                                <a href="?action=add" class="btn btn-primary" style="flex:1"><i class="fa fa-plus"></i> Add Student</a>
+                                <a href="?export=csv&session=<?= urlencode($search_session) ?>&term_id=<?= urlencode($search_term) ?>" class="btn btn-primary" style="background:#28a745" title="Download as CSV"><i class="fa fa-download"></i> CSV</a>
                             </div>
                         </div>
                         <div class="student-list" id="studentList">
@@ -1602,21 +1238,18 @@ function getTermName($id)
                                             <?php if (!empty($student['picture'])): ?>
                                                 <img src="../uploads/<?= htmlspecialchars($student['picture']) ?>">
                                             <?php else: ?>
-                                                <i class="fa fa-user"></i>
+                                                <i class="fa fa-user" style="font-size:24px"></i>
                                             <?php endif; ?>
                                         </div>
                                         <div class="student-info">
                                             <div class="student-name"><?= htmlspecialchars($student['first_name'] . ' ' . $student['last_name']) ?></div>
                                             <div class="student-details"><?= htmlspecialchars(getClassName($student['class'])) ?> | <?= htmlspecialchars(getTermName($student['term_id'])) ?></div>
-                                            <div class="student-id">ID: <?= htmlspecialchars($student['student_id']) ?></div>
+                                            <div class="student-id">ID: <?= htmlspecialchars($student['student_id']) ?> | Parent: <?= htmlspecialchars($student['parent_id'] ?? 'None') ?></div>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <div class="empty-state" style="padding: 30px 20px;">
-                                    <i class="fa fa-user-slash"></i>
-                                    <p>No students found.<br>Click "Add" to create one.</p>
-                                </div>
+                                <div class="empty-state" style="text-align: center; padding: 40px; color: #999;">No students found.<br>Click "Add Student" to create one.</div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -1636,15 +1269,15 @@ function getTermName($id)
                                 <?php if (!empty($allParentOptions)): ?>
                                     <div class="sibling-box">
                                         <label><i class="fa fa-users"></i> Link to existing parent? (Optional)</label>
-                                        <select name="existing_parent_id" id="existing_parent_id" class="form-select">
+                                        <select name="existing_parent_id" id="existing_parent_id" class="form-select" style="margin-top: 8px;">
                                             <option value="">-- Create NEW parent account --</option>
                                             <?php foreach ($allParentOptions as $parentId => $parentName): ?>
                                                 <option value="<?= htmlspecialchars($parentId) ?>">
-                                                    <?= htmlspecialchars($parentName) ?> (ID: <?= htmlspecialchars($parentId) ?>)
+                                                    <?= htmlspecialchars($parentName) ?> (Parent ID: <?= htmlspecialchars($parentId) ?>)
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <small>Select an existing parent to link this student as a sibling. Leave blank to create a new parent account.</small>
+                                        <small style="display: block; margin-top: 8px;">Select an existing parent to link this student as a sibling. Leave blank to create a new parent account.</small>
                                     </div>
                                 <?php endif; ?>
 
@@ -1686,10 +1319,7 @@ function getTermName($id)
                                         <div class="form-group"><label>Phone (Parent)</label><input type="text" name="phone" class="form-control" placeholder="Phone number"></div>
                                         <div class="form-group"><label>Profile Picture</label><input type="file" name="picture" class="form-control" accept="image/*"></div>
                                     </div>
-                                    <div class="action-buttons">
-                                        <button type="submit" name="add_student" class="btn btn-primary"><i class="fa fa-save"></i> Save Student</button>
-                                        <a href="<?= $FileName ?>" class="btn btn-outline">Cancel</a>
-                                    </div>
+                                    <div class="action-buttons"><button type="submit" name="add_student" class="btn btn-primary"><i class="fa fa-save"></i> Save Student</button><a href="<?= $FileName ?>" class="btn btn-outline">Cancel</a></div>
                                 </form>
                             </div>
                         <?php elseif ($editStudent): ?>
@@ -1706,7 +1336,7 @@ function getTermName($id)
                                 <!-- ============================================= -->
                                 <div class="assign-parent-box">
                                     <span class="badge-parent">🔗 Assign Parent</span>
-                                    <h4><i class="fa fa-link"></i> Copy Parent ID from another student</h4>
+                                    <h4 style="margin-top:0;"><i class="fa fa-link"></i> Copy Parent ID from another student</h4>
 
                                     <div class="current-parent-info">
                                         <strong>Current Parent ID:</strong>
@@ -1723,7 +1353,7 @@ function getTermName($id)
                                     <form method="post" onsubmit="return confirm('This will assign the parent ID from the selected student to the current student. Continue?')">
                                         <input type="hidden" name="target_student_id" value="<?= htmlspecialchars($editStudent['student_id']) ?>">
                                         <div class="parent-assign-row">
-                                            <div class="form-group">
+                                            <div class="form-group" style="flex:2;">
                                                 <label style="font-weight:600;">Select student to copy Parent ID from:</label>
                                                 <input type="text" id="sourceStudentSearch" class="inline-select-search" placeholder="Type name, student ID, or parent ID to filter...">
                                                 <select name="source_student_id" id="source_student_id_select" class="form-select" required>
@@ -1744,7 +1374,7 @@ function getTermName($id)
                                                 </select>
                                             </div>
                                             <div class="form-group" style="flex:0 0 auto;">
-                                                <button type="submit" name="assign_parent" class="btn btn-success" style="white-space:nowrap; width:100%;">
+                                                <button type="submit" name="assign_parent" class="btn btn-success" style="white-space:nowrap;">
                                                     <i class="fa fa-copy"></i> Assign Parent
                                                 </button>
                                             </div>
@@ -1761,7 +1391,7 @@ function getTermName($id)
                                 <?php if (!empty($allParentOptions)): ?>
                                     <div class="sibling-box">
                                         <label><i class="fa fa-users"></i> Change Parent / Link to Sibling (Optional)</label>
-                                        <select name="existing_parent_id" id="existing_parent_id" class="form-select">
+                                        <select name="existing_parent_id" id="existing_parent_id" class="form-select" style="margin-top: 8px;">
                                             <option value="">-- Keep current parent --</option>
                                             <?php foreach ($allParentOptions as $parentId => $parentName): ?>
                                                 <option value="<?= htmlspecialchars($parentId) ?>" <?= ($editStudent['parent_id'] == $parentId) ? 'selected' : '' ?>>
@@ -1769,7 +1399,7 @@ function getTermName($id)
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <small>Select a parent to link this student as a sibling. If the parent doesn't exist, a new parent account will be auto-created.</small>
+                                        <small style="display: block; margin-top: 8px;">Select a parent to link this student as a sibling. If the parent doesn't exist, a new parent account will be auto-created.</small>
                                     </div>
 
                                     <div class="form-group">
@@ -1823,11 +1453,9 @@ function getTermName($id)
                                 </form>
                             </div>
                         <?php else: ?>
-                            <div class="empty-state">
-                                <i class="fa fa-graduation-cap"></i>
+                            <div class="empty-state" style="padding:80px; text-align: center;"><i class="fa fa-graduation-cap" style="font-size:64px;color:#ddd;margin-bottom:15px;display:block"></i>
                                 <h3>Select a Student</h3>
-                                <p>Choose a student from the left sidebar or add a new one.</p>
-                                <a href="?action=add" class="btn btn-primary"><i class="fa fa-plus"></i> Add New Student</a>
+                                <p>Choose a student from the left sidebar or add a new one.</p><a href="?action=add" class="btn btn-primary"><i class="fa fa-plus"></i> Add New Student</a>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -1844,7 +1472,7 @@ function getTermName($id)
             <div id="modalPasswordDisplay" class="modal-password"></div>
             <p>Please copy this password and share it securely with the parent.</p>
             <button class="btn btn-primary" onclick="copyModalPassword()"><i class="fa fa-copy"></i> Copy Password</button>
-            <button class="btn btn-outline" onclick="closeModal()">Close</button>
+            <button class="btn btn-outline" onclick="closeModal()" style="margin-top: 10px;">Close</button>
         </div>
     </div>
 
@@ -1890,29 +1518,29 @@ function getTermName($id)
 
         const sourceStudentSearch = document.getElementById('sourceStudentSearch');
         const sourceStudentSelect = document.getElementById('source_student_id_select');
-        const sourceStudentInitialOptions = sourceStudentSelect ?
-            Array.from(sourceStudentSelect.options).slice(1).map(opt => ({
+        const sourceStudentInitialOptions = sourceStudentSelect
+            ? Array.from(sourceStudentSelect.options).slice(1).map(opt => ({
                 value: opt.value,
                 text: opt.textContent || ''
-            })) :
-            [];
+            }))
+            : [];
 
         function filterSourceStudentOptions() {
             if (!sourceStudentSearch || !sourceStudentSelect) return;
 
             const term = sourceStudentSearch.value.toLowerCase().trim();
 
-            const matches = term === '' ?
-                sourceStudentInitialOptions :
-                sourceStudentInitialOptions.filter(item => item.text.toLowerCase().includes(term));
+            const matches = term === ''
+                ? sourceStudentInitialOptions
+                : sourceStudentInitialOptions.filter(item => item.text.toLowerCase().includes(term));
 
             sourceStudentSelect.innerHTML = '';
 
             const placeholder = document.createElement('option');
             placeholder.value = '';
-            placeholder.textContent = matches.length > 0 ?
-                '-- Select a student --' :
-                '-- No matching student found --';
+            placeholder.textContent = matches.length > 0
+                ? '-- Select a student --'
+                : '-- No matching student found --';
             sourceStudentSelect.appendChild(placeholder);
 
             matches.forEach(item => {
