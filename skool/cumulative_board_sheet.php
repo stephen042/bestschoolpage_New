@@ -1,831 +1,1289 @@
 <?php
+
+/**
+ * Cumulative Broad Sheet - Modern Version
+ * Displays cumulative student performance across all subjects
+ * Version: 4.0 (Fully Mobile Responsive)
+ */
+
 include('../config.php');
 include('inc.session-create.php');
-$create_by_userid = (int)($_SESSION['create_by_userid'] ?? $_SESSION['userid'] ?? 0);
-$classDetail = $db->getRow("select * from school_class where randomid='" . ($_GET['randomid'] ?? '') . "' and create_by_userid='" . $create_by_userid . "'");
 
-$validate = new validation();
-$pageTitle = 'Cumulative Broad Sheet';
-$Filename = 'cumulative_board_sheet.php';
+// ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
+// ============================================================================
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $create_by_userid = (int)$userData['create_by_userid'];
+    }
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+$create_by_usertype = (string)($_SESSION['usertype'] ?? '');
+$sessionUserId = (int)($_SESSION['userid'] ?? 0);
+$sessionUsername = (string)($_SESSION['username'] ?? '');
+$sessionEmail = (string)($_SESSION['email'] ?? '');
+$isSchoolOwnerSession = ($sessionUserId > 0 && $sessionUserId === $create_by_userid);
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+$PageTitle = 'Cumulative Broad Sheet';
+$FileName = 'cumulative_board_sheet.php';
+$validate = new Validation();
 
 // Safe GET/POST parameter defaults
 $get_randomid = $_GET['randomid'] ?? '';
 $get_action   = $_GET['action'] ?? '';
 $post_session = $_POST['session'] ?? '';
 $post_term_id = $_POST['term_id'] ?? '';
+
+// ============================================================================
+// GET CLASS DETAILS
+// ============================================================================
+$classDetail = [];
+if (!empty($get_randomid)) {
+    $classDetail = db_get_row(
+        "SELECT * FROM school_class WHERE randomid = ? AND create_by_userid = ?",
+        [$get_randomid, $create_by_userid]
+    );
+}
+
+// ============================================================================
+// GET ALL CLASSES FOR SIDEBAR
+// ============================================================================
+$allClasses = [];
+if ($_SESSION['usertype'] == '1') {
+    $schoolRegisterStaffid = db_get_val(
+        "SELECT username FROM school_register WHERE id = ?",
+        [$sessionUserId]
+    );
+    $staffManageId = db_get_val(
+        "SELECT id FROM staff_manage WHERE staff_id = ?",
+        [$schoolRegisterStaffid]
+    );
+    $assignedClassIds = db_get_val(
+        "SELECT GROUP_CONCAT(school_class) FROM class_teacher WHERE staff_id = ?",
+        [$staffManageId]
+    );
+    $assignedClassIds = $assignedClassIds ? $assignedClassIds : '0';
+    $allClasses = db_get_rows(
+        "SELECT * FROM school_class WHERE create_by_userid = ? AND id IN ($assignedClassIds) ORDER BY name ASC",
+        [$create_by_userid]
+    );
+} else {
+    $allClasses = db_get_rows(
+        "SELECT * FROM school_class WHERE create_by_userid = ? ORDER BY name ASC",
+        [$create_by_userid]
+    );
+}
+
+// ============================================================================
+// GET SESSIONS AND TERMS
+// ============================================================================
+$sessions = db_get_rows(
+    "SELECT * FROM school_session WHERE create_by_userid = ? ORDER BY id DESC",
+    [$create_by_userid]
+);
+$terms = db_get_rows(
+    "SELECT * FROM school_term WHERE create_by_userid = ? ORDER BY id DESC",
+    [$create_by_userid]
+);
+
+// ============================================================================
+// GET SUBJECTS, STUDENTS, AND SCORES
+// ============================================================================
+$subjects = [];
+$students = [];
+$studentScores = [];
+$studentTotals = [];
+$studentAverages = [];
+$studentPositions = [];
+$totalSubjects = 0;
+$studentCount = 0;
+$classTotal = 0;
+$highLow = [];
+
+if (!empty($classDetail['id']) && !empty($post_session) && !empty($post_term_id)) {
+    // Get subjects for this class
+    $subjects = db_get_rows(
+        "SELECT * FROM school_subject WHERE class_id = ? AND create_by_userid = ? ORDER BY subject ASC",
+        [$classDetail['id'], $create_by_userid]
+    );
+    $totalSubjects = count($subjects);
+
+    // Get students for this class
+    $students = db_get_rows(
+        "SELECT * FROM manage_student 
+         WHERE class = ? AND session = ? AND term_id = ? AND create_by_userid = ? 
+         ORDER BY first_name ASC",
+        [$classDetail['id'], $post_session, $post_term_id, $create_by_userid]
+    );
+    $studentCount = count($students);
+
+    // Get all scores
+    $allScores = db_get_rows(
+        "SELECT student_id, subject_id, COALESCE(SUM(score), 0) AS total_score
+         FROM input_score_class_teacher 
+         WHERE session_id = ? 
+         AND term_id = ? 
+         AND class_id = ? 
+         AND create_by_userid = ?
+         GROUP BY student_id, subject_id",
+        [$post_session, $post_term_id, $classDetail['id'], $create_by_userid]
+    );
+
+    // Build scores lookup
+    $scoresLookup = [];
+    foreach ($allScores as $scoreRow) {
+        $scoresLookup[$scoreRow['student_id']][$scoreRow['subject_id']] = (float)$scoreRow['total_score'];
+    }
+
+    // Calculate totals and averages
+    foreach ($students as $student) {
+        $studentTotal = 0;
+        foreach ($subjects as $subject) {
+            $score = $scoresLookup[$student['id']][$subject['id']] ?? 0;
+            $studentTotal += $score;
+        }
+        $studentTotals[$student['id']] = $studentTotal;
+        $avg = $totalSubjects > 0 ? round($studentTotal / $totalSubjects, 2) : 0;
+        $studentAverages[$student['id']] = $avg;
+        $classTotal += $avg;
+        $highLow[] = $avg;
+    }
+
+    // Calculate positions
+    arsort($studentAverages);
+    $rank = 1;
+    $prevScore = -1;
+    $tieRank = 1;
+    foreach ($studentAverages as $studentId => $avgScore) {
+        if ($avgScore != $prevScore) {
+            $studentPositions[$studentId] = $rank;
+            $tieRank = $rank;
+        } else {
+            $studentPositions[$studentId] = $tieRank;
+        }
+        $rank++;
+        $prevScore = $avgScore;
+    }
+}
+
+// Get grade scale
+$gradeRules = db_get_rows(
+    "SELECT minimum_number, maximum_number, grade
+     FROM school_grade
+     WHERE create_by_userid = ?
+     ORDER BY minimum_number DESC",
+    [$create_by_userid]
+);
+
+function getGrade($score)
+{
+    global $gradeRules;
+    foreach ($gradeRules as $rule) {
+        $min = (float)($rule['minimum_number'] ?? 0);
+        $max = (float)($rule['maximum_number'] ?? 0);
+        if ($score >= $min && $score <= $max) {
+            return (string)($rule['grade'] ?? '');
+        }
+    }
+    return ($score >= 70 ? 'A' : ($score >= 60 ? 'B' : ($score >= 50 ? 'C' : ($score >= 45 ? 'D' : ($score >= 40 ? 'E' : 'F')))));
+}
+
+// Get session and term names
+$sessionName = db_get_val("SELECT session FROM school_session WHERE id = ?", [$post_session]);
+$termName = db_get_val("SELECT term FROM school_term WHERE id = ?", [$post_term_id]);
+$className = $classDetail['name'] ?? '';
+
+// Get school details
+$schoolDetails = db_get_row("SELECT * FROM school_register WHERE id = ?", [$create_by_userid]);
+$state = db_get_row("SELECT * FROM state WHERE id = ?", [$schoolDetails['state'] ?? 0]);
+$stateName = $state['title'] ?? '';
 ?>
 <!DOCTYPE html>
 <html>
 
 <head>
     <?php include('inc.meta.php'); ?>
-    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Droid+Serif" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <style>
-        body,
-        label,
-        span,
-        a,
-        .gwt-Button {
-            font-family: 'Droid Serif' !important;
-        }
-
-        .ddshgcfh {
-            position: absolute;
-            right: 170px;
-            top: 77px;
-            font-size: 50px;
-        }
-
-        .sectionza input[type=submit] {
-            background: #1B3058;
-            color: white;
-            border: none;
-        }
-
-        .sectionza label {
-            font-size: 17px;
-            font-weight: 600;
-        }
-
-        .sectionza input,
-        .sectionza select {
-            color: inherit;
-            font: inherit;
+        /* ============================================================
+        RESET & BASE - MOBILE FIRST
+        ============================================================ */
+        * {
             margin: 0;
-            width: 100px;
-            margin-left: 10px;
-            margin-top: 5px;
-            height: 30px;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .page-title {
-            font-size: 20px;
-            margin-bottom: 0;
-            margin-top: 7px;
-            text-align: center;
-            background: white;
-            padding: 23px 0 30px 0px;
-            border-bottom: 5px solid gainsboro;
+        body {
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        .zasw {
-            border: 1px solid gainsboro;
-            height: 1000px;
-            margin-top: 18px;
+        .cumulative-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 15px;
         }
 
-        .zasw1 {
-            height: auto;
-            margin-top: 18px;
+        /* ============================================================
+        PAGE HEADER - MOBILE FIRST
+        ============================================================ */
+        .page-header {
+            margin-bottom: 20px;
         }
 
-        .sectionza {
-            background: white;
-            height: 1000px;
-        }
-
-        .top-serche input {
-            padding: 5px 49px 5px 14px;
-            border: 2px solid gainsboro;
-            border-radius: 4px;
-            position: relative;
-        }
-
-        .top-serche {
-            padding: 32px 0 9px 30px;
-        }
-
-        .content-page>.content {
-            margin-bottom: 60px;
-            margin-top: 60px;
-            padding: 20px 30px 15px 78px;
-            background: white;
-        }
-
-        .zswqas ul {
-            list-style: none;
-        }
-
-        .zswqas li a span i {
-            font-size: 29px;
-            padding-top: 9px;
-        }
-
-        .zswqas li a span {
-            padding-right: 16px;
-        }
-
-        .zswqas li a {
-            width: 239px;
-            display: block;
-            padding: 16px 14px 14px 18px;
-            border-bottom: 2px solid gainsboro;
-        }
-
-        .topside-section ul {
-            display: inline-flex;
-            list-style: none;
-        }
-
-        .topside-section li {
-            padding: 0 11px 0 0;
-        }
-
-        .topside-section {
-            padding-top: 8px;
-            border: 1px solid gainsboro;
-            box-shadow: 1px 6px 4px gainsboro;
-            padding: 14px 8px 11px 1px;
-        }
-
-        .zqw22 .panel-success>.panel-heading {
-            background: white;
-        }
-
-        .zqw22 .nav.nav-tabs>li>a:hover,
-        .nav.tabs-vertical>li>a:hover {
-            color: black !important;
+        .page-header h2 {
+            color: #1B3058;
+            margin: 0;
+            font-size: 22px;
             font-weight: 700;
         }
 
-        .zqw22 .nav.nav-tabs>li>a,
-        .nav.tabs-vertical>li>a {
-            border-top-right-radius: 10px;
-            border-top-left-radius: 10px;
-            font-size: 10px;
-            height: 38px;
-            margin-top: 0;
+        .page-header h2 i {
+            margin-right: 8px;
         }
 
-        div.dataTables_filter label {
+        .page-header p {
+            color: #666;
+            margin-top: 4px;
+            font-size: 14px;
+        }
+
+        /* ============================================================
+        LAYOUT - MOBILE FIRST
+        ============================================================ */
+        .layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ============================================================
+        CLASS LIST PANEL - MOBILE FIRST
+        ============================================================ */
+        .class-panel {
+            width: 100%;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #1B3058, #2a4780);
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header i {
+            font-size: 18px;
+        }
+
+        .panel-header .count-badge {
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
             font-weight: 400;
-            white-space: nowrap;
-            text-align: left;
-            border: 1px solid gainsboro;
-            padding: 4px 13px 4px 0px;
-            border-radius: 5px;
-            color: black;
         }
 
-        #example .active {
+        .class-list {
+            max-height: 300px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .class-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .class-item:active {
+            background: #e8eef5;
+        }
+
+        .class-item:hover {
+            background: #f8f9ff;
+        }
+
+        .class-item.active {
+            background: #e8eef5;
+            border-left: 4px solid #1B3058;
+        }
+
+        .class-item .class-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #e8eef5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1B3058;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        .class-item.active .class-icon {
             background: #1B3058;
             color: white;
         }
 
-        .zqw22 .nav-tabs>li.active>a,
-        .nav-tabs>li.active>a:focus,
-        .nav-tabs>li.active>a:hover,
-        .tabs-vertical>li.active>a,
-        .tabs-vertical>li.active>a:focus,
-        .tabs-vertical>li.active>a:hover {
-            color: black !important;
+        .class-item .class-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .class-item .class-arrow {
+            margin-left: auto;
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        /* ============================================================
+        FILTER CARD - MOBILE FIRST
+        ============================================================ */
+        .filter-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .filter-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 11px;
             font-weight: 700;
-            line-height: 38px;
-            background: gainsboro;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
         }
 
-        .zqw22 .panel-success>.panel-heading {
-            background: white;
-            padding: 0;
+        .filter-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #fff;
+            transition: all 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
         }
 
-        .zqw22 .panel .panel-body {
-            border-right: none !important;
-            border: 1px solid gainsboro;
+        .filter-select:focus {
+            border-color: #1B3058;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(27, 48, 88, 0.1);
         }
 
-        .gwt-Label {
-            padding: 8px;
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
         }
 
-        .zqw22 input {
-            padding: 8px 3px 10px 0;
-            border: 1px solid gainsboro;
-            background: #dcdcdc45;
-            border-radius: 5px;
-            margin-right: 8px;
-            margin-bottom: 5px;
+        .filter-actions .btn {
+            flex: 1;
+            justify-content: center;
         }
 
-        .zqw22 button {
-            border: 1px solid #1B3058;
-            padding: 4px 3px 4px 3px;
-            margin-right: 7px;
+        /* ============================================================
+        BUTTONS - MOBILE FIRST
+        ============================================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: #1B3058;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #f21151;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-outline {
             background: transparent;
+            color: #1B3058;
+            border: 2px solid #1B3058;
+        }
+
+        .btn-outline:hover {
+            background: #1B3058;
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn-group .btn {
+            width: 100%;
+        }
+
+        /* ============================================================
+        HEADER SECTION - MOBILE FIRST
+        ============================================================ */
+        .header-section {
+            text-align: center;
+            margin-bottom: 16px;
+            padding: 16px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-section .school-name {
+            font-size: 20px;
+            font-weight: 700;
             color: #1B3058;
         }
 
-        .zqw22 select {
-            padding: 5px 0 8px 0;
-            background: #dcdcdc2e;
+        .header-section .school-address {
+            font-size: 13px;
+            color: #666;
+            margin-top: 2px;
         }
 
-        .zqw22 .nav-tabs>li {
-            padding: 0 4px 0 0;
-        }
-
-        #tab3success,
-        #tab4success .middleCenterInner {
-            border: 1px solid gainsboro;
-            padding: 17px 11px 51px 19px;
-        }
-
-        #tab3success .middleCenterInner {
-            border: 1px solid gainsboro;
-            padding: 17px 11px 51px 19px;
-        }
-
-        #tab3success,
-        #tab4success .BFOGCKB-c-h {
-            border-bottom: 3px solid;
-            width: 300px;
-        }
-
-        #tab3success .BFOGCKB-c-h {
-            border-bottom: 3px solid;
-            width: 300px;
-        }
-
-        #tab3success,
-        #tab4success {
-            border: 1px solid gainsboro;
-            padding: 14px 4px 42px 11px;
-            width: 361px;
-        }
-
-        #tab3success,
-        #tab4success .gwt-DecoratorPanel {
-            padding: 21px 21px 43px 4px;
-        }
-
-        #tab3success .gwt-DecoratorPanel {
-            padding: 21px 21px 43px 4px;
-        }
-
-        .zqw22 .panel .panel-body {
-            border-bottom: 3px solid gainsboro !important;
-        }
-
-        .zqw22 .nav.nav-tabs>li>a,
-        .nav.tabs-vertical>li>a {
-            background: #dcdcdc4f !important;
-        }
-
-        .zqw22 .nav.nav-tabs>li>a,
-        .nav.tabs-vertical>li>a {
-            color: black !important;
+        .header-section .report-title {
+            font-size: 16px;
             font-weight: 700;
-            line-height: 38px;
-            background: gainsboro;
+            text-decoration: underline;
+            margin-top: 6px;
+            color: #1B3058;
         }
 
-        .xza {
-            margin: 0;
-            width: 294px;
-            border-bottom: 1px solid;
-        }
-
-        .dataTables_paginate a {
-            background-color: transparent;
-            margin: 0 0px 0;
-            padding: 8px 15px 9px;
-            color: white;
-            cursor: pointer;
-            border: none;
-        }
-
-        .zqw22 .nav-tabs>li.active,
-        .nav-tabs>li.active:focus,
-        .nav-tabs>li.active:hover,
-        .tabs-vertical>li.active,
-        .tabs-vertical>li.active:focus,
-        .tabs-vertical>li.active:hover {
-            color: black !important;
-            font-weight: 700;
-        }
-
-        .zswqas .activate a {
-            width: 239px;
-            display: block;
-            padding: 16px 14px 14px 18px;
-            border-bottom: 2px solid gainsboro;
-            background: #1B3058;
-            color: white;
-        }
-
-        .zqw22 .nav-tabs>li.active>a,
-        .nav-tabs>li.active>a:focus,
-        .nav-tabs>li.active>a:hover,
-        .tabs-vertical>li.active>a,
-        .tabs-vertical>li.active>a:focus,
-        .tabs-vertical>li.active>a:hover {
-            border-bottom: 3px solid #1B3058;
-        }
-
-        .topside-section li a {
-            border: 1px solid #1B3058;
-            padding: 5px 5px 4px 5px;
-            display: block;
-        }
-
-        .zswqas li a:hover {
-            width: 239px;
-            display: block;
-            padding: 16px 14px 14px 18px;
-            border-bottom: 2px solid gainsboro;
-            background: #1B3058;
-            color: white;
-        }
-
-        .zswqas .active {
-            width: 239px;
-            display: block;
-            padding: 16px 14px 14px 18px;
-            border-bottom: 2px solid gainsboro;
-            background: #1B3058;
-            color: white;
-        }
-
-        .Wizard-a1 #example_length {
-            display: none;
-        }
-
-        div.dataTables_filter label {
-            font-weight: 400;
-            white-space: nowrap;
-            text-align: left;
-        }
-
-        div.dataTables_filter input {
-            margin-left: .5em;
-            display: inline-block;
-            float: right;
-            border: none;
-        }
-
-        div.dataTables_filter label {
+        .header-section .info-bar {
+            background: #f0f4f8;
             padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-size: 13px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px 16px;
         }
 
-        div.dataTables_filter input {
-            margin-left: .5em;
-            display: inline-block;
-            float: right;
+        .header-section .info-bar strong {
+            color: #1B3058;
         }
 
-        div.dataTables_filter {
+        /* ============================================================
+        RESULT CARD - MOBILE FIRST
+        ============================================================ */
+        .result-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .result-card .card-body {
+            padding: 12px 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ============================================================
+        RESULT TABLE - MOBILE FIRST
+        ============================================================ */
+        .result-table {
+            width: 100%;
+            min-width: 700px;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .result-table th,
+        .result-table td {
+            padding: 6px 4px;
             text-align: center;
-        }
-
-        .Wizard-a1 .zwq img {
-            width: 50px;
-        }
-
-        .Wizard-a1 .zwq {
-            padding-right: 8px;
-            float: left;
-        }
-
-        .Wizard-a1 .setting {
-            display: none;
-        }
-
-        .Wizard-a1 .dataTables_info {
-            margin: 0 auto !important;
-            text-align: center;
-            font-size: 12px;
-            float: initial;
-            position: absolute;
-            bottom: 11px;
-            left: 0;
-            right: 0;
-        }
-
-        #example {
-            width: 85% !important;
-            margin: 0 auto;
-        }
-
-        div.dataTables_filter input {
-            width: 70%;
-        }
-
-        div.dataTables_filter label {
-            line-height: 23px;
-        }
-
-        .dataTables_paginate #example_previous:before {
-            content: "";
-            width: 0;
-            height: 0;
-            border-top: 6px solid transparent;
-            border-right: 12px solid #555;
-            border-bottom: 6px solid transparent;
-            position: absolute;
-            z-index: 999999;
-            left: 15px;
-            bottom: 3px;
-        }
-
-        .Wizard-a1 .dataTables_info {
-            position: sticky !important;
-        }
-
-        div.dataTables_paginate {
-            position: relative;
-            top: -47px;
-        }
-
-        .dataTables_paginate a {
-            background-color: transparent;
-            margin: 0 0px 0;
-            padding: 8px 15px 9px;
-            color: white;
-            cursor: pointer;
-            border: none;
-            position: static;
-        }
-
-        .dataTables_paginate .next {
-            background: none;
-            border: navajowhite;
-            position: relative;
-            color: white !important;
-        }
-
-        div.dataTables_paginate {
-            margin: 0;
+            border: 1px solid #e0e0e0;
+            vertical-align: middle;
             white-space: nowrap;
-            text-align: center !important;
-            padding-top: 27px;
         }
 
-        .dataTables_paginate .disabled {
-            background: none;
+        .result-table th {
+            background: #1B3058;
             color: white;
-            border: none !important;
-            padding: unset;
+            font-weight: 700;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .result-table th small {
+            font-weight: 400;
+            opacity: 0.8;
+            font-size: 8px;
             display: block;
-            width: 90%;
-            color: transparent !important;
-            margin: 0 auto;
         }
 
-        div.dataTables_info {
-            white-space: nowrap;
-            padding-top: 0px;
+        .result-table tr:nth-child(even) {
+            background: #f9f9f9;
         }
 
-        .dataTables_paginate #example_next:before {
-            content: "";
-            width: 0;
-            height: 0;
-            border-top: 6px solid transparent;
-            border-left: 12px solid #555;
-            border-bottom: 6px solid transparent;
-            position: absolute;
-            z-index: 999999;
-            right: 0;
-            bottom: 9px;
-            top: 4px;
+        .result-table tr:active {
+            background: #f0f4ff;
         }
 
-        div.dataTables_paginate {
-            margin: 0;
-            white-space: nowrap;
-            text-align: center !important;
+        .result-table .student-name-cell {
+            text-align: left !important;
+            font-weight: 600;
+            font-size: 12px;
         }
 
-        .paging_simple_numbers span {
-            opacity: 0;
+        .result-table .student-id-cell {
+            color: #999;
+            font-size: 10px;
         }
 
-        #example td {
-            padding: 15px 11px 18px 13px;
-            border-bottom: 3px solid;
-            margin: 0 0 0;
+        .result-table .total-cell {
+            font-weight: 700;
+            background: #e8f5e9;
+            color: #2e7d32;
         }
 
-        #example .active:hover {
+        .result-table .grade-cell {
+            font-weight: 700;
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+
+        .result-table .pos-cell {
+            font-weight: 700;
+        }
+
+        .result-table .pos-1 {
+            background: #ffd700;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .result-table .pos-2 {
+            background: #c0c0c0;
+            color: #333;
+            font-weight: 700;
+        }
+
+        .result-table .pos-3 {
+            background: #cd7f32;
+            color: white;
+            font-weight: 700;
+        }
+
+        .result-table .position-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
             background: #1B3058;
             color: white;
         }
 
-        .Wizard-a1 .sorting_1 {
-            display: none;
+        .result-table .position-badge.gold {
+            background: #ffd700;
+            color: #333;
         }
 
-        .dataTables_filter label:before {
-            position: absolute;
-            right: 46px;
-            top: 62px !important;
-            border: 1px solid #1B3058;
+        .result-table .position-badge.silver {
+            background: #c0c0c0;
+            color: #333;
         }
 
-        .dataTables_filter:before {
-            content: '';
-            position: absolute;
+        .result-table .position-badge.bronze {
+            background: #cd7f32;
+            color: white;
         }
 
-        div.dataTables_filter label {
-            position: relative;
-            width: 85%;
-            text-align: left;
+        /* ============================================================
+        SUMMARY CARD - MOBILE FIRST
+        ============================================================ */
+        .summary-card {
+            background: white;
+            border-radius: 16px;
+            padding: 14px 12px;
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
         }
 
-        div.dataTables_filter {
-            margin-top: 20px;
+        .summary-item {
+            text-align: center;
+            padding: 8px 4px;
+            background: #f8f9fa;
+            border-radius: 10px;
         }
 
-        .sectsab li {
-            list-style: none;
+        .summary-item .summary-label {
+            font-size: 9px;
+            color: #888;
+            text-transform: uppercase;
+            font-weight: 600;
         }
 
-        div.dataTables_paginate {
-            margin: 0 auto;
+        .summary-item .summary-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1B3058;
+        }
+
+        /* ============================================================
+        EMPTY STATE - MOBILE FIRST
+        ============================================================ */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 16px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: #ddd;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .empty-state h3 {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+        }
+
+        /* ============================================================
+        ALERTS - MOBILE FIRST
+        ============================================================ */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .alert i {
+            font-size: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        /* ============================================================
+        RESPONSIVE - TABLET (768px+)
+        ============================================================ */
+        @media (min-width: 768px) {
+            .cumulative-container {
+                padding: 25px;
+            }
+
+            .layout {
+                flex-direction: row;
+                gap: 25px;
+            }
+
+            .class-panel {
+                width: 280px;
+                flex-shrink: 0;
+            }
+
+            .class-list {
+                max-height: 70vh;
+            }
+
+            .main-content {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .filter-grid {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .filter-group {
+                flex: 1;
+                min-width: 150px;
+            }
+
+            .filter-actions {
+                flex: 0 0 auto;
+            }
+
+            .filter-actions .btn {
+                flex: 0 0 auto;
+                padding: 10px 24px;
+            }
+
+            .btn-group {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .btn-group .btn {
+                width: auto;
+            }
+
+            .result-table {
+                font-size: 12px;
+                min-width: auto;
+            }
+
+            .result-table th,
+            .result-table td {
+                padding: 8px 10px;
+            }
+
+            .result-table th {
+                font-size: 10px;
+            }
+
+            .result-table .student-name-cell {
+                font-size: 13px;
+            }
+
+            .header-section .school-name {
+                font-size: 24px;
+            }
+
+            .header-section .report-title {
+                font-size: 18px;
+            }
+
+            .summary-card {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                padding: 16px 20px;
+            }
+
+            .summary-item .summary-value {
+                font-size: 22px;
+            }
+
+            .page-header h2 {
+                font-size: 28px;
+            }
+        }
+
+        /* ============================================================
+        RESPONSIVE - DESKTOP (1024px+)
+        ============================================================ */
+        @media (min-width: 1024px) {
+            .cumulative-container {
+                padding: 30px;
+            }
+
+            .class-panel {
+                width: 320px;
+            }
+
+            .result-table th,
+            .result-table td {
+                padding: 10px 14px;
+            }
+
+            .result-table th {
+                font-size: 11px;
+            }
+        }
+
+        /* ============================================================
+        RESPONSIVE - SMALL MOBILE (480px-)
+        ============================================================ */
+        @media (max-width: 480px) {
+            .cumulative-container {
+                padding: 10px;
+            }
+
+            .page-header h2 {
+                font-size: 18px;
+            }
+
+            .page-header p {
+                font-size: 12px;
+            }
+
+            .filter-card {
+                padding: 12px;
+            }
+
+            .filter-select {
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+
+            .result-table {
+                font-size: 9px;
+                min-width: 580px;
+            }
+
+            .result-table th,
+            .result-table td {
+                padding: 4px 2px;
+            }
+
+            .result-table th {
+                font-size: 7px;
+            }
+
+            .result-table td {
+                font-size: 9px;
+            }
+
+            .result-table .student-name-cell {
+                font-size: 10px;
+            }
+
+            .result-table .student-id-cell {
+                font-size: 8px;
+            }
+
+            .result-table .position-badge {
+                font-size: 8px;
+                padding: 1px 5px;
+            }
+
+            .header-section {
+                padding: 12px;
+            }
+
+            .header-section .school-name {
+                font-size: 16px;
+            }
+
+            .header-section .report-title {
+                font-size: 14px;
+            }
+
+            .header-section .info-bar {
+                font-size: 11px;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .summary-card {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+                padding: 10px 8px;
+            }
+
+            .summary-item .summary-value {
+                font-size: 15px;
+            }
+
+            .summary-item .summary-label {
+                font-size: 8px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 8px 14px;
+                min-height: 38px;
+            }
+        }
+
+        /* ============================================================
+        PRINT STYLES
+        ============================================================ */
+        @media print {
+
+            .class-panel,
+            .filter-card,
+            .btn-group,
+            .btn,
+            .no-print,
+            .page-header {
+                display: none !important;
+            }
+
+            .layout {
+                display: block;
+            }
+
+            .main-content {
+                width: 100%;
+            }
+
+            .result-table {
+                font-size: 9px;
+                min-width: auto;
+            }
+
+            .result-table th {
+                background: #1B3058 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                color: white !important;
+            }
+
+            .result-table .total-cell,
+            .result-table .grade-cell,
+            .result-table .pos-1,
+            .result-table .pos-2,
+            .result-table .pos-3 {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .header-section {
+                box-shadow: none !important;
+                border: 1px solid #ddd;
+            }
+
+            .summary-card {
+                box-shadow: none !important;
+                border: 1px solid #ddd;
+            }
+
+            body {
+                background: white;
+            }
+
+            .cumulative-container {
+                padding: 0;
+            }
         }
     </style>
 </head>
 
-<body class="fixed-left">
+<body>
     <div id="wrapper">
         <?php include('inc.header.php'); ?>
         <?php include('inc.sideleft.php'); ?>
         <div class="content-page">
-            <!-- Start content -->
             <div class="content">
-                <div class="container">
-                    <!-- Page-Title -->
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <h4 class="page-title"><?php echo $pageTitle; ?> <?php echo is_array($stat) ? '' : $stat; ?></h4>
-                        </div>
+                <div class="cumulative-container">
+
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <h2><i class="fa fa-bar-chart"></i> <?= htmlspecialchars($PageTitle) ?></h2>
+                        <p>View cumulative student performance across all subjects</p>
                     </div>
-                    <div class="row">
-                        <div class="sectionza">
-                            <div class="col-md-12 col-xm-12">
-                                <div class="col-md-4 col-xm-12">
-                                    <div class="zasw ">
-                                        <div class="zawq Wizard-a1">
-                                            <table id="example" class="display">
-                                                <thead class="setting">
-                                                    <tr>
-                                                        <th>Position</th>
-                                                        <th>Position</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php
-                                                    if (($_SESSION['usertype'] ?? '') == '1') {
-                                                        $iSchoolRegisterStaffid = $db->getVal("select username from school_register where id='" . $_SESSION['userid'] . "' order by id desc");
-                                                        $iStaffManageId = $db->getVal("select id from staff_manage where staff_id ='" . $iSchoolRegisterStaffid . "'");
-                                                        $iConCatScholCls = $db->getVal("select GROUP_CONCAT(school_class) from class_teacher where staff_id='" . $iStaffManageId . "'");
-                                                        $iConCatScholCls = $iConCatScholCls ? $iConCatScholCls : '0';
-                                                        $aryDetail = $db->getRows("select * from school_class where create_by_userid='" . $create_by_userid . "' and id IN ($iConCatScholCls)");
-                                                    } else {
-                                                        $aryDetail = $db->getRows("select * from school_class where create_by_userid='" . $create_by_userid . "'");
-                                                    }
 
-                                                    foreach ($aryDetail as $iList) {
-                                                    ?>
-                                                        <tr>
-                                                            <td style="padding:0px;"></td>
-                                                            <td class="sectsab <?php if ($get_randomid == $iList['randomid']) {
-                                                                                    echo "active";
-                                                                                } ?>">
-                                                                <a href="<?php echo $Filename; ?>?action=board_sheet&randomid=<?php echo $iList['randomid']; ?>">
-                                                                    <ul>
-                                                                        <span class="zwq"> <i class="fa fa-book" style="font-size:48px"></i> </span>
-                                                                        <span class="subject"> <?php echo $iList['name']; ?> <br /></span>
-                                                                    </ul>
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                    <?php } ?>
-                                                </tbody>
-                                                <tfoot>
-                                                    <tr class="setting">
-                                                        <th>Name</th>
-                                                        <th>Position</th>
-                                                    </tr>
-                                                </tfoot>
-                                            </table>
-                                        </div>
+                    <div class="layout">
+
+                        <!-- LEFT SIDEBAR -->
+                        <div class="class-panel">
+                            <div class="panel-header">
+                                <i class="fa fa-graduation-cap"></i> Select Class
+                                <span class="count-badge"><?= count($allClasses) ?></span>
+                            </div>
+                            <div class="class-list">
+                                <?php if (!empty($allClasses)): ?>
+                                    <?php foreach ($allClasses as $class): ?>
+                                        <a href="?action=board_sheet&randomid=<?= urlencode($class['randomid']) ?>"
+                                            class="class-item <?= ($get_randomid == $class['randomid']) ? 'active' : '' ?>">
+                                            <div class="class-icon">
+                                                <i class="fa fa-book"></i>
+                                            </div>
+                                            <div class="class-name"><?= htmlspecialchars($class['name']) ?></div>
+                                            <div class="class-arrow"><i class="fa fa-chevron-right"></i></div>
+                                        </a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="empty-state" style="padding: 30px 20px;">
+                                        <i class="fa fa-book"></i>
+                                        <p>No classes found</p>
                                     </div>
-                                </div>
-                                <div class="col-md-8 col-xm-12">
-                                    <form method="POST" action="">
-                                        <label>Session:</label>
-                                        <select name="session" id="session" required>
-                                            <option value=""> Session</option>
-                                            <?php
-                                            $aryDetail = $db->getRows("select * from school_session where create_by_userid='" . $create_by_userid . "'");
-                                            foreach ($aryDetail as $iList) {
-                                            ?>
-                                                <option value="<?php echo $iList['id']; ?>" <?php if ($post_session == $iList['id']) {
-                                                                                                echo "selected";
-                                                                                            } ?>><?php echo $iList['session']; ?></option>
-                                            <?php } ?>
-                                        </select>
+                                <?php endif; ?>
+                            </div>
+                        </div>
 
-                                        <label>Term:</label>
-                                        <select name="term_id" id="term_id" required>
-                                            <option value=""> Term</option>
-                                            <?php
-                                            $aryDetail = $db->getRows("select * from school_term where create_by_userid='" . $create_by_userid . "'");
-                                            foreach ($aryDetail as $iList) {
-                                            ?>
-                                                <option value="<?php echo $iList['id']; ?>" <?php if ($post_term_id == $iList['id']) {
-                                                                                                echo "selected";
-                                                                                            } ?>><?php echo $iList['term']; ?></option>
-                                            <?php } ?>
-                                        </select>
+                        <!-- RIGHT MAIN CONTENT -->
+                        <div class="main-content">
+                            <?php if (!empty($classDetail)): ?>
 
-                                        <input type="hidden" value="<?php echo e($get_randomid); ?>" name="randomid">
-                                        <input type="hidden" value="<?php echo e($get_action); ?>" name="action">
-                                        <input type="submit" value="Click Here" name="" />
-                                    </form>
-                                    <br>
-                                    <table cellspacing="5" cellpadding="0">
-                                        <tbody>
-                                            <tr>
-                                                <td align="left" style="vertical-align: top;">
-                                                    <a href="<?php echo SKOOL_URL; ?>cummulative_broad_sheet_pfd.php?randomid=<?php echo $get_randomid; ?>&session=<?php echo $post_session; ?>&term_id=<?php echo $post_term_id; ?>" class="gwt-Button" style="background: #1b3058;color: #fff; padding: 10px; font-size: 12px;" target="_blank">Print Cumulative Broad Sheet</a>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                    <div class="zasw1">
-                                        <div class="card-box">
-                                            <tr>
-                                                <td>
-                                                    <div class="boldInfoLabel"> SESSION: <?php echo $db->getVal("select session from school_session where id= '" . $post_session . "'"); ?>
-                                                        <?php echo $db->getVal("select term from school_term where id= '" . $post_term_id . "'"); ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div class="infoLabel"> Class: <?php echo $db->getVal("select name from school_class where id ='" . ($classDetail['id'] ?? 0) . "' and create_by_userid='" . $create_by_userid . "' "); ?> </div>
-                                                </td>
-                                            </tr>
-                                            <div class="card-box table-responsive tablthisresponsive">
-                                                <table class="table table-striped table-bordered tablthisresponsive">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Student ID</th>
-                                                            <th>First Name</th>
-                                                            <th>Last Name</th>
-                                                            <th>Other Name</th>
-                                                            <?php
-                                                            $schoolClassDetail = $db->getRows("select * from school_subject where class_id = '" . ($classDetail['id'] ?? 0) . "' and create_by_userid='" . $create_by_userid . "'");
-                                                            $i = 0;
-                                                            $subid = ''; // FIXED: Explicitly initialized as string to prevent Array to string conversion warning
-                                                            foreach ($schoolClassDetail as $iListDetail) {
-                                                                $i = $i + 1;
-                                                                $subid .= $iListDetail['id'] . ',';
-                                                            ?>
-                                                                <th><?php echo $iListDetail['subject']; ?></th>
-                                                            <?php } ?>
-                                                            <th>No. of Sub.</th>
-                                                            <th>Total Score</th>
-                                                            <th>Average(100%)</th>
-                                                            <th>Grade</th>
-                                                            <th>Position</th>
-                                                        </tr>
-                                                        <?php
-                                                        $aryListss = array();
-                                                        if (!empty($classDetail['id']) && !empty($post_session) && !empty($post_term_id)) {
-                                                            $aryListss = $db->getRows("select * from manage_student where class = '" . $classDetail['id'] . "' and session= '" . $post_session . "' and term_id= '" . $post_term_id . "' and create_by_userid='" . $create_by_userid . "' order by first_name asc");
-                                                        }
-
-                                                        $tStuden = 0;
-                                                        $classTotal = 0;
-                                                        $highLow = array();
-                                                        $student_two = array();
-                                                        $grandTotal = '';
-
-                                                        foreach ($aryListss as $aryStudent) {
-                                                            $tStuden = $tStuden + 1;
-                                                            $s_id = $aryStudent['id'];
-                                                            ${"d" . $s_id} = 0; // Initialize dynamic variable for total calculation
-                                                        ?>
-                                                            <tr class="flexTable-OddRow">
-                                                                <td>
-                                                                    <div class="clickableElement" style="width: 100%;"> <?php echo $aryStudent['student_id']; ?> </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="resultDataCell" style="width: 100%;"> <?php echo $aryStudent['first_name']; ?> </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="resultDataCell" style="width: 100%;"> <?php echo $aryStudent['last_name']; ?> </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="resultDataCell" style="width: 100%;"> <?php echo $aryStudent['other_name']; ?> </div>
-                                                                </td>
-                                                                <?php
-                                                                $totalSub = 0;
-                                                                foreach ($schoolClassDetail as $iListDetail) {
-                                                                    $totalSub = $totalSub + 1;
-                                                                ?>
-                                                                    <td>
-                                                                        <div class="gwt-Label" style="width: 100%;">
-                                                                            <?php
-                                                                            $totalscore = $db->getRow("select SUM(score) as total_score from input_score_class_teacher where class_id='" . $classDetail['id'] . "' and subject_id='" . $iListDetail['id'] . "' and student_id = '" . $aryStudent['id'] . "' and create_by_userid='" . $create_by_userid . "'");
-                                                                            $total_val = $totalscore['total_score'] ?? 0;
-                                                                            echo $total_val;
-                                                                            ${"d" . $s_id} += $total_val;
-                                                                            ?>
-                                                                        </div>
-                                                                    </td>
-                                                                <?php }
-                                                                $grandTotal = ${"d" . $s_id};
-                                                                ?>
-                                                                <td><?php echo $totalSub; ?></td>
-                                                                <td>
-                                                                    <div class="resultDataCell" style="width: 100%;">
-                                                                        <?php
-                                                                        echo $grandTotal;
-                                                                        $student_two["$s_id"] = $grandTotal;
-                                                                        ?>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <div class="resultDataCell" style="width: 100%;">
-                                                                        <?php
-                                                                        $avg = ($i > 0) ? ($grandTotal / $i) : 0;
-                                                                        echo round($avg, 2);
-                                                                        $classTotal += $avg;
-                                                                        $highLow[] = $avg;
-                                                                        ?>
-                                                                    </div>
-                                                                </td>
-                                                                <td>
-                                                                    <?php echo $db->getVal("select grade from school_grade where create_by_userid='" . $create_by_userid . "' and minimum_number <= " . $avg . " and maximum_number >= " . $avg . ""); ?>
-                                                                </td>
-                                                                <td id="<?php echo $s_id; ?>"></td>
-                                                            </tr>
-                                                        <?php } ?>
-                                                    </thead>
-                                                </table>
-                                                <?php
-                                                function setPosition($standings)
-                                                {
-                                                    $rankings = array();
-                                                    arsort($standings);
-                                                    $rank = 1;
-                                                    $tie_rank = 0;
-                                                    $prev_score = -1;
-                                                    $count = 0;
-
-                                                    foreach ($standings as $name => $score) {
-                                                        if ($score != $prev_score) {
-                                                            $count = 0;
-                                                            $prev_score = $score;
-                                                            $rankings[$name] = array('score' => $score, 'rank' => $rank);
-                                                        } else {
-                                                            $prev_score = $score;
-                                                            if ($count++ == 0) {
-                                                                $tie_rank = $rank - 1;
-                                                            }
-                                                            $rankings[$name] = array('score' => $score, 'rank' => $tie_rank);
-                                                        }
-                                                        $rank++;
-                                                    }
-                                                    return $rankings;
-                                                }
-
-                                                $rankedScores = array();
-                                                if ($grandTotal !== '' && !empty($student_two)) {
-                                                    $rankedScores = setPosition($student_two);
-                                                }
-
-                                                foreach ($rankedScores as $studentwa => $data) {
-                                                    $rank = $data['rank'];
-                                                    echo "<script>document.getElementById('$studentwa').innerHTML=$rank;</script>";
-                                                }
-                                                ?>
-
-                                                <?php if ($tStuden > 0) { ?>
-                                                    <table class="table table-striped table-bordered">
-                                                        <tr>
-                                                            <td><span>No. of Students: <?php echo $tStuden; ?></span></td>
-                                                            <td><span>Class Average:
-                                                                    <?php $classAvg = $classTotal / $tStuden;
-                                                                    echo round($classAvg, 2); ?>
-                                                                </span></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td><span>Highest Average in Class: <?php echo !empty($highLow) ? round(max($highLow), 2) : 0; ?></span></td>
-                                                            <td><span>Lowest Average in Class: <?php echo !empty($highLow) ? round(min($highLow), 2) : 0; ?></span></td>
-                                                        </tr>
-                                                    </table>
-                                                <?php } ?>
+                                <!-- FILTERS -->
+                                <div class="filter-card">
+                                    <form method="POST" action="" id="filterForm">
+                                        <input type="hidden" name="randomid" value="<?= htmlspecialchars($get_randomid) ?>">
+                                        <input type="hidden" name="action" value="<?= htmlspecialchars($get_action) ?>">
+                                        <div class="filter-grid">
+                                            <div class="filter-group">
+                                                <label><i class="fa fa-calendar"></i> Session</label>
+                                                <select name="session" class="filter-select" required>
+                                                    <option value="">-- Select --</option>
+                                                    <?php foreach ($sessions as $s): ?>
+                                                        <option value="<?= $s['id'] ?>" <?= ($post_session == $s['id']) ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($s['session']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div class="filter-group">
+                                                <label><i class="fa fa-tag"></i> Term</label>
+                                                <select name="term_id" class="filter-select" required>
+                                                    <option value="">-- Select --</option>
+                                                    <?php foreach ($terms as $t): ?>
+                                                        <option value="<?= $t['id'] ?>" <?= ($post_term_id == $t['id']) ? 'selected' : '' ?>>
+                                                            <?= htmlspecialchars($t['term']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div class="filter-actions">
+                                                <button type="submit" class="btn btn-primary btn-block">
+                                                    <i class="fa fa-filter"></i> Load Report
+                                                </button>
                                             </div>
                                         </div>
-                                    </div>
+                                    </form>
                                 </div>
-                            </div>
+
+                                <?php if (!empty($post_session) && !empty($post_term_id)): ?>
+
+                                    <!-- HEADER -->
+                                    <div class="header-section">
+                                        <div class="school-name"><?= htmlspecialchars($schoolDetails['name'] ?? 'School Name') ?></div>
+                                        <div class="school-address">
+                                            <?= htmlspecialchars($schoolDetails['location'] ?? '') ?><?= !empty($stateName) ? ', ' . htmlspecialchars($stateName) : '' ?>
+                                        </div>
+                                        <div class="report-title">CUMULATIVE BROAD SHEET REPORT</div>
+                                        <div class="info-bar">
+                                            <span><strong>Class:</strong> <?= htmlspecialchars($className) ?></span>
+                                            <span><strong>Session:</strong> <?= htmlspecialchars($sessionName) ?></span>
+                                            <span><strong>Term:</strong> <?= htmlspecialchars($termName) ?></span>
+                                            <span><strong>Students:</strong> <?= $studentCount ?></span>
+                                            <span><strong>Subjects:</strong> <?= $totalSubjects ?></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- TABLE -->
+                                    <?php if (!empty($students)): ?>
+                                        <div class="result-card">
+                                            <div class="card-body">
+                                                <table class="result-table" id="resultTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th style="min-width:40px;">#</th>
+                                                            <th style="min-width:60px;">ID</th>
+                                                            <th style="min-width:80px;">First Name</th>
+                                                            <th style="min-width:80px;">Last Name</th>
+                                                            <th style="min-width:80px;">Other Name</th>
+                                                            <?php foreach ($subjects as $subject): ?>
+                                                                <th><small><?= htmlspecialchars($subject['subject']) ?></small></th>
+                                                            <?php endforeach; ?>
+                                                            <th>Subj</th>
+                                                            <th>Total</th>
+                                                            <th>Avg</th>
+                                                            <th>Grade</th>
+                                                            <th>Pos</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php $counter = 0;
+                                                        foreach ($students as $student): $counter++; ?>
+                                                            <tr>
+                                                                <td><?= $counter ?></td>
+                                                                <td class="student-id-cell"><?= htmlspecialchars($student['student_id']) ?></td>
+                                                                <td class="student-name-cell"><?= htmlspecialchars($student['first_name']) ?></td>
+                                                                <td class="student-name-cell"><?= htmlspecialchars($student['last_name']) ?></td>
+                                                                <td class="student-name-cell"><?= htmlspecialchars($student['other_name'] ?? '') ?></td>
+
+                                                                <?php
+                                                                $studentTotal = 0;
+                                                                foreach ($subjects as $subject):
+                                                                    $score = $scoresLookup[$student['id']][$subject['id']] ?? 0;
+                                                                    $studentTotal += $score;
+                                                                ?>
+                                                                    <td><?= number_format($score, 1) ?></td>
+                                                                <?php endforeach; ?>
+
+                                                                <td><?= $totalSubjects ?></td>
+                                                                <td class="total-cell"><strong><?= number_format($studentTotal, 1) ?></strong></td>
+                                                                <td><?= number_format($studentAverages[$student['id']] ?? 0, 2) ?></td>
+                                                                <td class="grade-cell"><?= getGrade($studentAverages[$student['id']] ?? 0) ?></td>
+                                                                <td class="pos-cell">
+                                                                    <?php
+                                                                    $pos = $studentPositions[$student['id']] ?? 0;
+                                                                    $posClass = '';
+                                                                    $suffix = 'th';
+                                                                    if ($pos == 1) {
+                                                                        $suffix = 'st';
+                                                                        $posClass = 'gold';
+                                                                    } elseif ($pos == 2) {
+                                                                        $suffix = 'nd';
+                                                                        $posClass = 'silver';
+                                                                    } elseif ($pos == 3) {
+                                                                        $suffix = 'rd';
+                                                                        $posClass = 'bronze';
+                                                                    }
+                                                                    ?>
+                                                                    <?php if ($pos > 0): ?>
+                                                                        <span class="position-badge <?= $posClass ?>">
+                                                                            <?= $pos . $suffix ?>
+                                                                        </span>
+                                                                    <?php else: ?>
+                                                                        -
+                                                                    <?php endif; ?>
+                                                                </td>
+                                                            </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <!-- SUMMARY -->
+                                        <div class="summary-card">
+                                            <div class="summary-item">
+                                                <div class="summary-label">Students</div>
+                                                <div class="summary-value"><?= $studentCount ?></div>
+                                            </div>
+                                            <div class="summary-item">
+                                                <div class="summary-label">Class Average</div>
+                                                <div class="summary-value"><?= $studentCount > 0 ? number_format($classTotal / $studentCount, 2) : '0.00' ?></div>
+                                            </div>
+                                            <div class="summary-item">
+                                                <div class="summary-label">Highest</div>
+                                                <div class="summary-value"><?= !empty($highLow) ? number_format(max($highLow), 2) : '0.00' ?></div>
+                                            </div>
+                                            <div class="summary-item">
+                                                <div class="summary-label">Lowest</div>
+                                                <div class="summary-value"><?= !empty($highLow) ? number_format(min($highLow), 2) : '0.00' ?></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- BUTTONS -->
+                                        <div class="btn-group">
+                                            <a href="<?= SKOOL_URL ?>cummulative_broad_sheet_pfd.php?randomid=<?= urlencode($get_randomid) ?>&session=<?= urlencode($post_session) ?>&term_id=<?= urlencode($post_term_id) ?>"
+                                                class="btn btn-danger" target="_blank">
+                                                <i class="fa fa-file-pdf-o"></i> Print Cumulative Broad Sheet
+                                            </a>
+                                            <button class="btn btn-success" onclick="window.print()">
+                                                <i class="fa fa-print"></i> Print Report
+                                            </button>
+                                        </div>
+
+                                    <?php else: ?>
+                                        <div class="empty-state">
+                                            <i class="fa fa-users"></i>
+                                            <h3>No Students Found</h3>
+                                            <p>No students enrolled in this class for the selected session and term.</p>
+                                        </div>
+                                    <?php endif; ?>
+
+                                <?php else: ?>
+                                    <div class="empty-state">
+                                        <i class="fa fa-filter"></i>
+                                        <h3>Select Session and Term</h3>
+                                        <p>Please select a session and term to view the Cumulative Broad Sheet.</p>
+                                    </div>
+                                <?php endif; ?>
+
+                            <?php else: ?>
+                                <div class="empty-state">
+                                    <i class="fa fa-graduation-cap"></i>
+                                    <h3>Select a Class</h3>
+                                    <p>Please select a class from the left sidebar.</p>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -836,65 +1294,34 @@ $post_term_id = $_POST['term_id'] ?? '';
 
     <?php include('inc.js.php'); ?>
     <script>
-        (function() {
-            $(function() {
-                var toggle;
-                return toggle = new Toggle('.zswqas');
+        // Auto-submit filters on change
+        document.addEventListener('DOMContentLoaded', function() {
+            var filterForm = document.getElementById('filterForm');
+            if (!filterForm) return;
+
+            var selects = filterForm.querySelectorAll('select');
+            selects.forEach(function(select) {
+                select.addEventListener('change', function() {
+                    var session = filterForm.querySelector('select[name="session"]');
+                    var term = filterForm.querySelector('select[name="term_id"]');
+                    if (session && term && session.value && term.value) {
+                        filterForm.submit();
+                    }
+                });
             });
+        });
 
-            this.Toggle = (function() {
-                class Toggle {
-                    constructor(toggleClass) {
-                        this.el = $(toggleClass);
-                        this.tabs = this.el.find(".xz");
-                        this.panels = this.el.find(".panel");
-                        this.bind();
+        // Add active class to class items
+        document.addEventListener('DOMContentLoaded', function() {
+            var classItems = document.querySelectorAll('.class-item');
+            classItems.forEach(function(item) {
+                item.addEventListener('click', function() {
+                    var current = document.querySelector('.class-item.active');
+                    if (current) {
+                        current.classList.remove('active');
                     }
-
-                    show(index) {
-                        var activePanel, activeTab;
-                        this.tabs.removeClass('activate');
-                        activeTab = this.tabs.get(index);
-                        $(activeTab).addClass('activate');
-                        this.panels.hide();
-                        activePanel = this.panels.get(index);
-                        return $(activePanel).show();
-                    }
-
-                    bind() {
-                        return this.tabs.unbind('click').bind('click', (e) => {
-                            return this.show($(e.currentTarget).index());
-                        });
-                    }
-
-                };
-
-                Toggle.prototype.el = null;
-                Toggle.prototype.tabs = null;
-                Toggle.prototype.panels = null;
-
-                return Toggle;
-
-            }).call(this);
-
-        }).call(this);
-    </script>
-    <script>
-        var header = document.getElementById("example");
-        var btns = header.getElementsByClassName("sectsab");
-        for (var i = 0; i < btns.length; i++) {
-            btns[i].addEventListener("click", function() {
-                var current = document.getElementsByClassName("active");
-                if (current.length > 0) {
-                    current[0].className = current[0].className.replace(" active", "");
-                }
-                this.className += " active";
+                });
             });
-        }
-    </script>
-    <script>
-        $('#example').dataTable({
-            "pageLength": 5
         });
     </script>
 </body>

@@ -266,8 +266,6 @@ $gradeScale = db_get_rows("SELECT * FROM school_grade WHERE create_by_userid = ?
 // SIMPLIFIED GRADE RESOLUTION FUNCTION
 // ============================================================================
 
-
-
 function resolveGradeFromScale($createByUserId, $score) {
     $score = round((float)$score, 2);
     
@@ -339,15 +337,40 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
 <head>
     <?php include('inc.meta.php'); ?>
     <style>
+        /* ============================================================
+        RESET & BASE
+        ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        .results-container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+        /* ============================================================
+        CONTAINER
+        ============================================================ */
+        .results-container { 
+            max-width: 1600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
         
-        .page-header { margin-bottom: 30px; }
-        .page-header h2 { color: #1B3058; margin: 0; font-size: 28px; }
-        .page-header p { color: #666; margin-top: 5px; }
+        /* ============================================================
+        PAGE HEADER
+        ============================================================ */
+        .page-header { 
+            margin-bottom: 30px; 
+        }
+        .page-header h2 { 
+            color: #1B3058; 
+            margin: 0; 
+            font-size: 28px; 
+        }
+        .page-header p { 
+            color: #666; 
+            margin-top: 5px; 
+        }
         
+        /* ============================================================
+        FILTER BAR - MOBILE FIRST
+        ============================================================ */
         .filter-bar { 
             background: white; 
             border-radius: 20px; 
@@ -355,9 +378,25 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
             margin-bottom: 25px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        .filter-row { display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; }
-        .filter-group { flex: 1; min-width: 150px; }
-        .filter-group label { display: block; font-size: 11px; font-weight: 700; color: #888; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .filter-row { 
+            display: flex; 
+            gap: 15px; 
+            flex-wrap: wrap; 
+            align-items: flex-end; 
+        }
+        .filter-group { 
+            flex: 1; 
+            min-width: 150px; 
+        }
+        .filter-group label { 
+            display: block; 
+            font-size: 11px; 
+            font-weight: 700; 
+            color: #888; 
+            margin-bottom: 5px; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+        }
         .filter-select { 
             width: 100%; 
             padding: 12px 15px; 
@@ -368,7 +407,10 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
             cursor: pointer;
             transition: all 0.2s;
         }
-        .filter-select:focus { outline: none; border-color: #1B3058; }
+        .filter-select:focus { 
+            outline: none; 
+            border-color: #1B3058; 
+        }
         
         .assessment-group {
             margin-top: 15px;
@@ -393,8 +435,15 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
             gap: 8px;
             cursor: pointer;
         }
-        .assessment-checkbox input { width: 18px; height: 18px; cursor: pointer; }
-        .assessment-checkbox span { font-size: 13px; color: #333; }
+        .assessment-checkbox input { 
+            width: 18px; 
+            height: 18px; 
+            cursor: pointer; 
+        }
+        .assessment-checkbox span { 
+            font-size: 13px; 
+            color: #333; 
+        }
         .apply-btn {
             background: #1B3058;
             color: white;
@@ -406,11 +455,31 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
             transition: all 0.2s;
             margin-top: 15px;
         }
-        .apply-btn:hover { background: #f21151; transform: translateY(-2px); }
+        .apply-btn:hover { 
+            background: #f21151; 
+            transform: translateY(-2px); 
+        }
         
-        .two-column-layout { display: flex; gap: 25px; flex-wrap: wrap; }
-        .students-panel { flex: 1; min-width: 300px; background: white; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
-        .results-panel { flex: 3; min-width: 500px; }
+        /* ============================================================
+        TWO COLUMN LAYOUT - MOBILE FIRST
+        ============================================================ */
+        .two-column-layout { 
+            display: flex; 
+            gap: 25px; 
+            flex-wrap: wrap; 
+        }
+        .students-panel { 
+            flex: 1; 
+            min-width: 300px; 
+            background: white; 
+            border-radius: 24px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            overflow: hidden; 
+        }
+        .results-panel { 
+            flex: 3; 
+            min-width: 500px; 
+        }
         .panel-header { 
             padding: 18px 20px; 
             background: linear-gradient(135deg, #1B3058 0%, #2a4780 100%);
@@ -431,9 +500,15 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
             font-size: 14px;
             transition: all 0.2s;
         }
-        .search-input:focus { outline: none; border-color: #1B3058; }
+        .search-input:focus { 
+            outline: none; 
+            border-color: #1B3058; 
+        }
         
-        .students-list { max-height: 60vh; overflow-y: auto; }
+        .students-list { 
+            max-height: 60vh; 
+            overflow-y: auto; 
+        }
         .student-card {
             display: flex;
             align-items: center;
@@ -444,8 +519,13 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
             transition: all 0.2s;
             text-decoration: none;
         }
-        .student-card:hover { background: #f8f9ff; }
-        .student-card.active { background: #e8eef5; border-left: 4px solid #1B3058; }
+        .student-card:hover { 
+            background: #f8f9ff; 
+        }
+        .student-card.active { 
+            background: #e8eef5; 
+            border-left: 4px solid #1B3058; 
+        }
         .student-avatar {
             width: 48px;
             height: 48px;
@@ -458,35 +538,144 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
             background: linear-gradient(135deg, #1B3058 0%, #2a4780 100%);
             color: white;
             overflow: hidden;
+            flex-shrink: 0;
         }
-        .student-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .student-info h4 { margin: 0; font-size: 15px; color: #333; }
-        .student-info p { margin: 5px 0 0; font-size: 11px; color: #888; }
+        .student-avatar img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        .student-info h4 { 
+            margin: 0; 
+            font-size: 15px; 
+            color: #333; 
+        }
+        .student-info p { 
+            margin: 5px 0 0; 
+            font-size: 11px; 
+            color: #888; 
+        }
         
-        .results-card { background: white; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; }
+        /* ============================================================
+        RESULTS CARD - MOBILE FIRST
+        ============================================================ */
+        .results-card { 
+            background: white; 
+            border-radius: 24px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            overflow: hidden; 
+        }
+        
+        /* Student Header - Mobile First */
         .student-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 25px;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
+            gap: 12px;
         }
-        .student-header h3 { margin: 0; font-size: 24px; }
-        .student-header p { margin: 8px 0 0; opacity: 0.9; }
+        .student-header .student-info-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+        .student-header .student-avatar-lg {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(255,255,255,0.4);
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.2);
+            font-size: 30px;
+            font-weight: bold;
+        }
+        .student-header .student-avatar-lg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .student-header .student-details h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .student-header .student-details p {
+            margin: 4px 0 0;
+            opacity: 0.9;
+            font-size: 13px;
+        }
+        .student-header .student-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            justify-content: center;
+            font-size: 12px;
+            opacity: 0.85;
+        }
+        .student-header .student-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
         
-        .results-table-wrapper { overflow-x: auto; padding: 20px; }
-        .results-table { width: 100%; border-collapse: collapse; }
-        .results-table th, .results-table td { padding: 12px 8px; text-align: center; border-bottom: 1px solid #eee; }
-        .results-table th { background: #f8f9fa; font-weight: 700; color: #1B3058; font-size: 12px; }
-        .results-table td { font-size: 13px; }
-        .subject-name { text-align: left; font-weight: 600; color: #333; }
+        /* Results Table Wrapper - Mobile First */
+        .results-table-wrapper { 
+            overflow-x: auto; 
+            padding: 12px 8px; 
+            -webkit-overflow-scrolling: touch;
+        }
+        .results-table { 
+            width: 100%; 
+            min-width: 600px;
+            border-collapse: collapse; 
+            font-size: 12px;
+        }
+        .results-table th, 
+        .results-table td { 
+            padding: 8px 4px; 
+            text-align: center; 
+            border-bottom: 1px solid #eee; 
+            white-space: nowrap;
+        }
+        .results-table th { 
+            background: #f8f9fa; 
+            font-weight: 700; 
+            color: #1B3058; 
+            font-size: 10px; 
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .results-table th small {
+            font-weight: 400;
+            opacity: 0.7;
+        }
+        .results-table td { 
+            font-size: 12px; 
+        }
+        .subject-name { 
+            text-align: left; 
+            font-weight: 600; 
+            color: #333; 
+            min-width: 80px;
+            white-space: normal;
+        }
         
         .progress-bar-container {
-            width: 80px;
-            height: 6px;
+            width: 50px;
+            height: 5px;
             background: #e0e0e0;
             border-radius: 10px;
             overflow: hidden;
-            margin: 0 auto 4px;
+            margin: 0 auto 3px;
         }
         .progress-bar-fill {
             height: 100%;
@@ -496,65 +685,113 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
         
         .grade-badge {
             display: inline-block;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 20px;
             font-weight: 700;
-            font-size: 11px;
+            font-size: 10px;
+            min-width: 28px;
         }
         
+        /* ============================================================
+        OVERALL STATS - MOBILE FIRST
+        ============================================================ */
         .overall-stats {
-            display: flex;
-            gap: 15px;
-            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 16px;
             background: #f8f9fa;
             border-top: 1px solid #eee;
-            flex-wrap: wrap;
         }
         .stat-card {
-            flex: 1;
             text-align: center;
-            padding: 12px;
+            padding: 12px 8px;
             background: white;
-            border-radius: 16px;
+            border-radius: 14px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
-        .stat-card .label { font-size: 11px; color: #888; margin-bottom: 5px; text-transform: uppercase; }
-        .stat-card .value { font-size: 24px; font-weight: 700; color: #1B3058; }
-        .stat-card .sub { font-size: 11px; color: #666; margin-top: 5px; }
+        .stat-card .label { 
+            font-size: 9px; 
+            color: #888; 
+            margin-bottom: 3px; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .stat-card .value { 
+            font-size: 20px; 
+            font-weight: 700; 
+            color: #1B3058; 
+        }
+        .stat-card .sub { 
+            font-size: 10px; 
+            color: #666; 
+            margin-top: 3px; 
+        }
+        .stat-card .progress-bar-container {
+            width: 80%;
+            margin: 6px auto 0;
+            height: 4px;
+        }
+        .stat-card .grade-badge {
+            font-size: 16px;
+            padding: 4px 14px;
+        }
         
+        /* ============================================================
+        BUTTONS - MOBILE FIRST
+        ============================================================ */
         .print-btn {
             background: #28a745;
             color: white;
             border: none;
-            padding: 12px 25px;
-            border-radius: 14px;
+            padding: 10px 18px;
+            border-radius: 12px;
             font-weight: 600;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin: 0 20px 20px auto;
+            gap: 6px;
+            margin: 12px 16px 16px auto;
+            width: 100%;
+            justify-content: center;
         }
-        .print-btn:hover { background: #218838; transform: translateY(-2px); }
-        .print-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .print-btn:hover { 
+            background: #218838; 
+            transform: translateY(-2px); 
+        }
+        .print-btn:disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+            transform: none; 
+        }
 
         .bulk-btn {
             background: #1B3058;
             color: white;
             border: none;
-            padding: 12px 18px;
-            border-radius: 14px;
+            padding: 10px 16px;
+            border-radius: 12px;
             font-weight: 600;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            margin-right: 12px;
+            gap: 6px;
+            width: 100%;
+            justify-content: center;
         }
-        .bulk-btn:hover { background: #16305f; transform: translateY(-2px); }
-        .bulk-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .bulk-btn:hover { 
+            background: #16305f; 
+            transform: translateY(-2px); 
+        }
+        .bulk-btn:disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+            transform: none; 
+        }
 
         .bulk-status {
             display: none;
@@ -564,6 +801,7 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
             background: #f1f5fb;
             border: 1px solid #d7e2f3;
             color: #1B3058;
+            font-size: 13px;
         }
         .bulk-status .bulk-line {
             font-size: 13px;
@@ -591,6 +829,18 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
         }
         .bulk-download-link:hover { text-decoration: underline; }
         
+        .btn-group-mobile {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 16px 12px;
+        }
+        .btn-group-mobile .print-btn,
+        .btn-group-mobile .bulk-btn {
+            width: 100%;
+            margin: 0;
+        }
+        
         .spinner {
             display: inline-block;
             width: 16px;
@@ -602,26 +852,368 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        .empty-state { text-align: center; padding: 60px 20px; color: #999; }
-        .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 15px; display: block; }
-        
-        .alert { padding: 15px 20px; border-radius: 16px; margin-bottom: 20px; }
-        .alert-info { background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8; }
-        .alert-warning { background: #fff3cd; color: #856404; border-left: 4px solid #ffc107; }
-        
-        @media (max-width: 900px) {
-            .two-column-layout { flex-direction: column; }
-            .filter-row { flex-direction: column; }
-            .results-table th, .results-table td { padding: 6px 4px; font-size: 10px; }
-            .results-container { padding-top: 68px; }
+        /* ============================================================
+        EMPTY STATE / ALERTS
+        ============================================================ */
+        .empty-state { 
+            text-align: center; 
+            padding: 40px 20px; 
+            color: #999; 
+        }
+        .empty-state i { 
+            font-size: 48px; 
+            color: #ddd; 
+            margin-bottom: 12px; 
+            display: block; 
+        }
+        .empty-state h3 {
+            font-size: 16px;
+            margin-bottom: 6px;
+            color: #666;
+        }
+        .empty-state p {
+            font-size: 13px;
+            color: #999;
         }
         
+        .alert { 
+            padding: 12px 16px; 
+            border-radius: 16px; 
+            margin-bottom: 20px; 
+            font-size: 13px;
+        }
+        .alert-info { 
+            background: #d1ecf1; 
+            color: #0c5460; 
+            border-left: 4px solid #17a2b8; 
+        }
+        .alert-warning { 
+            background: #fff3cd; 
+            color: #856404; 
+            border-left: 4px solid #ffc107; 
+        }
+        
+        /* ============================================================
+        RESPONSIVE - TABLET (768px+)
+        ============================================================ */
+        @media (min-width: 768px) {
+            .results-container { 
+                padding: 25px; 
+            }
+            
+            .student-header {
+                flex-direction: row;
+                padding: 25px 30px;
+                text-align: left;
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            .student-header .student-info-wrap {
+                flex-direction: row;
+                align-items: center;
+                gap: 18px;
+                width: auto;
+            }
+            .student-header .student-details h3 {
+                font-size: 24px;
+            }
+            .student-header .student-meta {
+                justify-content: flex-start;
+            }
+            
+            .overall-stats {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+                padding: 20px 25px;
+            }
+            .stat-card .value { 
+                font-size: 24px; 
+            }
+            
+            .print-btn {
+                width: auto;
+                padding: 12px 25px;
+                margin: 0 25px 20px auto;
+                font-size: 14px;
+            }
+            
+            .bulk-btn {
+                width: auto;
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+            
+            .btn-group-mobile {
+                flex-direction: row;
+                justify-content: flex-end;
+                padding: 0 20px 16px;
+                gap: 12px;
+            }
+            .btn-group-mobile .print-btn,
+            .btn-group-mobile .bulk-btn {
+                width: auto;
+                margin: 0;
+            }
+            
+            .results-table-wrapper { 
+                padding: 16px 20px; 
+            }
+            .results-table { 
+                font-size: 13px;
+                min-width: auto;
+            }
+            .results-table th, 
+            .results-table td { 
+                padding: 10px 12px; 
+            }
+            .results-table th { 
+                font-size: 11px; 
+            }
+            .results-table td { 
+                font-size: 13px; 
+            }
+            .subject-name { 
+                min-width: 120px;
+            }
+            .progress-bar-container {
+                width: 70px;
+                height: 6px;
+            }
+            .grade-badge {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+            
+            .filter-row { 
+                flex-wrap: nowrap; 
+            }
+        }
+        
+        /* ============================================================
+        RESPONSIVE - DESKTOP (1024px+)
+        ============================================================ */
+        @media (min-width: 1024px) {
+            .results-container { 
+                padding: 30px; 
+            }
+            
+            .student-header {
+                padding: 30px 40px;
+            }
+            .student-header .student-avatar-lg {
+                width: 80px;
+                height: 80px;
+            }
+            .student-header .student-details h3 {
+                font-size: 28px;
+            }
+            
+            .overall-stats {
+                padding: 25px 40px;
+                gap: 20px;
+            }
+            .stat-card { 
+                padding: 16px 20px; 
+            }
+            .stat-card .value { 
+                font-size: 28px; 
+            }
+            
+            .results-table-wrapper { 
+                padding: 20px 30px; 
+            }
+            .results-table th, 
+            .results-table td { 
+                padding: 12px 16px; 
+            }
+        }
+        
+        /* ============================================================
+        RESPONSIVE - SMALL MOBILE (480px-)
+        ============================================================ */
+        @media (max-width: 480px) {
+            .results-container { 
+                padding: 10px; 
+            }
+            
+            .filter-bar { 
+                padding: 14px 16px; 
+                border-radius: 16px;
+            }
+            .filter-group { 
+                min-width: 100%; 
+            }
+            .filter-select { 
+                font-size: 13px; 
+                padding: 10px 12px; 
+            }
+            
+            .assessment-checkboxes {
+                gap: 10px;
+            }
+            .assessment-checkbox span { 
+                font-size: 12px; 
+            }
+            .apply-btn {
+                width: 100%;
+                justify-content: center;
+                font-size: 13px;
+                padding: 12px;
+            }
+            
+            .student-header {
+                padding: 16px 12px;
+            }
+            .student-header .student-avatar-lg {
+                width: 56px;
+                height: 56px;
+                font-size: 22px;
+            }
+            .student-header .student-details h3 {
+                font-size: 17px;
+            }
+            .student-header .student-details p {
+                font-size: 12px;
+            }
+            .student-header .student-meta {
+                font-size: 11px;
+                gap: 6px 12px;
+            }
+            
+            .results-table-wrapper { 
+                padding: 8px 4px; 
+            }
+            .results-table { 
+                font-size: 10px;
+                min-width: 480px;
+            }
+            .results-table th, 
+            .results-table td { 
+                padding: 5px 3px; 
+            }
+            .results-table th { 
+                font-size: 8px; 
+            }
+            .results-table td { 
+                font-size: 10px; 
+            }
+            .subject-name { 
+                min-width: 60px;
+                font-size: 10px;
+            }
+            .progress-bar-container {
+                width: 30px;
+                height: 4px;
+            }
+            .grade-badge {
+                font-size: 8px;
+                padding: 2px 5px;
+                min-width: 20px;
+            }
+            
+            .overall-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+                padding: 10px 8px;
+            }
+            .stat-card { 
+                padding: 8px 4px; 
+                border-radius: 10px;
+            }
+            .stat-card .label { 
+                font-size: 8px; 
+            }
+            .stat-card .value { 
+                font-size: 16px; 
+            }
+            .stat-card .sub { 
+                font-size: 8px; 
+            }
+            .stat-card .grade-badge {
+                font-size: 13px;
+                padding: 3px 10px;
+            }
+            
+            .students-panel { 
+                min-width: 100%; 
+            }
+            .results-panel { 
+                min-width: 100%; 
+            }
+            
+            .student-card {
+                padding: 10px 14px;
+            }
+            .student-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+            }
+            .student-info h4 {
+                font-size: 13px;
+            }
+            .student-info p {
+                font-size: 10px;
+            }
+            
+            .btn-group-mobile {
+                padding: 0 12px 12px;
+                gap: 6px;
+            }
+            .btn-group-mobile .print-btn,
+            .btn-group-mobile .bulk-btn {
+                font-size: 12px;
+                padding: 8px 14px;
+            }
+            
+            .bulk-status {
+                font-size: 12px;
+                padding: 10px;
+            }
+            .bulk-status .bulk-line {
+                font-size: 12px;
+            }
+        }
+        
+        /* ============================================================
+        PRINT STYLES
+        ============================================================ */
         @media print {
-            .filter-bar, .students-panel, .print-btn, .sidebar, .header { display: none; }
-            .results-panel { margin: 0; padding: 0; width: 100%; }
-            .results-container { padding: 0; }
-            body { background: white; }
-            .results-card { box-shadow: none; }
+            .filter-bar, .students-panel, .print-btn, .sidebar, .header, 
+            .bulk-btn, .bulk-status, .btn-group-mobile {
+                display: none !important;
+            }
+            .results-panel { 
+                margin: 0; 
+                padding: 0; 
+                width: 100%; 
+                min-width: 100%;
+            }
+            .results-container { 
+                padding: 0; 
+            }
+            body { 
+                background: white; 
+            }
+            .results-card { 
+                box-shadow: none; 
+                border: 1px solid #ddd;
+            }
+            .student-header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .grade-badge {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .progress-bar-fill {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .overall-stats {
+                break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -752,7 +1344,8 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
                             <?php else: ?>
                                 <div class="empty-state">
                                     <i class="fa fa-user-slash"></i>
-                                    No students found
+                                    <h3>No Students Found</h3>
+                                    <p>Please select a class to see students.</p>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -774,20 +1367,25 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
                             
                             <div class="results-card">
                                 <!-- Student Header -->
-                                <div class="student-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-                                    <div style="display: flex; align-items: center; gap: 15px;">
-                                        <?php 
-                                        $studentPhoto = getStudentPhoto($selectedStudent['picture'] ?? '');
-                                        if (!empty($studentPhoto)): ?>
-                                            <img src="<?= $studentPhoto ?>" style="width: 70px; height: 70px; border-radius: 35px; object-fit: cover; border: 3px solid white;">
-                                        <?php else: ?>
-                                            <div style="width: 70px; height: 70px; border-radius: 35px; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 30px;">
+                                <div class="student-header">
+                                    <div class="student-info-wrap">
+                                        <div class="student-avatar-lg">
+                                            <?php 
+                                            $studentPhoto = getStudentPhoto($selectedStudent['picture'] ?? '');
+                                            if (!empty($studentPhoto)): ?>
+                                                <img src="<?= $studentPhoto ?>" alt="<?= htmlspecialchars($selectedStudent['first_name'] ?? '') ?>">
+                                            <?php else: ?>
                                                 <?= strtoupper(substr($selectedStudent['first_name'] ?? '?', 0, 1)) ?>
-                                            </div>
-                                        <?php endif; ?>
-                                        <div>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div class="student-details">
                                             <h3><?= htmlspecialchars(($selectedStudent['first_name'] ?? '') . ' ' . ($selectedStudent['last_name'] ?? '')) ?></h3>
                                             <p><i class="fa fa-id-card"></i> <?= htmlspecialchars($selectedStudent['student_id'] ?? '') ?></p>
+                                            <div class="student-meta">
+                                                <span><i class="fa fa-building"></i> <?= htmlspecialchars($selectedStudent['class_name'] ?? 'N/A') ?></span>
+                                                <span><i class="fa fa-calendar"></i> <?= htmlspecialchars($selectedStudent['session'] ?? '') ?></span>
+                                                <span><i class="fa fa-tag"></i> <?= htmlspecialchars($selectedStudent['term_id'] ?? '') ?></span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -841,23 +1439,23 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
                                 <!-- Overall Stats -->
                                 <div class="overall-stats">
                                     <div class="stat-card">
-                                        <div class="label">Subjects Taken</div>
+                                        <div class="label">Subjects</div>
                                         <div class="value"><?= $subjectCount ?></div>
                                     </div>
                                     <div class="stat-card">
                                         <div class="label">Total Score</div>
                                         <div class="value"><?= $overallTotal ?></div>
-                                        <div class="sub">out of <?= $overallMaxTotal ?></div>
+                                        <div class="sub">of <?= $overallMaxTotal ?></div>
                                     </div>
                                     <div class="stat-card">
-                                        <div class="label">Overall Percentage</div>
+                                        <div class="label">Percentage</div>
                                         <div class="value"><?= $overallPercentage ?>%</div>
-                                        <div class="progress-bar-container" style="margin-top: 8px;">
+                                        <div class="progress-bar-container">
                                             <div class="progress-bar-fill" style="width: <?= $overallPercentage ?>%; background: <?= getGradeColor($overallPercentage, $gradeScale) ?>;"></div>
                                         </div>
                                     </div>
                                     <div class="stat-card">
-                                        <div class="label">Overall Grade</div>
+                                        <div class="label">Grade</div>
                                         <div class="value">
                                             <span class="grade-badge" style="background: <?= getGradeColor($overallPercentage, $gradeScale) ?>20; color: <?= getGradeColor($overallPercentage, $gradeScale) ?>; font-size: 20px;">
                                                 <?= $overallGrade ?: '--' ?>
@@ -866,8 +1464,11 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
                                     </div>
                                 </div>
                                 
-                                <!-- Print Button -->
-                                <div style="text-align: right; padding: 0 20px 20px 0;">
+                                <!-- Action Buttons -->
+                                <div class="btn-group-mobile">
+                                    <!-- <button type="button" class="bulk-btn" id="bulkPdfBtn" onclick="startBulkDownload()" style="background: #6c757d;">
+                                        <i class="fa fa-files-o"></i> Bulk Download
+                                    </button> -->
                                     <button class="print-btn" id="printPdfBtn" onclick="openPDF()">
                                         <i class="fa fa-file-pdf-o"></i> Print Report Sheet
                                     </button>
@@ -878,8 +1479,9 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
                             <div class="results-card">
                                 <div class="empty-state">
                                     <i class="fa fa-file-text-o"></i>
-                                    No results found for this student.
-                                    <br><small>Please ensure scores have been entered for the selected session, term, class, and assessments.</small>
+                                    <h3>No Results Found</h3>
+                                    <p>No scores have been entered for this student.</p>
+                                    <small>Please ensure scores have been entered for the selected session, term, class, and assessments.</small>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -909,7 +1511,7 @@ function updateAndSubmit() {
 
 function openPDF() {
     var btn = document.getElementById('printPdfBtn');
-    btn.innerHTML = '<span class="spinner"></span> Generating PDF...';
+    btn.innerHTML = '<span class="spinner"></span> Generating...';
     btn.disabled = true;
     
     var sessionId = '<?= $selectedSession ?>';

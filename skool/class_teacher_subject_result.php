@@ -3,20 +3,35 @@
 // CLASS TEACHER SUBJECT RESULT
 // ============================================================================
 // Handles subject result management for class teachers
+// Version: 4.0 (Fully Mobile Responsive)
 // ============================================================================
 
 include('../config.php');
 include('inc.session-create.php');
 
 // ============================================================================
-// SESSION VARIABLES INITIALIZATION
+// FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
 // ============================================================================
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $create_by_userid = (int)$userData['create_by_userid'];
+    }
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+$create_by_usertype = (string)($_SESSION['usertype'] ?? '');
 $sessionUserId = (int)($_SESSION['userid'] ?? 0);
 $sessionUsername = (string)($_SESSION['username'] ?? '');
 $sessionEmail = (string)($_SESSION['email'] ?? '');
-$isSchoolOwnerSession = ($sessionUserId > 0 && $sessionUserId === (int)($_SESSION['create_by_userid'] ?? $sessionUserId));
-$create_by_userid = (int)($_SESSION['create_by_userid'] ?? $_SESSION['userid'] ?? 0);
-$create_by_usertype = (string)($_SESSION['usertype'] ?? '');
+$isSchoolOwnerSession = ($sessionUserId > 0 && $sessionUserId === $create_by_userid);
 
 $PageTitle = "Class Teacher Subject Result";
 $FileName = 'class_teacher_subject_result.php';
@@ -58,22 +73,12 @@ if (!empty($_SESSION['success'])) {
 }
 
 // ============================================================================
-// PROCESS PDF BUTTON
-// ============================================================================
-if (isset($_POST['pdf'])) {
-    if (empty($_POST['subject'])) {
-        $stat['error'] = "Select a subject and open";
-    }
-}
-
-// ============================================================================
 // GET TEACHER'S ASSIGNED CLASSES
 // ============================================================================
 $classList = [];
 $assignedClassIds = [];
 
 if ($_SESSION['usertype'] == '1') {
-    // Get staff ID from staff_manage
     $staffDetails = db_get_row(
         "SELECT id FROM staff_manage WHERE staff_id = ? OR id = ?",
         [$sessionUsername, $sessionUserId]
@@ -81,8 +86,6 @@ if ($_SESSION['usertype'] == '1') {
 
     if (!empty($staffDetails)) {
         $staffId = (int)$staffDetails['id'];
-
-        // Get assigned class IDs from class_teacher table
         $assignedClasses = db_get_rows(
             "SELECT school_class FROM class_teacher WHERE staff_id = ? AND create_by_userid = ?",
             [$staffId, $create_by_userid]
@@ -111,7 +114,7 @@ if ($_SESSION['usertype'] == '1') {
 // GET SESSIONS, TERMS, AND SUBJECTS FOR FORMS
 // ============================================================================
 $sessionList = db_get_rows(
-    "SELECT * FROM school_session WHERE create_by_userid = ? ORDER BY id ASC",
+    "SELECT * FROM school_session WHERE create_by_userid = ? ORDER BY id DESC",
     [$create_by_userid]
 );
 
@@ -133,7 +136,7 @@ if (!empty($aryList) && isset($aryList['id'])) {
 $assessmentList = [];
 if (!empty($aryList) && isset($aryList['id'])) {
     $assessmentList = db_get_rows(
-        "SELECT * FROM school_assessment WHERE create_by_userid = ? AND class_id = ? ORDER BY id DESC",
+        "SELECT * FROM school_assessment WHERE create_by_userid = ? AND (class_id = ? OR class_id IS NULL OR class_id = 0) ORDER BY id ASC",
         [$create_by_userid, (int)$aryList['id']]
     );
 }
@@ -155,7 +158,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'input_score' && !empty($aryLis
     $postAssessments = isset($_POST['assesment']) ? array_map('intval', $_POST['assesment']) : [];
 
     if ($postSession > 0 && $postTerm > 0 && $postSubject > 0 && !empty($postAssessments)) {
-        // Get students for the class
         $students = db_get_rows(
             "SELECT * FROM manage_student 
              WHERE class = ? AND session = ? AND term_id = ? AND create_by_userid = ? 
@@ -163,7 +165,6 @@ if (isset($_GET['action']) && $_GET['action'] == 'input_score' && !empty($aryLis
             [(int)$aryList['id'], $postSession, $postTerm, $create_by_userid]
         );
 
-        // Get scores for each student
         foreach ($students as $student) {
             $studentId = (int)$student['id'];
             $totalScore = 0;
@@ -229,872 +230,1231 @@ $rankedScores = [];
 if (!empty($studentScores)) {
     $rankedScores = setPosition($studentScores);
 }
+
+// Get selected values for form
+$selectedSession = isset($_POST['session']) ? (int)$_POST['session'] : 0;
+$selectedTerm = isset($_POST['term_id']) ? (int)$_POST['term_id'] : 0;
+$selectedSubject = isset($_POST['subject']) ? (int)$_POST['subject'] : 0;
+$selectedAssessments = isset($_POST['assesment']) ? array_map('intval', $_POST['assesment']) : [];
+
+// Get class name for display
+$className = $aryList['name'] ?? 'Select a Class';
 ?>
 <!DOCTYPE html>
 <html>
 
 <head>
     <?php include('inc.meta.php'); ?>
-    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Droid+Serif" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <style>
-        body,
-        label,
-        span,
-        a,
-        .gwt-Button {
-            font-family: 'Droid Serif' !important;
-        }
-
-        .ddshgcfh {
-            position: absolute;
-            right: 170px;
-            top: 77px;
-            font-size: 50px;
-        }
-
-        .sectionza input[type=checkbox],
-        input[type=radio] {
-            margin: 4px 5px 0;
-        }
-
-        .sectionza input[type=submit] {
-            background: #1B3058;
-            color: white;
-            border: none;
-            padding: 3px 19px;
-            cursor: pointer;
-        }
-
-        .printer_pdf {
-            background: #1B3058;
-            color: white;
-            border: none;
-            padding: 3px 19px;
-            text-decoration: none;
-            display: inline-block;
-            cursor: pointer;
-        }
-
-        .printer_pdf:hover {
-            color: white;
-            text-decoration: none;
-        }
-
-        .sectionza label {
-            font-size: 17px;
-            font-weight: 600;
-        }
-
-        .sectionza select {
-            color: inherit;
-            font: inherit;
+        /* ============================================================
+        RESET & BASE - MOBILE FIRST
+        ============================================================ */
+        * {
             margin: 0;
-            width: 100px;
-            margin-left: 10px;
-            margin-top: 5px;
-            height: 30px;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .page-title {
-            font-size: 20px;
-            margin-bottom: 0;
-            margin-top: 7px;
-            text-align: center;
-            background: white;
-            padding: 23px 0 30px 0px;
-            border-bottom: 5px solid gainsboro;
+        body {
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
-        .zasw {
-            border: 1px solid gainsboro;
-            height: auto;
-            margin-top: 18px;
+        .result-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
         }
 
-        .zasw1 {
-            height: auto;
-            margin-top: 18px;
+        /* ============================================================
+        PAGE HEADER - MOBILE FIRST
+        ============================================================ */
+        .page-header {
+            margin-bottom: 20px;
         }
 
-        .sectionza {
-            background: white;
-            height: 1000px;
-        }
-
-        .top-serche input {
-            padding: 5px 49px 5px 14px;
-            border: 2px solid gainsboro;
-            border-radius: 4px;
-            position: relative;
-        }
-
-        .top-serche {
-            padding: 32px 0 9px 30px;
-        }
-
-        .content-page>.content {
-            margin-bottom: 60px;
-            margin-top: 60px;
-            padding: 20px 30px 15px 78px;
-            background: white;
-        }
-
-        .zswqas ul {
-            list-style: none;
-        }
-
-        .zswqas li a span i {
-            font-size: 29px;
-            padding-top: 9px;
-        }
-
-        .zswqas li a span {
-            padding-right: 16px;
-        }
-
-        .zswqas li a {
-            width: 239px;
-            display: block;
-            padding: 16px 14px 14px 18px;
-            border-bottom: 2px solid gainsboro;
-        }
-
-        .topside-section ul {
-            display: inline-flex;
-            list-style: none;
-        }
-
-        .topside-section li {
-            padding: 0 11px 0 0;
-        }
-
-        .topside-section {
-            padding-top: 8px;
-            border: 1px solid gainsboro;
-            box-shadow: 1px 6px 4px gainsboro;
-            padding: 14px 8px 11px 1px;
-        }
-
-        .zqw22 .panel-success>.panel-heading {
-            background: white;
-        }
-
-        .zqw22 .nav.nav-tabs>li>a:hover,
-        .nav.tabs-vertical>li>a:hover {
-            color: black !important;
+        .page-header h2 {
+            color: #1B3058;
+            margin: 0;
+            font-size: 22px;
             font-weight: 700;
         }
 
-        .zqw22 .nav.nav-tabs>li>a,
-        .nav.tabs-vertical>li>a {
-            border-top-right-radius: 10px;
-            border-top-left-radius: 10px;
-            font-size: 10px;
-            height: 38px;
-            margin-top: 0;
+        .page-header h2 i {
+            margin-right: 8px;
         }
 
-        div.dataTables_filter label {
+        .page-header p {
+            color: #666;
+            margin-top: 4px;
+            font-size: 14px;
+        }
+
+        /* ============================================================
+        LAYOUT - MOBILE FIRST
+        ============================================================ */
+        .layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* ============================================================
+        CLASS LIST PANEL - MOBILE FIRST
+        ============================================================ */
+        .class-panel {
+            width: 100%;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #1B3058, #2a4780);
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header i {
+            font-size: 18px;
+        }
+
+        .panel-header .count-badge {
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 12px;
+            border-radius: 12px;
+            font-size: 12px;
             font-weight: 400;
-            white-space: nowrap;
-            text-align: left;
-            border: 1px solid gainsboro;
-            padding: 4px 13px 4px 0px;
-            border-radius: 5px;
-            color: black;
         }
 
-        #example .active {
+        .class-list {
+            max-height: 300px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .class-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 18px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .class-item:active {
+            background: #e8eef5;
+        }
+
+        .class-item:hover {
+            background: #f8f9ff;
+        }
+
+        .class-item.active {
+            background: #e8eef5;
+            border-left: 4px solid #1B3058;
+        }
+
+        .class-item .class-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #e8eef5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1B3058;
+            flex-shrink: 0;
+            font-size: 18px;
+        }
+
+        .class-item.active .class-icon {
             background: #1B3058;
             color: white;
         }
 
-        .zqw22 .nav-tabs>li.active>a,
-        .nav-tabs>li.active>a:focus,
-        .nav-tabs>li.active>a:hover,
-        .tabs-vertical>li.active>a,
-        .tabs-vertical>li.active>a:focus,
-        .tabs-vertical>li.active>a:hover {
-            color: black !important;
+        .class-item .class-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .class-item .class-arrow {
+            margin-left: auto;
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        /* ============================================================
+        FILTER CARD - MOBILE FIRST
+        ============================================================ */
+        .filter-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .filter-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 11px;
             font-weight: 700;
-            line-height: 38px;
-            background: gainsboro;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
         }
 
-        .zqw22 .panel-success>.panel-heading {
-            background: white;
-            padding: 0;
+        .filter-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            background: #fff;
+            transition: all 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
         }
 
-        .zqw22 .panel .panel-body {
-            border-right: none !important;
-            border: 1px solid gainsboro;
+        .filter-select:focus {
+            border-color: #1B3058;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(27, 48, 88, 0.1);
         }
 
-        .gwt-Label {
-            padding: 8px;
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
         }
 
-        .zqw22 input {
-            padding: 8px 3px 10px 0;
-            border: 1px solid gainsboro;
-            background: #dcdcdc45;
-            border-radius: 5px;
-            margin-right: 8px;
-            margin-bottom: 5px;
+        .filter-actions .btn {
+            flex: 1;
+            justify-content: center;
         }
 
-        .zqw22 button {
-            border: 1px solid #1B3058;
-            padding: 4px 3px 4px 3px;
-            margin-right: 7px;
+        /* ============================================================
+        ASSESSMENT CHECKBOXES - MOBILE FIRST
+        ============================================================ */
+        .assessment-group {
+            margin-top: 8px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .assessment-group .assessment-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .assessment-group .checkbox-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .assessment-group .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            padding: 4px 10px;
+            background: #f8f9fa;
+            border-radius: 20px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s;
+        }
+
+        .assessment-group .checkbox-item:active {
+            transform: scale(0.97);
+        }
+
+        .assessment-group .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #1B3058;
+        }
+
+        .assessment-group .checkbox-item .ass-percent {
+            font-size: 10px;
+            color: #999;
+        }
+
+        /* ============================================================
+        BUTTONS - MOBILE FIRST
+        ============================================================ */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            min-height: 44px;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: #1B3058;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #f21151;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+        .btn-outline {
             background: transparent;
+            color: #1B3058;
+            border: 2px solid #1B3058;
+        }
+
+        .btn-outline:hover {
+            background: #1B3058;
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+            min-height: 32px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn-group .btn {
+            width: 100%;
+        }
+
+        /* ============================================================
+        RESULT CARD - MOBILE FIRST
+        ============================================================ */
+        .result-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-top: 16px;
+        }
+
+        .result-card .card-header {
+            padding: 14px 18px;
+            background: linear-gradient(135deg, #1B3058, #2a4780);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .result-card .card-header .title {
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-card .card-header .subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        .result-card .card-body {
+            padding: 12px 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* ============================================================
+        RESULT TABLE - MOBILE FIRST
+        ============================================================ */
+        .result-table {
+            width: 100%;
+            min-width: 600px;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .result-table th,
+        .result-table td {
+            padding: 8px 6px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .result-table th {
+            background: #f8f9fa;
+            font-weight: 700;
+            color: #1B3058;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .result-table th small {
+            font-weight: 400;
+            opacity: 0.7;
+            font-size: 9px;
+        }
+
+        .result-table td {
+            font-size: 12px;
+        }
+
+        .result-table .student-name-cell {
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .result-table .student-id-cell {
+            color: #999;
+            font-size: 11px;
+        }
+
+        .result-table .total-cell {
+            font-weight: 700;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .result-table .grade-cell {
+            font-weight: 700;
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+
+        .result-table .position-cell {
+            font-weight: 700;
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .result-table .rank-1 {
+            background: #fff8e1;
+        }
+
+        .result-table .rank-2 {
+            background: #f5f5f5;
+        }
+
+        .result-table .rank-3 {
+            background: #fafafa;
+        }
+
+        .result-table .position-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            background: #1B3058;
+            color: white;
+        }
+
+        .result-table .position-badge.gold {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .result-table .position-badge.silver {
+            background: #bdbdbd;
+            color: #333;
+        }
+
+        .result-table .position-badge.bronze {
+            background: #cd7f32;
+            color: white;
+        }
+
+        /* ============================================================
+        SUMMARY STATS - MOBILE FIRST
+        ============================================================ */
+        .summary-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            padding: 12px 8px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 8px 4px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .summary-stat .number {
+            font-size: 18px;
+            font-weight: 700;
             color: #1B3058;
         }
 
-        .zqw22 select {
-            padding: 5px 0 8px 0;
-            background: #dcdcdc2e;
+        .summary-stat .label {
+            font-size: 9px;
+            color: #888;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 2px;
         }
 
-        .zqw22 .nav-tabs>li {
-            padding: 0 4px 0 0;
+        /* ============================================================
+        ALERTS - MOBILE FIRST
+        ============================================================ */
+        .alert {
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
         }
 
-        #tab3success,
-        #tab4success .middleCenterInner {
-            border: 1px solid gainsboro;
-            padding: 17px 11px 51px 19px;
+        .alert i {
+            font-size: 18px;
+            margin-top: 2px;
+            flex-shrink: 0;
         }
 
-        #tab3success .middleCenterInner {
-            border: 1px solid gainsboro;
-            padding: 17px 11px 51px 19px;
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
         }
 
-        #tab3success,
-        #tab4success .BFOGCKB-c-h {
-            border-bottom: 3px solid;
-            width: 300px;
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
         }
 
-        #tab3success .BFOGCKB-c-h {
-            border-bottom: 3px solid;
-            width: 300px;
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
         }
 
-        #tab3success,
-        #tab4success {
-            border: 1px solid gainsboro;
-            padding: 14px 4px 42px 11px;
-            width: 361px;
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
         }
 
-        #tab3success,
-        #tab4success .gwt-DecoratorPanel {
-            padding: 21px 21px 43px 4px;
-        }
-
-        #tab3success .gwt-DecoratorPanel {
-            padding: 21px 21px 43px 4px;
-        }
-
-        .zqw22 .panel .panel-body {
-            border-bottom: 3px solid gainsboro !important;
-        }
-
-        .zqw22 .nav.nav-tabs>li>a,
-        .nav.tabs-vertical>li>a {
-            background: #dcdcdc4f !important;
-            color: black !important;
-            font-weight: 700;
-            line-height: 38px;
-            background: gainsboro;
-        }
-
-        .xza {
-            margin: 0;
-            width: 294px;
-            border-bottom: 1px solid;
-        }
-
-        .dataTables_paginate a {
-            background-color: transparent;
-            margin: 0 0px 0;
-            padding: 8px 15px 9px;
-            color: white;
-            cursor: pointer;
-            border: none;
-        }
-
-        .zqw22 .nav-tabs>li.active,
-        .nav-tabs>li.active:focus,
-        .nav-tabs>li.active:hover,
-        .tabs-vertical>li.active,
-        .tabs-vertical>li.active:focus,
-        .tabs-vertical>li.active:hover {
-            color: black !important;
-            font-weight: 700;
-        }
-
-        .zswqas .activate a {
-            width: 239px;
-            display: block;
-            padding: 16px 14px 14px 18px;
-            border-bottom: 2px solid gainsboro;
-            background: #1B3058;
-            color: white;
-        }
-
-        .zqw22 .nav-tabs>li.active>a,
-        .nav-tabs>li.active>a:focus,
-        .nav-tabs>li.active>a:hover,
-        .tabs-vertical>li.active>a,
-        .tabs-vertical>li.active>a:focus,
-        .tabs-vertical>li.active>a:hover {
-            border-bottom: 3px solid #1B3058;
-        }
-
-        .topside-section li a {
-            border: 1px solid #1B3058;
-            padding: 5px 5px 4px 5px;
-            display: block;
-        }
-
-        .zswqas li a:hover {
-            width: 239px;
-            display: block;
-            padding: 16px 14px 14px 18px;
-            border-bottom: 2px solid gainsboro;
-            background: #1B3058;
-            color: white;
-        }
-
-        .zswqas .active {
-            width: 239px;
-            display: block;
-            padding: 16px 14px 14px 18px;
-            border-bottom: 2px solid gainsboro;
-            background: #1B3058;
-            color: white;
-        }
-
-        .Wizard-a1 #example_length {
-            display: none;
-        }
-
-        div.dataTables_filter label {
-            font-weight: 400;
-            white-space: nowrap;
-            text-align: left;
-        }
-
-        div.dataTables_filter input {
-            margin-left: .5em;
-            display: inline-block;
-            float: right;
-            border: none;
-        }
-
-        div.dataTables_filter label {
-            padding: 10px;
-        }
-
-        div.dataTables_filter input {
-            margin-left: .5em;
-            display: inline-block;
-            float: right;
-        }
-
-        div.dataTables_filter {
+        /* ============================================================
+        EMPTY STATE
+        ============================================================ */
+        .empty-state {
             text-align: center;
+            padding: 40px 20px;
+            color: #999;
         }
 
-        .Wizard-a1 .zwq img {
-            width: 50px;
-        }
-
-        .Wizard-a1 .zwq {
-            padding-right: 8px;
-            float: left;
-        }
-
-        .Wizard-a1 .setting {
-            display: none;
-        }
-
-        .Wizard-a1 .dataTables_info {
-            margin: 0 auto !important;
-            text-align: center;
-            font-size: 12px;
-            float: initial;
-            position: absolute;
-            bottom: 11px;
-            left: 0;
-            right: 0;
-        }
-
-        #example {
-            width: 85% !important;
-            margin: 0 auto;
-        }
-
-        div.dataTables_filter input {
-            width: 70%;
-        }
-
-        div.dataTables_filter label {
-            line-height: 23px;
-        }
-
-        .dataTables_paginate #example_previous:before {
-            content: "";
-            width: 0;
-            height: 0;
-            border-top: 6px solid transparent;
-            border-right: 12px solid #555;
-            border-bottom: 6px solid transparent;
-            position: absolute;
-            z-index: 999999;
-            left: 15px;
-            bottom: 3px;
-        }
-
-        .Wizard-a1 .dataTables_info {
-            position: sticky !important;
-        }
-
-        div.dataTables_paginate {
-            position: relative;
-            top: -47px;
-        }
-
-        .dataTables_paginate a {
-            background-color: transparent;
-            margin: 0 0px 0;
-            padding: 8px 15px 9px;
-            color: white;
-            cursor: pointer;
-            border: none;
-            position: static;
-        }
-
-        .dataTables_paginate .next {
-            background: none;
-            border: navajowhite;
-            position: relative;
-            color: white !important;
-            position: relative;
-        }
-
-        div.dataTables_paginate {
-            margin: 0;
-            white-space: nowrap;
-            text-align: center !important;
-            padding-top: 27px;
-        }
-
-        .dataTables_paginate .disabled {
-            background: none;
-            color: white;
-            border: none !important;
-            padding: unset;
+        .empty-state i {
+            font-size: 48px;
+            color: #ddd;
             display: block;
-            width: 90%;
-            color: transparent !important;
-            margin: 0 auto;
+            margin-bottom: 12px;
         }
 
-        div.dataTables_info {
-            white-space: nowrap;
-            padding-top: 0px;
+        .empty-state h4 {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 4px;
         }
 
-        .dataTables_paginate #example_next:before {
-            content: "";
-            width: 0;
-            height: 0;
-            border-top: 6px solid transparent;
-            border-left: 12px solid #555;
-            border-bottom: 6px solid transparent;
-            position: absolute;
-            z-index: 999999;
-            right: 0;
-            bottom: 9px;
-            top: 4px;
+        .empty-state p {
+            font-size: 13px;
         }
 
-        div.dataTables_paginate {
-            margin: 0;
-            white-space: nowrap;
-            text-align: center !important;
+        /* ============================================================
+        RESPONSIVE - TABLET (768px+)
+        ============================================================ */
+        @media (min-width: 768px) {
+            .result-container {
+                padding: 25px;
+            }
+
+            .layout {
+                flex-direction: row;
+                gap: 25px;
+            }
+
+            .class-panel {
+                width: 280px;
+                flex-shrink: 0;
+            }
+
+            .class-list {
+                max-height: 70vh;
+            }
+
+            .main-panel {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .filter-grid {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .filter-group {
+                flex: 1;
+                min-width: 150px;
+            }
+
+            .result-table {
+                font-size: 13px;
+                min-width: auto;
+            }
+
+            .result-table th,
+            .result-table td {
+                padding: 10px 12px;
+            }
+
+            .result-table th {
+                font-size: 11px;
+            }
+
+            .result-card .card-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 24px;
+            }
+
+            .result-card .card-body {
+                padding: 16px 20px;
+            }
+
+            .btn-group {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .btn-group .btn {
+                width: auto;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                padding: 16px 20px;
+            }
+
+            .summary-stat .number {
+                font-size: 22px;
+            }
+
+            .page-header h2 {
+                font-size: 28px;
+            }
         }
 
-        .paging_simple_numbers span {
-            opacity: 0;
+        /* ============================================================
+        RESPONSIVE - DESKTOP (1024px+)
+        ============================================================ */
+        @media (min-width: 1024px) {
+            .result-container {
+                padding: 30px;
+            }
+
+            .class-panel {
+                width: 320px;
+            }
+
+            .result-table th,
+            .result-table td {
+                padding: 12px 16px;
+            }
         }
 
-        #example td {
-            padding: 15px 11px 18px 13px;
-            border-bottom: 3px solid;
-            margin: 0 0 0;
+        /* ============================================================
+        RESPONSIVE - SMALL MOBILE (480px-)
+        ============================================================ */
+        @media (max-width: 480px) {
+            .result-container {
+                padding: 10px;
+            }
+
+            .page-header h2 {
+                font-size: 18px;
+            }
+
+            .page-header p {
+                font-size: 12px;
+            }
+
+            .filter-card {
+                padding: 12px;
+            }
+
+            .filter-select {
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+
+            .result-table {
+                font-size: 10px;
+                min-width: 480px;
+            }
+
+            .result-table th,
+            .result-table td {
+                padding: 5px 3px;
+            }
+
+            .result-table th {
+                font-size: 8px;
+            }
+
+            .result-table td {
+                font-size: 10px;
+            }
+
+            .result-table .student-name-cell {
+                font-size: 11px;
+            }
+
+            .result-card .card-header .title {
+                font-size: 13px;
+            }
+
+            .result-card .card-header .subtitle {
+                font-size: 10px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 8px 14px;
+                min-height: 38px;
+            }
+
+            .assessment-group .checkbox-item {
+                font-size: 11px;
+                padding: 3px 8px;
+            }
+
+            .summary-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+                padding: 10px 6px;
+            }
+
+            .summary-stat .number {
+                font-size: 15px;
+            }
+
+            .summary-stat .label {
+                font-size: 8px;
+            }
         }
 
-        #example .active:hover {
-            background: #1B3058;
-            color: white;
-        }
+        /* ============================================================
+        PRINT STYLES
+        ============================================================ */
+        @media print {
 
-        .Wizard-a1 .sorting_1 {
-            display: none;
-        }
+            .class-panel,
+            .filter-card,
+            .btn-group,
+            .btn,
+            .no-print {
+                display: none !important;
+            }
 
-        .dataTables_filter label:before {
-            position: absolute;
-            right: 46px;
-            top: 62px !important;
-            border: 1px solid #1B3058;
-        }
+            .result-card {
+                box-shadow: none !important;
+                border: 1px solid #ddd;
+            }
 
-        .dataTables_filter:before {
-            content: '';
-            position: absolute;
-        }
+            .result-card .card-header {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
 
-        div.dataTables_filter label {
-            position: relative;
-            width: 85%;
-            text-align: left;
-        }
+            body {
+                background: white;
+            }
 
-        div.dataTables_filter {
-            margin-top: 20px;
-        }
+            .result-container {
+                padding: 0;
+            }
 
-        .sectsab li {
-            list-style: none;
-        }
+            .result-table th {
+                background: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
 
-        div.dataTables_paginate {
-            margin: 0 auto;
-        }
+            .result-table .total-cell,
+            .result-table .grade-cell,
+            .result-table .position-cell {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
 
-        .table-img {
-            width: 50px;
-        }
+            .result-table .position-badge {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
 
-        .form-inline select,
-        .form-inline input {
-            margin: 5px 5px;
-        }
-
-        .btn-group-print {
-            margin-top: 10px;
-        }
-
-        .btn-group-print a,
-        .btn-group-print button {
-            margin-right: 5px;
+            .summary-stats {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
 
-<body class="fixed-left">
+<body>
     <div id="wrapper">
         <?php include('inc.header.php'); ?>
         <?php include('inc.sideleft.php'); ?>
         <div class="content-page">
             <div class="content">
-                <div class="container">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <h4 class="page-title"><?php echo e($PageTitle); ?></h4>
-                            <?php echo showMessage($stat); ?>
-                        </div>
+                <div class="result-container">
+
+                    <!-- Page Header -->
+                    <div class="page-header">
+                        <h2><i class="fa fa-bar-chart"></i> <?= htmlspecialchars($PageTitle) ?></h2>
+                        <p>Select a class, session, term, subject, and assessments to view results</p>
                     </div>
-                    <div class="row">
-                        <div class="sectionza">
-                            <div class="col-md-12 col-xm-12">
-                                <div class="col-md-4 col-xm-12">
-                                    <div class="zasw">
-                                        <div class="zawq Wizard-a1">
-                                            <table id="example" class="display">
-                                                <thead class="setting">
-                                                    <tr>
-                                                        <th>Position</th>
-                                                        <th>Position</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?php foreach ($classList as $iList): ?>
-                                                        <tr>
-                                                            <td style="padding:0px;"></td>
-                                                            <td class="sectsab <?php if (isset($_GET['randomid']) && $_GET['randomid'] == $iList['randomid']) {
-                                                                                    echo "active";
-                                                                                } ?>">
-                                                                <a href="<?php echo $FileName; ?>?action=input_score&randomid=<?php echo e($iList['randomid']); ?>">
-                                                                    <ul>
-                                                                        <li>
-                                                                            <span class="zwq">
-                                                                                <img class="table-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTbRnETjp3LR55_QTrkge0ZW1VZwhnBGrZuDDM4DSh6dQSMFG21" alt="Class Icon">
-                                                                            </span>
-                                                                            <?php echo e($iList['name']); ?>
-                                                                        </li>
-                                                                    </ul>
-                                                                </a>
-                                                            </td>
-                                                        </tr>
-                                                    <?php endforeach; ?>
-                                                </tbody>
-                                                <tfoot>
-                                                    <tr class="setting">
-                                                        <th>Name</th>
-                                                        <th>Position</th>
-                                                    </tr>
-                                                </tfoot>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <!-- Filter Form -->
-                                <form method="post" action="" class="form-inline">
-                                    <select name="session" id="session" required>
-                                        <option value="">Session</option>
-                                        <?php foreach ($sessionList as $sList): ?>
-                                            <option value="<?php echo (int)$sList['id']; ?>" <?php if (isset($_POST['session']) && $_POST['session'] == $sList['id']) {
-                                                                                                    echo "selected";
-                                                                                                } ?>>
-                                                <?php echo e($sList['session']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                    <?= showMessage($stat) ?>
 
-                                    <select name="term_id" id="term_id" required>
-                                        <option value="">Term</option>
-                                        <?php foreach ($termList as $tList): ?>
-                                            <option value="<?php echo (int)$tList['id']; ?>" <?php if (isset($_POST['term_id']) && $_POST['term_id'] == $tList['id']) {
-                                                                                                    echo "selected";
-                                                                                                } ?>>
-                                                <?php echo e($tList['term']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                    <div class="layout">
 
-                                    <select name="subject">
-                                        <option value="">Subject</option>
-                                        <?php foreach ($subjectList as $subList): ?>
-                                            <option value="<?php echo (int)$subList['id']; ?>" <?php if (isset($_POST['subject']) && $_POST['subject'] == $subList['id']) {
-                                                                                                    echo "selected";
-                                                                                                } ?>>
-                                                <?php echo e($subList['subject']); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-
-                                    <input type="hidden" value="<?php echo isset($_POST['randomid']) ? e($_POST['randomid']) : ''; ?>" name="randomid">
-                                    <input type="hidden" value="<?php echo isset($_POST['action']) ? e($_POST['action']) : ''; ?>" name="action">
-                                    <input type="hidden" value="<?php echo isset($iList['randomid']) ? e($iList['randomid']) : ''; ?>" name="new_randomid">
-
-                                    <label>Ass:</label>
-                                    <?php foreach ($assessmentList as $assList): ?>
-                                        <span><?php echo e($assList['assesment'] ?? ''); ?></span>
-                                        <input type="checkbox" name="assesment[]" value="<?php echo (int)$assList['id']; ?>"
-                                            <?php if (isset($_POST['assesment']) && in_array($assList['id'], $_POST['assesment'])) {
-                                                echo "checked";
-                                            } ?>>
-                                    <?php endforeach; ?>
-
-                                    <input type="submit" value="Open" name="" />
-                                </form>
-
-                                <!-- Print Buttons -->
-                                <form action="" method="post" class="btn-group-print">
-                                    <br>
-                                    <?php
-                                    $subjectId = isset($_POST['subject']) ? (int)$_POST['subject'] : 0;
-                                    $sessionId = isset($_POST['session']) ? (int)$_POST['session'] : 0;
-                                    $termId = isset($_POST['term_id']) ? (int)$_POST['term_id'] : 0;
-                                    $assesments = isset($_POST['assesment']) ? implode('-', array_map('intval', $_POST['assesment'])) : '';
-                                    ?>
-
-                                    <?php if ($subjectId == 0): ?>
-                                        <button type="submit" name="pdf" class="printer_pdf">Print Subject Result</button>
-                                    <?php else: ?>
-                                        <a href="<?php echo SKOOL_URL; ?>class_teacher_subject_result_pdf.php?randomid=<?php echo isset($_GET['randomid']) ? e($_GET['randomid']) : ''; ?>&subject=<?php echo $subjectId; ?>&session=<?php echo $sessionId; ?>&term_id=<?php echo $termId; ?>&assesments=<?php echo $assesments; ?>" class="printer_pdf" target="_blank">Print Subject Result</a>
-                                    <?php endif; ?>
-
-                                    <?php if ($subjectId == 0): ?>
-                                        <button type="submit" name="pdf" class="printer_pdf">Print Empty Score Sheet</button>
-                                    <?php else: ?>
-                                        <a href="<?php echo SKOOL_URL; ?>class_teacher_subject_empty_result_pdf.php?randomid=<?php echo isset($_GET['randomid']) ? e($_GET['randomid']) : ''; ?>&subject=<?php echo $subjectId; ?>&session=<?php echo $sessionId; ?>&term_id=<?php echo $termId; ?>&assesments=<?php echo $assesments; ?>" class="printer_pdf" target="_blank">Print Empty Score Sheet</a>
-                                    <?php endif; ?>
-                                </form>
-
-                                <!-- Score Display -->
-                                <?php if (isset($_GET['action']) && $_GET['action'] == 'input_score' && !empty($scoreData)): ?>
-                                    <div class="col-md-8 col-xm-12">
-                                        <div class="zasw1">
-                                            <div class="card-box table-responsive tablthisresponsive">
-                                                <table class="table table-striped table-bordered tablthisresponsive">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Student id</th>
-                                                            <th>First Name</th>
-                                                            <th>Last Name</th>
-                                                            <?php
-                                                            $postAssessments = isset($_POST['assesment']) ? array_map('intval', $_POST['assesment']) : [];
-                                                            foreach ($postAssessments as $assId):
-                                                                $assDetail = db_get_row(
-                                                                    "SELECT assesment, percentage FROM school_assessment WHERE id = ?",
-                                                                    [$assId]
-                                                                );
-                                                            ?>
-                                                                <th><?php echo e($assDetail['assesment'] ?? 'Ass') . ' ' . e($assDetail['percentage'] ?? ''); ?></th>
-                                                            <?php endforeach; ?>
-                                                            <th>Total</th>
-                                                            <th>Grade</th>
-                                                            <th>Position</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <?php
-                                                        $tStudent = 0;
-                                                        $classTotal = 0;
-                                                        $highLow = [];
-                                                        $studentTotals = [];
-
-                                                        foreach ($scoreData as $studentId => $data):
-                                                            $tStudent++;
-                                                            $student = $data['student'];
-                                                            $totalScore = $data['total'];
-                                                            $studentTotals[$studentId] = $totalScore;
-                                                            $classTotal += $totalScore;
-                                                            $highLow[] = $totalScore;
-                                                        ?>
-                                                            <tr>
-                                                                <td><?php echo e($student['student_id'] ?? ''); ?></td>
-                                                                <td><?php echo e($student['first_name'] ?? ''); ?></td>
-                                                                <td><?php echo e($student['last_name'] ?? ''); ?></td>
-
-                                                                <?php foreach ($postAssessments as $assId): ?>
-                                                                    <td><?php echo isset($data['scores'][$assId]) ? number_format($data['scores'][$assId], 2) : '0.00'; ?></td>
-                                                                <?php endforeach; ?>
-
-                                                                <td><?php echo number_format($totalScore, 2); ?></td>
-                                                                <td>
-                                                                    <?php
-                                                                    $grade = db_get_val(
-                                                                        "SELECT grade FROM school_grade 
-                                                             WHERE create_by_userid = ? 
-                                                             AND minimum_number <= ? 
-                                                             AND maximum_number >= ?",
-                                                                        [$create_by_userid, $totalScore, $totalScore]
-                                                                    );
-                                                                    echo e($grade);
-                                                                    ?>
-                                                                </td>
-                                                                <td id="rank_<?php echo $studentId; ?>"></td>
-                                                            </tr>
-                                                        <?php endforeach; ?>
-                                                    </tbody>
-                                                </table>
-
-                                                <?php
-                                                // Calculate and display rankings
-                                                if (!empty($studentTotals)) {
-                                                    $rankedScores = setPosition($studentTotals);
-                                                    foreach ($rankedScores as $studentId => $data) {
-                                                        $rank = $data['rank'];
-                                                        $suffix = 'th';
-                                                        if ($rank == 1) $suffix = 'st';
-                                                        elseif ($rank == 2) $suffix = 'nd';
-                                                        elseif ($rank == 3) $suffix = 'rd';
-                                                        echo "<script>document.getElementById('rank_" . $studentId . "').innerHTML = '" . $rank . $suffix . "';</script>";
-                                                    }
-                                                }
-                                                ?>
-
-                                                <?php if ($tStudent > 0): ?>
-                                                    <table class="table table-striped table-bordered">
-                                                        <tr>
-                                                            <td><span>No. of Students: <?php echo $tStudent; ?></span></td>
-                                                            <td><span>Class Average: <?php echo $tStudent > 0 ? round($classTotal / $tStudent, 2) : '0.00'; ?></span></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td><span>Highest Average in Class: <?php echo !empty($highLow) ? round(max($highLow), 2) : '0.00'; ?></span></td>
-                                                            <td><span>Lowest Average in Class: <?php echo !empty($highLow) ? round(min($highLow), 2) : '0.00'; ?></span></td>
-                                                        </tr>
-                                                    </table>
-                                                <?php endif; ?>
+                        <!-- LEFT: Class List -->
+                        <div class="class-panel">
+                            <div class="panel-header">
+                                <i class="fa fa-graduation-cap"></i> Select Class
+                                <span class="count-badge"><?= count($classList) ?></span>
+                            </div>
+                            <div class="class-list">
+                                <?php if (!empty($classList)): ?>
+                                    <?php foreach ($classList as $iList): ?>
+                                        <a href="<?= $FileName ?>?action=input_score&randomid=<?= e($iList['randomid']) ?>"
+                                            class="class-item <?= (isset($_GET['randomid']) && $_GET['randomid'] == $iList['randomid']) ? 'active' : '' ?>">
+                                            <div class="class-icon">
+                                                <i class="fa fa-book"></i>
                                             </div>
-                                        </div>
+                                            <div class="class-name"><?= e($iList['name']) ?></div>
+                                            <div class="class-arrow"><i class="fa fa-chevron-right"></i></div>
+                                        </a>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <div class="empty-state" style="padding: 30px 20px;">
+                                        <i class="fa fa-book"></i>
+                                        <p>No classes found</p>
                                     </div>
                                 <?php endif; ?>
                             </div>
                         </div>
+
+                        <!-- RIGHT: Main Content -->
+                        <div class="main-panel">
+
+                            <?php if (!empty($aryList)): ?>
+
+                                <!-- Filter Form -->
+                                <div class="filter-card">
+                                    <form method="POST" action="" id="filterForm">
+                                        <input type="hidden" name="action" value="input_score">
+                                        <input type="hidden" name="randomid" value="<?= e($_GET['randomid'] ?? '') ?>">
+                                        <input type="hidden" name="new_randomid" value="<?= isset($iList['randomid']) ? e($iList['randomid']) : '' ?>">
+
+                                        <div class="filter-grid">
+                                            <div class="filter-group">
+                                                <label><i class="fa fa-calendar"></i> Session</label>
+                                                <select name="session" class="filter-select" required>
+                                                    <option value="">-- Select --</option>
+                                                    <?php foreach ($sessionList as $sList): ?>
+                                                        <option value="<?= (int)$sList['id'] ?>" <?= ($selectedSession == $sList['id']) ? 'selected' : '' ?>>
+                                                            <?= e($sList['session']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div class="filter-group">
+                                                <label><i class="fa fa-tag"></i> Term</label>
+                                                <select name="term_id" class="filter-select" required>
+                                                    <option value="">-- Select --</option>
+                                                    <?php foreach ($termList as $tList): ?>
+                                                        <option value="<?= (int)$tList['id'] ?>" <?= ($selectedTerm == $tList['id']) ? 'selected' : '' ?>>
+                                                            <?= e($tList['term']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                            <div class="filter-group">
+                                                <label><i class="fa fa-book"></i> Subject</label>
+                                                <select name="subject" class="filter-select" required>
+                                                    <option value="">-- Select --</option>
+                                                    <?php foreach ($subjectList as $subList): ?>
+                                                        <option value="<?= (int)$subList['id'] ?>" <?= ($selectedSubject == $subList['id']) ? 'selected' : '' ?>>
+                                                            <?= e($subList['subject']) ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <!-- Assessments -->
+                                        <?php if (!empty($assessmentList)): ?>
+                                            <div class="assessment-group">
+                                                <span class="assessment-label"><i class="fa fa-check-square-o"></i> Select Assessments</span>
+                                                <div class="checkbox-grid">
+                                                    <?php foreach ($assessmentList as $assList): ?>
+                                                        <label class="checkbox-item">
+                                                            <input type="checkbox" name="assesment[]" value="<?= (int)$assList['id'] ?>"
+                                                                <?= in_array($assList['id'], $selectedAssessments) ? 'checked' : '' ?>>
+                                                            <?= e($assList['assesment'] ?? '') ?>
+                                                            <span class="ass-percent">(<?= floatval($assList['percentage'] ?? 0) ?>%)</span>
+                                                        </label>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+
+                                        <div class="filter-actions" style="margin-top: 12px;">
+                                            <button type="submit" class="btn btn-primary btn-block">
+                                                <i class="fa fa-search"></i> View Results
+                                            </button>
+                                            <button type="reset" class="btn btn-outline btn-block" onclick="resetFilters()">
+                                                <i class="fa fa-refresh"></i> Reset
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    <!-- Print Buttons -->
+                                    <div class="btn-group">
+                                        <?php if ($selectedSubject == 0): ?>
+                                            <button type="button" class="btn btn-info" onclick="alert('Please select a subject first')">
+                                                <i class="fa fa-file-pdf-o"></i> Print Subject Result
+                                            </button>
+                                            <button type="button" class="btn btn-info" onclick="alert('Please select a subject first')">
+                                                <i class="fa fa-file-pdf-o"></i> Print Empty Score Sheet
+                                            </button>
+                                        <?php else: ?>
+                                            <a href="<?= SKOOL_URL ?>class_teacher_subject_result_pdf.php?randomid=<?= isset($_GET['randomid']) ? e($_GET['randomid']) : '' ?>&subject=<?= $selectedSubject ?>&session=<?= $selectedSession ?>&term_id=<?= $selectedTerm ?>&assesments=<?= implode('-', $selectedAssessments) ?>"
+                                                class="btn btn-danger" target="_blank">
+                                                <i class="fa fa-file-pdf-o"></i> Print Subject Result
+                                            </a>
+                                            <a href="<?= SKOOL_URL ?>class_teacher_subject_empty_result_pdf.php?randomid=<?= isset($_GET['randomid']) ? e($_GET['randomid']) : '' ?>&subject=<?= $selectedSubject ?>&session=<?= $selectedSession ?>&term_id=<?= $selectedTerm ?>&assesments=<?= implode('-', $selectedAssessments) ?>"
+                                                class="btn btn-info" target="_blank">
+                                                <i class="fa fa-file-pdf-o"></i> Print Empty Score Sheet
+                                            </a>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <!-- Results Display -->
+                                <?php if (!empty($scoreData)): ?>
+                                    <div class="result-card">
+                                        <div class="card-header">
+                                            <div class="title">
+                                                <i class="fa fa-table"></i>
+                                                <?= e($className) ?> - Subject Results
+                                            </div>
+                                            <div class="subtitle">
+                                                <i class="fa fa-info-circle"></i>
+                                                <?= count($students) ?> student(s)
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <table class="result-table" id="resultTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th style="min-width:120px;">Student</th>
+                                                        <th style="min-width:60px;">ID</th>
+                                                        <?php foreach ($selectedAssessments as $assId):
+                                                            $assDetail = db_get_row(
+                                                                "SELECT assesment, percentage FROM school_assessment WHERE id = ?",
+                                                                [$assId]
+                                                            );
+                                                        ?>
+                                                            <th><?= e($assDetail['assesment'] ?? 'Ass') ?><br><small>(<?= e($assDetail['percentage'] ?? 0) ?>%)</small></th>
+                                                        <?php endforeach; ?>
+                                                        <th>Total</th>
+                                                        <th>Grade</th>
+                                                        <th>Position</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <?php
+                                                    $tStudent = 0;
+                                                    $classTotal = 0;
+                                                    $highLow = [];
+                                                    $studentTotals = [];
+
+                                                    foreach ($scoreData as $studentId => $data):
+                                                        $tStudent++;
+                                                        $student = $data['student'];
+                                                        $totalScore = $data['total'];
+                                                        $studentTotals[$studentId] = $totalScore;
+                                                        $classTotal += $totalScore;
+                                                        $highLow[] = $totalScore;
+                                                    ?>
+                                                        <tr id="row-<?= $studentId ?>">
+                                                            <td class="student-name-cell"><?= e($student['first_name'] ?? '') . ' ' . e($student['last_name'] ?? '') ?></td>
+                                                            <td class="student-id-cell"><?= e($student['student_id'] ?? '') ?></td>
+                                                            <?php foreach ($selectedAssessments as $assId): ?>
+                                                                <td><?= isset($data['scores'][$assId]) ? number_format($data['scores'][$assId], 2) : '0.00' ?></td>
+                                                            <?php endforeach; ?>
+                                                            <td class="total-cell"><?= number_format($totalScore, 2) ?></td>
+                                                            <td class="grade-cell">
+                                                                <?php
+                                                                $grade = db_get_val(
+                                                                    "SELECT grade FROM school_grade 
+                                                             WHERE create_by_userid = ? 
+                                                             AND minimum_number <= ? 
+                                                             AND maximum_number >= ?",
+                                                                    [$create_by_userid, $totalScore, $totalScore]
+                                                                );
+                                                                echo e($grade ?: 'N/A');
+                                                                ?>
+                                                            </td>
+                                                            <td class="position-cell" id="rank_<?= $studentId ?>">
+                                                                <span class="position-badge">--</span>
+                                                            </td>
+                                                        </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+
+                                            <!-- Rankings Script -->
+                                            <script>
+                                                <?php if (!empty($studentTotals)): ?>
+                                                    <?php
+                                                    $rankedScores = setPosition($studentTotals);
+                                                    foreach ($rankedScores as $studentId => $data):
+                                                        $rank = $data['rank'];
+                                                        $suffix = 'th';
+                                                        $rankClass = '';
+                                                        if ($rank == 1) {
+                                                            $suffix = 'st';
+                                                            $rankClass = 'gold';
+                                                        } elseif ($rank == 2) {
+                                                            $suffix = 'nd';
+                                                            $rankClass = 'silver';
+                                                        } elseif ($rank == 3) {
+                                                            $suffix = 'rd';
+                                                            $rankClass = 'bronze';
+                                                        }
+                                                    ?>
+                                                        document.getElementById('rank_<?= $studentId ?>').innerHTML =
+                                                            '<span class="position-badge <?= $rankClass ?>"><?= $rank . $suffix ?></span>';
+                                                    <?php endforeach; ?>
+                                                <?php endif; ?>
+                                            </script>
+                                        </div>
+
+                                        <!-- Summary Stats -->
+                                        <div class="summary-stats">
+                                            <div class="summary-stat">
+                                                <div class="number"><?= $tStudent ?></div>
+                                                <div class="label">Students</div>
+                                            </div>
+                                            <div class="summary-stat">
+                                                <div class="number"><?= $tStudent > 0 ? round($classTotal / $tStudent, 2) : '0.00' ?></div>
+                                                <div class="label">Class Average</div>
+                                            </div>
+                                            <div class="summary-stat">
+                                                <div class="number"><?= !empty($highLow) ? round(max($highLow), 2) : '0.00' ?></div>
+                                                <div class="label">Highest Score</div>
+                                            </div>
+                                            <div class="summary-stat">
+                                                <div class="number"><?= !empty($highLow) ? round(min($highLow), 2) : '0.00' ?></div>
+                                                <div class="label">Lowest Score</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php elseif (isset($_POST['session']) && isset($_POST['term_id']) && isset($_POST['subject']) && !empty($_POST['assesment'])): ?>
+                                    <div class="alert alert-warning">
+                                        <i class="fa fa-exclamation-triangle"></i>
+                                        <div>
+                                            No results found for the selected criteria.
+                                            <br><small>Please ensure that scores have been entered for this subject.</small>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
+
+                            <?php else: ?>
+                                <div class="alert alert-info">
+                                    <i class="fa fa-info-circle"></i>
+                                    <div>Please select a class from the left panel to view results.</div>
+                                </div>
+                            <?php endif; ?>
+
+                        </div>
                     </div>
+
                 </div>
             </div>
+            <?php include('inc.footer.php'); ?>
         </div>
     </div>
-    <?php include('inc.footer.php'); ?>
+
     <?php include('inc.js.php'); ?>
-
     <script>
-        (function() {
-            $(function() {
-                var toggle;
-                return toggle = new Toggle('.zswqas');
+        function resetFilters() {
+            var form = document.getElementById('filterForm');
+            if (!form) return;
+            var selects = form.querySelectorAll('select');
+            selects.forEach(function(select) {
+                select.selectedIndex = 0;
             });
-
-            this.Toggle = (function() {
-                class Toggle {
-                    constructor(toggleClass) {
-                        this.el = $(toggleClass);
-                        this.tabs = this.el.find(".xz");
-                        this.panels = this.el.find(".panel");
-                        this.bind();
-                    }
-
-                    show(index) {
-                        var activePanel, activeTab;
-                        this.tabs.removeClass('activate');
-                        activeTab = this.tabs.get(index);
-                        $(activeTab).addClass('activate');
-                        this.panels.hide();
-                        activePanel = this.panels.get(index);
-                        return $(activePanel).show();
-                    }
-
-                    bind() {
-                        return this.tabs.unbind('click').bind('click', (e) => {
-                            return this.show($(e.currentTarget).index());
-                        });
-                    }
-                }
-                return Toggle;
-            }).call(this);
-        }).call(this);
-
-        // Add active class to the current button
-        var header = document.getElementById("example");
-        if (header) {
-            var btns = header.getElementsByClassName("sectsab");
-            for (var i = 0; i < btns.length; i++) {
-                btns[i].addEventListener("click", function() {
-                    var current = document.getElementsByClassName("active");
-                    if (current.length > 0) {
-                        current[0].className = current[0].className.replace(" active", "");
-                    }
-                    this.className += " active";
-                });
-            }
+            var checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = false;
+            });
+            form.submit();
         }
 
-        $(document).ready(function() {
-            $('#example').DataTable({
-                "pageLength": 5
+        // Auto-submit when filters change (for better UX)
+        document.addEventListener('DOMContentLoaded', function() {
+            var form = document.getElementById('filterForm');
+            if (!form) return;
+
+            var selects = form.querySelectorAll('select');
+            selects.forEach(function(select) {
+                select.addEventListener('change', function() {
+                    // Check if all required fields are filled
+                    var session = form.querySelector('select[name="session"]');
+                    var term = form.querySelector('select[name="term_id"]');
+                    var subject = form.querySelector('select[name="subject"]');
+                    var assessments = form.querySelectorAll('input[type="checkbox"]:checked');
+
+                    if (session && session.value && term && term.value && subject && subject.value && assessments.length > 0) {
+                        form.submit();
+                    }
+                });
+            });
+
+            var checkboxes = form.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.addEventListener('change', function() {
+                    var session = form.querySelector('select[name="session"]');
+                    var term = form.querySelector('select[name="term_id"]');
+                    var subject = form.querySelector('select[name="subject"]');
+                    var assessments = form.querySelectorAll('input[type="checkbox"]:checked');
+
+                    if (session && session.value && term && term.value && subject && subject.value && assessments.length > 0) {
+                        form.submit();
+                    }
+                });
+            });
+        });
+
+        // Add active class to class items
+        document.addEventListener('DOMContentLoaded', function() {
+            var classItems = document.querySelectorAll('.class-item');
+            classItems.forEach(function(item) {
+                item.addEventListener('click', function() {
+                    var current = document.querySelector('.class-item.active');
+                    if (current) {
+                        current.classList.remove('active');
+                    }
+                    this.classList.add('active');
+                });
             });
         });
     </script>
