@@ -12,23 +12,23 @@ require_once('../config.php');
 require_once('inc.session-create.php');
 
 // ============================================================================
-// ACCESS CONTROL
+// FIX: USE CORRECT USER IDENTIFICATION
 // ============================================================================
-// Only allow principal/admin access (usertype = 1)
-if (empty($_SESSION['userid'])) {
-    redirect(SKOOL_URL . 'login.php');
-    exit;
+// Use the same method as class_teacher_roll_call_bulk.php
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $create_by_userid = (int)$userData['create_by_userid'];
+    }
 }
 
-if (!in_array((string)($_SESSION['usertype'] ?? ''), ['1', '0', 'admin'], true)) {
-    redirect(SKOOL_URL . 'index.php');
-    exit;
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
 }
-
-$sessionCreateBy = (int)($_SESSION['create_by_userid'] ?? 0);
-$sessionUserId = (int)($_SESSION['userid'] ?? 0);
-$school_id = ($sessionCreateBy > 0) ? $sessionCreateBy : $sessionUserId;
-$create_by_userid = ($sessionCreateBy > 0) ? $sessionCreateBy : $sessionUserId;
 
 // ============================================================================
 // GET FILTERS FROM URL
