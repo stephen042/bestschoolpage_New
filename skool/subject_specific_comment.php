@@ -162,7 +162,6 @@ if (!empty($classDetail['id']) && !empty($selectedSession) && !empty($selectedTe
             student_id,
             first_name,
             last_name,
-            middle_name
          FROM manage_student
          WHERE
             class = ?
