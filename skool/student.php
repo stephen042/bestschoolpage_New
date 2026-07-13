@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 /**
  * Student Information Page - Modern PHP 8.x

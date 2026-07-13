@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Staff Management - Modern UI with PDF Export
  * Sidebar layout matching Student page
