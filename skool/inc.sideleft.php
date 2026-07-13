@@ -4,6 +4,7 @@
  * Sidebar Menu - Rebuilt for PHP 8.x
  * Dynamic sidebar with role-based permissions
  * FIXED: Proper school owner ID handling to prevent cross-school data display
+ * IMPROVED: Mobile scrolling support
  */
 
 // Prevent direct access
@@ -261,6 +262,9 @@ function isActive($currentFile, $targetFile)
 ?>
 
 <style>
+    /* ============================================================
+       SIDEBAR MAIN STYLES - IMPROVED MOBILE SCROLLING
+       ============================================================ */
     .left.side-menu {
         --menu-bg-1: #1B3058;
         --menu-bg-2: #142445;
@@ -276,10 +280,22 @@ function isActive($currentFile, $targetFile)
         width: 240px;
         background: linear-gradient(170deg, var(--menu-bg-1) 0%, var(--menu-bg-2) 100%);
         z-index: 999;
-        transition: all 0.3s ease;
+        transition: transform 0.3s ease;
         border-right: 1px solid var(--menu-border);
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.35);
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* FIX: Sidebar collapsed state - hides sidebar on desktop */
+    body.sidebar-collapsed .left.side-menu {
+        transform: translateX(-100%);
+    }
+
+    /* FIX: Sidebar collapsed state - adjusts content margin */
+    body.sidebar-collapsed .content-page {
+        margin-left: 0 !important;
     }
 
     .left.side-menu::before {
@@ -291,6 +307,7 @@ function isActive($currentFile, $targetFile)
         height: 250px;
         background: radial-gradient(circle, rgba(242, 17, 81, 0.28) 0%, rgba(242, 17, 81, 0) 70%);
         pointer-events: none;
+        z-index: 0;
     }
 
     .left.side-menu::after {
@@ -302,6 +319,7 @@ function isActive($currentFile, $targetFile)
         height: 220px;
         background: radial-gradient(circle, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 75%);
         pointer-events: none;
+        z-index: 0;
     }
 
     body.fixed-left .side-menu.left {
@@ -313,15 +331,23 @@ function isActive($currentFile, $targetFile)
 
     .content-page {
         margin-left: 240px !important;
+        transition: margin-left 0.3s ease;
     }
 
+    /* ============================================================
+       SIDEBAR INNER - SCROLLABLE CONTAINER
+       ============================================================ */
     .sidebar-inner {
         position: relative;
         z-index: 1;
-        height: 100%;
+        flex: 1;
         overflow-y: auto;
         overflow-x: hidden;
         padding: 10px 12px 24px;
+        min-height: 0;
+        /* Critical for flex scrolling */
+        -webkit-overflow-scrolling: touch;
+        /* Smooth scrolling on iOS */
     }
 
     .sidebar-inner::-webkit-scrollbar {
@@ -330,6 +356,7 @@ function isActive($currentFile, $targetFile)
 
     .sidebar-inner::-webkit-scrollbar-track {
         background: rgba(12, 24, 47, 0.8);
+        border-radius: 3px;
     }
 
     .sidebar-inner::-webkit-scrollbar-thumb {
@@ -337,6 +364,19 @@ function isActive($currentFile, $targetFile)
         border-radius: 6px;
     }
 
+    .sidebar-inner::-webkit-scrollbar-thumb:hover {
+        background: #d40e45;
+    }
+
+    /* Firefox scrollbar styling */
+    .sidebar-inner {
+        scrollbar-width: thin;
+        scrollbar-color: var(--menu-accent) rgba(12, 24, 47, 0.8);
+    }
+
+    /* ============================================================
+       USER DETAILS
+       ============================================================ */
     .user-details {
         margin: 8px 2px 14px;
         padding: 12px;
@@ -344,6 +384,7 @@ function isActive($currentFile, $targetFile)
         background: rgba(255, 255, 255, 0.05);
         border-radius: 14px;
         text-align: center;
+        flex-shrink: 0;
     }
 
     .user-details .raju {
@@ -360,8 +401,12 @@ function isActive($currentFile, $targetFile)
         box-shadow: 0 0 16px rgba(242, 17, 81, 0.45);
     }
 
+    /* ============================================================
+       SIDEBAR MENU
+       ============================================================ */
     #sidebar-menu {
         padding: 0;
+        flex-shrink: 0;
     }
 
     #sidebar-menu ul {
@@ -476,25 +521,160 @@ function isActive($currentFile, $targetFile)
         transform: rotate(90deg);
     }
 
+    /* ============================================================
+       MOBILE SIDEBAR - OVERLAY WITH SCROLLING
+       ============================================================ */
     @media (max-width: 768px) {
-
-        .left.side-menu,
-        body.fixed-left .side-menu.left {
-            left: -240px;
+        .left.side-menu {
+            left: 0 !important;
+            transform: translateX(-100%);
             top: 60px !important;
+            height: calc(100vh - 60px) !important;
+            width: 280px !important;
+            position: fixed;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .left.side-menu.open {
-            left: 0;
+            transform: translateX(0);
+        }
+
+        /* When body has sidebar-collapsed on mobile, hide sidebar */
+        body.sidebar-collapsed .left.side-menu {
+            transform: translateX(-100%);
+        }
+
+        body.fixed-left .side-menu.left {
+            left: 0 !important;
+            transform: translateX(-100%);
+        }
+
+        body.fixed-left .side-menu.left.open {
+            transform: translateX(0) !important;
         }
 
         .content-page {
             margin-left: 0 !important;
         }
+
+        body.sidebar-collapsed .content-page {
+            margin-left: 0 !important;
+        }
+
+        /* Mobile scrollbar - thinner for touch devices */
+        .sidebar-inner::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .sidebar-inner {
+            scrollbar-width: thin;
+        }
+
+        /* Ensure all menu items are visible when scrolling */
+        .sidebar-inner {
+            padding-bottom: 40px;
+        }
+
+        /* Add extra padding at bottom for better scrolling experience */
+        #sidebar-menu {
+            padding-bottom: 20px;
+        }
+    }
+
+    /* ============================================================
+       SMALL MOBILE SCREENS
+       ============================================================ */
+    @media (max-width: 480px) {
+        .left.side-menu {
+            width: 260px !important;
+        }
+
+        #sidebar-menu ul li a {
+            min-height: 40px;
+            padding: 9px 10px;
+            font-size: 12px !important;
+        }
+
+        #sidebar-menu ul li a i {
+            font-size: 14px;
+            width: 20px;
+            min-width: 20px;
+        }
+
+        .user-details .raju img {
+            width: 50px;
+            height: 50px;
+        }
+
+        .user-details {
+            padding: 10px;
+            margin: 4px 2px 10px;
+        }
+    }
+
+    /* ============================================================
+       EXTRA SMALL SCREENS
+       ============================================================ */
+    @media (max-width: 360px) {
+        .left.side-menu {
+            width: 240px !important;
+        }
+
+        #sidebar-menu ul li a {
+            min-height: 36px;
+            padding: 7px 8px;
+            font-size: 11px !important;
+            gap: 6px;
+        }
+
+        #sidebar-menu ul li a i {
+            font-size: 12px;
+            width: 18px;
+            min-width: 18px;
+        }
+
+        .user-details .raju img {
+            width: 42px;
+            height: 42px;
+            object-fit: contain;
+        }
+
+        .user-details {
+            padding: 8px;
+            margin: 4px 2px 8px;
+        }
+    }
+
+    #sidebar-menu > img {
+        display: block;
+        width: 100%;
+        max-width: 220px;
+        height: auto;
+        margin: 0 auto 12px;
+        padding: 8px 0;
+        object-fit: contain;
+    }
+
+    @media (max-width: 360px) {
+        #sidebar-menu > img {
+            max-width: 180px;
+            padding: 6px 0;
+        }
+    }
+
+    /* ============================================================
+       DESKTOP SIDEBAR COLLAPSED STATE
+       ============================================================ */
+    @media (min-width: 769px) {
+        body.sidebar-collapsed .left.side-menu {
+            transform: translateX(-100%);
+        }
     }
 </style>
 
-<div class="left side-menu">
+<div id="sidebar-wrapper" class="left side-menu">
     <div class="sidebar-inner slimscrollleft">
         <div class="user-details">
             <div class="pull-left raju">
@@ -801,21 +981,3 @@ function isActive($currentFile, $targetFile)
         </div>
     </div>
 </div>
-
-<script>
-    $(document).ready(function() {
-        $('.has_sub > a').on('click', function(e) {
-            e.preventDefault();
-            var parentLi = $(this).parent('.has_sub');
-            parentLi.toggleClass('open');
-            parentLi.find('> ul').slideToggle(200);
-        });
-
-        $('.has_sub .active').parents('.has_sub').addClass('open');
-        $('.has_sub.open > ul').show();
-
-        $('.button-menu-mobile').on('click', function() {
-            $('.left.side-menu').toggleClass('open');
-        });
-    });
-</script>

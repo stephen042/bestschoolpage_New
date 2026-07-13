@@ -11,6 +11,28 @@ $PageTitle = "Principal Remarks";
 $FileName = 'princple_remark.php';
 
 // ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
+// ============================================================================
+// Use the same method as class_teacher_roll_call_bulk.php
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $create_by_userid = (int)$userData['create_by_userid'];
+    }
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+// Also get the usertype correctly
+$create_by_usertype = $_SESSION['usertype'] ?? '';
+
+// ============================================================================
 // INITIALIZATION
 // ============================================================================
 $stat = [];
@@ -20,8 +42,6 @@ $session = $_GET['session'] ?? '';
 $term_id = $_GET['term_id'] ?? '';
 $currentPage = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 50;
-$create_by_userid = $_SESSION['userid'] ?? 0;
-$create_by_usertype = $_SESSION['usertype'] ?? '';
 
 if (isset($_SESSION['success']) && $_SESSION['success'] != "") {
     $stat['success'] = $_SESSION['success'];
