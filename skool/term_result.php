@@ -1465,10 +1465,7 @@ if (empty($resultsData) && !empty($studentNumericId) && !empty($selectedClass) &
                                 </div>
                                 
                                 <!-- Action Buttons -->
-                                <div class="btn-group-mobile">
-                                    <!-- <button type="button" class="bulk-btn" id="bulkPdfBtn" onclick="startBulkDownload()" style="background: #6c757d;">
-                                        <i class="fa fa-files-o"></i> Bulk Download
-                                    </button> -->
+                                <div class="btn-group-mobile"> 
                                     <button class="print-btn" id="printPdfBtn" onclick="openPDF()">
                                         <i class="fa fa-file-pdf-o"></i> Print Report Sheet
                                     </button>

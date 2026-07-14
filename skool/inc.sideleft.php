@@ -5,6 +5,7 @@
  * Dynamic sidebar with role-based permissions
  * FIXED: Proper school owner ID handling to prevent cross-school data display
  * IMPROVED: Mobile scrolling support
+ * FIXED: User identification matches dashboard.php logic
  */
 
 // Prevent direct access
@@ -13,7 +14,7 @@ if (!defined('DS')) {
 }
 
 // ============================================================================
-// VALIDATE SESSION AND SCHOOL OWNER ID
+// VALIDATE SESSION AND SCHOOL OWNER ID - MATCHES DASHBOARD.PHP
 // ============================================================================
 
 // First, check if user is logged in
@@ -30,82 +31,67 @@ $iCurrentFileName = basename($_SERVER['PHP_SELF']);
 $currentFile = basename($_SERVER["SCRIPT_FILENAME"], '.php') . ".php";
 
 // ============================================================================
-// INITIALIZE VARIABLES WITH PROPER SCHOOL OWNER ID
+// FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
 // ============================================================================
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
 
-// CRITICAL FIX: Always use create_by_userid from session, NEVER fall back to userid
-$schoolOwnerId = (int)($_SESSION['create_by_userid'] ?? 0);
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $create_by_userid = (int)$userData['create_by_userid'];
+    }
+}
 
-// Verify the school owner ID is valid
-if ($schoolOwnerId <= 0) {
-    // If invalid, try to recover from the school_register table
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+// Also try to get from school_register if needed
+if ($create_by_userid <= 0) {
     $userData = db_get_row(
         "SELECT create_by_userid, usertype FROM school_register WHERE id = ?",
         [(int)$_SESSION['userid']]
     );
-
     if (!empty($userData)) {
-        $schoolOwnerId = (int)($userData['create_by_userid'] ?? 0);
-        if ($schoolOwnerId <= 0) {
-            // If create_by_userid is 0, check if this user is the owner (usertype = 0)
-            if ((int)($userData['usertype'] ?? 1) === 0) {
-                $schoolOwnerId = (int)$_SESSION['userid'];
-            } else {
-                // This is a staff/teacher with missing create_by_userid
-                // Try to find the school owner
-                $owner = db_get_row(
-                    "SELECT id FROM school_register WHERE usertype = 0 AND status = 1 ORDER BY id ASC LIMIT 1"
-                );
-                if (!empty($owner)) {
-                    $schoolOwnerId = (int)$owner['id'];
-                    // Fix the user record
-                    db_update(
-                        "school_register",
-                        ['create_by_userid' => $schoolOwnerId],
-                        "id = ?",
-                        [(int)$_SESSION['userid']]
-                    );
-                    // Update session
-                    $_SESSION['create_by_userid'] = $schoolOwnerId;
-                    error_log("Fixed create_by_userid for user: " . $_SESSION['userid'] . " -> " . $schoolOwnerId);
-                } else {
-                    // Last resort - use user's own ID (should only happen in multi-owner mode)
-                    $schoolOwnerId = (int)$_SESSION['userid'];
-                    error_log("WARNING: Using user's own ID as school owner for: " . $_SESSION['userid']);
-                }
-            }
+        $create_by_userid = (int)($userData['create_by_userid'] ?? 0);
+        if ($create_by_userid <= 0 && (int)($userData['usertype'] ?? 1) === 0) {
+            $create_by_userid = (int)$_SESSION['userid'];
         }
-        $_SESSION['create_by_userid'] = $schoolOwnerId;
-    } else {
-        // Cannot find user - force logout
-        session_destroy();
-        redirect(SITE_URL . 'login.php');
-        exit;
     }
 }
+
+// Final fallback - use session userid
+if ($create_by_userid <= 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+// Update session with the resolved value
+$_SESSION['create_by_userid'] = $create_by_userid;
 
 // Additional verification: check if the school owner ID actually exists
 $ownerCheck = db_get_val(
     "SELECT id FROM school_register WHERE id = ?",
-    [$schoolOwnerId]
+    [$create_by_userid]
 );
 
-if (empty($ownerCheck)) {
+if (empty($ownerCheck) && $create_by_userid > 0) {
     // The school owner ID doesn't exist in the database
-    error_log("CRITICAL: School owner ID " . $schoolOwnerId . " does not exist for user: " . $_SESSION['userid']);
+    error_log("CRITICAL: School owner ID " . $create_by_userid . " does not exist for user: " . $_SESSION['userid']);
 
     // Try to find a valid owner
     $owner = db_get_row(
         "SELECT id FROM school_register WHERE usertype = 0 AND status = 1 ORDER BY id ASC LIMIT 1"
     );
     if (!empty($owner)) {
-        $schoolOwnerId = (int)$owner['id'];
-        $_SESSION['create_by_userid'] = $schoolOwnerId;
-        error_log("Recovered school owner ID: " . $schoolOwnerId);
+        $create_by_userid = (int)$owner['id'];
+        $_SESSION['create_by_userid'] = $create_by_userid;
+        error_log("Recovered school owner ID: " . $create_by_userid);
     } else {
         // No valid owner exists - use user's own ID
-        $schoolOwnerId = (int)$_SESSION['userid'];
-        $_SESSION['create_by_userid'] = $schoolOwnerId;
+        $create_by_userid = (int)$_SESSION['userid'];
+        $_SESSION['create_by_userid'] = $create_by_userid;
         error_log("WARNING: Using user's own ID as school owner after recovery failure");
     }
 }
@@ -120,7 +106,7 @@ $userType = $_SESSION['usertype'] ?? '';
 $dashboardFile = 'dashboard.php';
 
 // Determine if this is a school owner/admin session
-$isSchoolOwnerSession = ($sessionUserId > 0 && $sessionUserId === $schoolOwnerId);
+$isSchoolOwnerSession = ($sessionUserId > 0 && $sessionUserId === $create_by_userid);
 $isAdminMenu = ($userType == '0' || $isSchoolOwnerSession);
 
 // Fallback teacher files (for staff without specific permissions)
@@ -153,7 +139,7 @@ if (!$isAdminMenu) {
            AND (id = ? OR staff_id = ? OR email = ?)
          ORDER BY id DESC
          LIMIT 1",
-        [$schoolOwnerId, $sessionUserId, $sessionUsername, $sessionEmail]
+        [$create_by_userid, $sessionUserId, $sessionUsername, $sessionEmail]
     );
     $effectiveStaffId = (int)($staffForPerm['id'] ?? 0);
 
@@ -169,7 +155,7 @@ if (!$isAdminMenu) {
     if (!empty($candidateStaffIds)) {
         $placeholders = implode(',', array_fill(0, count($candidateStaffIds), '?'));
         $params = $candidateStaffIds;
-        $params[] = $schoolOwnerId;
+        $params[] = $create_by_userid;
         $iStaffCheck = db_get_row(
             "SELECT * FROM assign_role
              WHERE staff_id IN ($placeholders)
@@ -227,7 +213,7 @@ if (!$isAdminMenu && empty($ret)) {
 // Get package permissions
 $iPackageAllowFile = db_get_row(
     "SELECT file_allow FROM school_purchased_pacakage WHERE userid = ? AND status = '1' ORDER BY id DESC",
-    [$schoolOwnerId]
+    [$create_by_userid]
 );
 
 $iPackageJsoneDecodeAllowFile = [];
@@ -240,7 +226,7 @@ if (!is_array($iPackageJsoneDecodeAllowFile)) {
 
 // Sidebar logo image - ALWAYS use the school owner ID for the logo
 $sidebarLogo = '../image/user.png';
-$sidebarSchool = db_get_row("SELECT logo FROM school_register WHERE id = ?", [$schoolOwnerId]);
+$sidebarSchool = db_get_row("SELECT logo FROM school_register WHERE id = ?", [$create_by_userid]);
 if (!empty($sidebarSchool['logo']) && file_exists("../uploads/" . $sidebarSchool['logo'])) {
     $sidebarLogo = "../uploads/" . $sidebarSchool['logo'];
 }

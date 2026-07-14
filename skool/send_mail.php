@@ -1,632 +1,1002 @@
-<?php include('../config.php');
+<?php
+
+/**
+ * ============================================================================
+ * SEND EMAIL - MODERN REDESIGN
+ * ============================================================================
+ * Description: Send email messages to parents and staff
+ * Version: 4.0 (Fully Mobile Responsive)
+ * ============================================================================
+ */
+
+include('../config.php');
 include('inc.session-create.php');
-$validate = new validation();
+
 $PageTitle = "SEND EMAIL";
 $FileName = 'send_mail.php';
-if ($_SESSION['success'] != "")
-{
+
+// ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
+// ============================================================================
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+	$userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+	if ($userData && !empty($userData['create_by_userid'])) {
+		$create_by_userid = (int)$userData['create_by_userid'];
+	}
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+	$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+$create_by_usertype = (string)($_SESSION['usertype'] ?? '');
+$sessionUserId = (int)($_SESSION['userid'] ?? 0);
+
+$validate = new Validation();
+$stat = [];
+
+if (isset($_SESSION['success']) && $_SESSION['success'] != "") {
 	$stat['success'] = $_SESSION['success'];
 	unset($_SESSION['success']);
-}	
-$iupdatedetails=$db->getRow("select * from  school_register where id='".$_SESSION['userid']."'");
-$skoolName=$iupdatedetails['name'];		
-
-mail($to, $subject, $message, $headers);
-{
-	$to      = $iupdatedetails['email'];
-	$subject = 'the subject';
-	$message = 'hello';
-	$headers = 'From: mail@schoolinfo.com' . "\r\n" .
-    'Reply-To: mail@schoolinfo.com' . "\r\n" .
-    'X-Mailer: PHP/' . phpversion();
 }
 
-if(isset($_POST['parentMAIL']))
-{
-	$validate->addRule($_POST['pSubject'],'','Subject',true);	
-	$validate->addRule($_POST['pSMS'],'','Message',true);	
-		
-	if ($validate->validate() && count($stat) == 0)
-	{	
-		$mainMessagee = $_POST['pSMS'];
-		$Subject = $_POST['pSubject'];
-		
-		foreach($_POST['sendMAILToParent'] as $Key => $Val)
-		{
-			$Email = $Val;
-			
-			$headers  = "From: SCHOOL INFO < mail@schoolinfo.com >\n";
-			$headers .= "X-Sender: SCHOOL INFO < mail@schoolinfo.com >\n";
-			$headers .= 'X-Mailer: PHP/' . phpversion();
-			$headers .= "X-Priority: 1\n"; // Urgent message!
-			$headers .= "Return-Path: mail@schoolinfo.com\n"; // Return path for errors
-			$headers .= "MIME-Version: 1.0\r\n";
-			$headers .= "Content-Type: text/html; charset=iso-8859-1\n";
-			
-			mail($Email,$Subject,$mainMessagee,$headers);
+// ============================================================================
+// GET SCHOOL NAME
+// ============================================================================
+$schoolDetails = db_get_row("SELECT name FROM school_register WHERE create_by_userid = ?", [$create_by_userid]);
+$schoolName = $schoolDetails['name'] ?? 'School';
+
+// ============================================================================
+// GET PARENTS FOR DISPLAY (with pagination)
+// ============================================================================
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$perPage = 25;
+$offset = ($page - 1) * $perPage;
+
+// Count total parents
+$totalParents = db_get_val(
+	"SELECT COUNT(DISTINCT parent_id) FROM student_guardian WHERE create_by_userid = ? AND parent_id IS NOT NULL AND parent_id != ''",
+	[$create_by_userid]
+);
+$totalParents = (int)$totalParents;
+$totalParentPages = ceil($totalParents / $perPage);
+
+// Get parents with pagination
+$parentList = db_get_rows(
+	"SELECT DISTINCT parent_id, first_name, last_name, phone, email 
+     FROM student_guardian 
+     WHERE create_by_userid = ? AND parent_id IS NOT NULL AND parent_id != ''
+     ORDER BY first_name ASC 
+     LIMIT ? OFFSET ?",
+	[$create_by_userid, $perPage, $offset]
+);
+
+// ============================================================================
+// GET STAFF FOR DISPLAY (with pagination)
+// ============================================================================
+$staffPage = isset($_GET['staff_page']) ? (int)$_GET['staff_page'] : 1;
+$staffOffset = ($staffPage - 1) * $perPage;
+
+// Count total staff
+$totalStaff = db_get_val(
+	"SELECT COUNT(*) FROM staff_manage WHERE create_by_userid = ?",
+	[$create_by_userid]
+);
+$totalStaff = (int)$totalStaff;
+$totalStaffPages = ceil($totalStaff / $perPage);
+
+// Get staff with pagination
+$staffList = db_get_rows(
+	"SELECT * FROM staff_manage 
+     WHERE create_by_userid = ? 
+     ORDER BY first_name ASC 
+     LIMIT ? OFFSET ?",
+	[$create_by_userid, $perPage, $staffOffset]
+);
+
+// ============================================================================
+// PROCESS PARENT EMAIL
+// ============================================================================
+if (isset($_POST['parentMAIL'])) {
+	$validate->addRule($_POST['pSubject'] ?? '', '', 'Subject', true);
+	$validate->addRule($_POST['pMessage'] ?? '', '', 'Message', true);
+
+	if ($validate->validate() && count($stat) == 0) {
+		$mainMessage = $_POST['pMessage'];
+		$subject = $_POST['pSubject'];
+		$recipients = 0;
+
+		if (isset($_POST['sendMAILToParent']) && is_array($_POST['sendMAILToParent'])) {
+			foreach ($_POST['sendMAILToParent'] as $email) {
+				if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+					$headers = "From: " . $schoolName . " <mail@schoolinfo.com>\r\n";
+					$headers .= "Reply-To: mail@schoolinfo.com\r\n";
+					$headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
+					$headers .= "X-Priority: 1\r\n";
+					$headers .= "MIME-Version: 1.0\r\n";
+					$headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+
+					mail($email, $subject, $mainMessage, $headers);
+					$recipients++;
+				}
+			}
+			$_SESSION['success'] = "Email sent successfully to $recipients parent(s)!";
+			redirect('send_mail.php');
+		} else {
+			$stat['error'] = "No parents selected.";
 		}
-		$_SESSION['success'] = "Email has been sent successfully";
-		redirect('send_mail.php');
-	}
-	else
-	{
-		$stat['error']= $validate->errors();
+	} else {
+		$stat['error'] = $validate->errors();
 	}
 }
 
-if(isset($_POST['staffEMAIL']))
-{
-	
-	$validate->addRule($_POST['sSubject'],'','Subject',true);	
-	$validate->addRule($_POST['sSMS'],'','Message',true);	
-		
-	if ($validate->validate() && count($stat) == 0)
-	{	
-		$mainMessagee = $_POST['sSMS'];
-		$Subject = $_POST['sSubject'];
-		
-		foreach($_POST['sendMAILToStaff'] as $Key => $Val)
-		{
-			$Email = $Val;
-			
-			$headers  = "From: SCHOOL INFO < mail@schoolinfo.com >\n";
-			$headers .= "X-Sender: SCHOOL INFO < mail@schoolinfo.com >\n";
-			$headers .= 'X-Mailer: PHP/' . phpversion();
-			$headers .= "X-Priority: 1\n"; // Urgent message!
-			$headers .= "Return-Path: mail@schoolinfo.com\n"; // Return path for errors
-			$headers .= "MIME-Version: 1.0\r\n";
-			$headers .= "Content-Type: text/html; charset=iso-8859-1\n";
-			
-			mail($Email,$Subject,$mainMessagee,$headers);
+// ============================================================================
+// PROCESS STAFF EMAIL
+// ============================================================================
+if (isset($_POST['staffEMAIL'])) {
+	$validate->addRule($_POST['sSubject'] ?? '', '', 'Subject', true);
+	$validate->addRule($_POST['sMessage'] ?? '', '', 'Message', true);
+
+	if ($validate->validate() && count($stat) == 0) {
+		$mainMessage = $_POST['sMessage'];
+		$subject = $_POST['sSubject'];
+		$recipients = 0;
+
+		if (isset($_POST['sendMAILToStaff']) && is_array($_POST['sendMAILToStaff'])) {
+			foreach ($_POST['sendMAILToStaff'] as $email) {
+				if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+					$headers = "From: " . $schoolName . " <mail@schoolinfo.com>\r\n";
+					$headers .= "Reply-To: mail@schoolinfo.com\r\n";
+					$headers .= "X-Mailer: PHP/" . phpversion() . "\r\n";
+					$headers .= "X-Priority: 1\r\n";
+					$headers .= "MIME-Version: 1.0\r\n";
+					$headers .= "Content-Type: text/html; charset=UTF-8\r\n";
+
+					mail($email, $subject, $mainMessage, $headers);
+					$recipients++;
+				}
+			}
+			$_SESSION['success'] = "Email sent successfully to $recipients staff member(s)!";
+			redirect('send_mail.php?action=staff');
+		} else {
+			$stat['error'] = "No staff members selected.";
 		}
-		$_SESSION['success'] = "Email has been sent successfully";
-		redirect('send_mail.php?action=staff');
-	}
-	else
-	{
-		$stat['error']= $validate->errors();
+	} else {
+		$stat['error'] = $validate->errors();
 	}
 }
+
+// Get current action
+$action = $_GET['action'] ?? 'parents';
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
-    <?php include('inc.meta.php'); ?>
-    <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Droid+Serif" />
-<style>
+	<?php include('inc.meta.php'); ?>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+	<style>
+		/* ============================================================
+        RESET & BASE - MOBILE FIRST
+        ============================================================ */
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
 
-body, label, span, a, .gwt-Button {
-	
-	 font-family: 'Droid Serif' !important; 
-}
-.abhi .nav-tabs {
-	border-bottom: 2px solid #DDD;
-}
+		body {
+			background: #f0f2f5;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		}
 
-.abhi .nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover {
-	border-width: 0;
-}
+		.email-container {
+			max-width: 1200px;
+			margin: 0 auto;
+			padding: 15px;
+		}
 
-.abhi .nav.nav-tabs > li > a:hover, .nav.tabs-vertical > li > a:hover {
-	color: #1B3058 !important;
-}
+		/* ============================================================
+        PAGE HEADER - MOBILE FIRST
+        ============================================================ */
+		.page-header {
+			margin-bottom: 25px;
+		}
 
-.abhi .nav-tabs > li > a {
-	border: none;
-	color: #1B3058 !important;
-}
+		.page-header h2 {
+			color: #1B3058;
+			margin: 0;
+			font-size: 24px;
+			font-weight: 700;
+		}
 
-.abhi .nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover, .tabs-vertical > li.active > a, .tabs-vertical > li.active > a:focus, .tabs-vertical > li.active > a:hover {
-	color: #1B3058 !important;
-}
+		.page-header h2 i {
+			margin-right: 8px;
+		}
 
-.abhi .nav > li > a i {
-	font-size: 16px;
-	padding-right: 5px;
-}
+		.page-header p {
+			color: #666;
+			margin-top: 4px;
+			font-size: 14px;
+		}
 
-.abhi .nav-tabs > li > a::after {
-	content: "";
-	background: #1B3058;
-	height: 2px;
-	position: absolute;
-	width: 100%;
-	left: 0px;
-	bottom: -1px;
-	transition: all 250ms ease 0s;
-	transform: scale(0);
-}
+		/* ============================================================
+        TABS - MOBILE FIRST
+        ============================================================ */
+		.tabs-container {
+			background: #fff;
+			border-radius: 16px;
+			box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+			overflow: hidden;
+		}
 
-.abhi .nav-tabs > li.active > a::after, .nav-tabs > a::after {
-	transform: scale(1);
-}
+		.tabs-header {
+			display: flex;
+			border-bottom: 2px solid #f0f0f0;
+			background: #f8fafc;
+		}
 
-.abhi .tab-nav > li > a::after {
-	background: # #5a4080 none repeat scroll 0% 0%;
-	color: #fff;
-}
+		.tab-btn {
+			flex: 1;
+			padding: 14px 12px;
+			text-align: center;
+			font-weight: 600;
+			font-size: 14px;
+			color: #888;
+			cursor: pointer;
+			transition: all 0.3s;
+			border: none;
+			background: transparent;
+			position: relative;
+			min-height: 48px;
+			touch-action: manipulation;
+		}
 
-.abhi .tab-pane {
-	padding: 25px 0;
-}
+		.tab-btn:active {
+			transform: scale(0.97);
+		}
 
-.abhi .tab-content {
-	padding: 20px;
-}
+		.tab-btn i {
+			margin-right: 6px;
+			font-size: 16px;
+		}
 
-.abhi .nav-tabs > li {
-	width: 30%;
-	text-align: center;
-}
+		.tab-btn.active {
+			color: #1B3058;
+		}
 
-.abhi .card {
-	background: #FFF none repeat scroll 0% 0%;
-	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3);
-	margin-bottom: 30px;
-}
+		.tab-btn.active::after {
+			content: '';
+			position: absolute;
+			bottom: -2px;
+			left: 20%;
+			right: 20%;
+			height: 3px;
+			background: #1B3058;
+			border-radius: 3px;
+		}
 
-.abhi body {
-	background: #EDECEC;
-	padding: 50px;
-}
+		.tab-btn:hover {
+			color: #1B3058;
+		}
 
-.abhi .ass .select-hide {
-	display: none;
-}
+		.tab-content {
+			padding: 16px;
+		}
 
-.abhi .ass .custom-select select {
-	display: none;
-}
+		/* ============================================================
+        FORM - MOBILE FIRST
+        ============================================================ */
+		.form-group {
+			margin-bottom: 16px;
+		}
 
-.abhi .ass .select-selected {
-	border-bottom: 1px solid #9e9e9e;
-}
+		.form-group label {
+			display: block;
+			font-weight: 600;
+			font-size: 13px;
+			color: #333;
+			margin-bottom: 6px;
+		}
 
-.abhi .ass .ytr {
-	margin-top: 22px;
-}
+		.form-group label .required {
+			color: #dc3545;
+		}
 
-.abhi .fdg {
-	border-bottom: 1px solid #9e9e9e2b;
-}
+		.form-group input[type="text"] {
+			width: 100%;
+			padding: 10px 14px;
+			border: 2px solid #e0e0e0;
+			border-radius: 12px;
+			font-size: 14px;
+			transition: all 0.2s;
+		}
 
-.abhi .shg p {
-	color: #1B3058;
-}
+		.form-group input[type="text"]:focus {
+			outline: none;
+			border-color: #1B3058;
+			box-shadow: 0 0 0 3px rgba(27, 48, 88, 0.1);
+		}
 
-.abhi .ass .bgb i {
-	color: #1B3058;
-	font-size: 19px;
-}
+		.form-group textarea {
+			width: 100%;
+			padding: 12px 14px;
+			border: 2px solid #e0e0e0;
+			border-radius: 12px;
+			font-size: 14px;
+			font-family: inherit;
+			resize: vertical;
+			min-height: 120px;
+			transition: all 0.2s;
+		}
 
-.abhi .ass .col-md-4 i {
-	background: #F44336;
-	padding: 8px;
-	border-radius: 50%;
-	color: #fff;
-	font-size: 14px;
-}
+		.form-group textarea:focus {
+			outline: none;
+			border-color: #1B3058;
+			box-shadow: 0 0 0 3px rgba(27, 48, 88, 0.1);
+		}
 
-.abhi .ass .shg {
-	padding-top: 29px;
-}
+		.btn-send {
+			background: linear-gradient(135deg, #1B3058, #2a4780);
+			color: white;
+			border: none;
+			padding: 12px 30px;
+			border-radius: 12px;
+			font-weight: 600;
+			font-size: 15px;
+			cursor: pointer;
+			transition: all 0.3s;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+			width: 100%;
+			justify-content: center;
+			min-height: 48px;
+			touch-action: manipulation;
+		}
 
-.abhi .ass .select-items {
-	border: 1px solid #ddd;
-	padding: 9px;
-	position: relative;
-	bottom: 20px;
-	background: #fff;
-}
+		.btn-send:active {
+			transform: scale(0.97);
+		}
 
-.abhi .ass .select-items div {
-	padding-bottom: 7px;
-}
+		.btn-send:hover {
+			background: linear-gradient(135deg, #f21151, #c90d44);
+			transform: translateY(-2px);
+		}
 
-.abhi .ab-1 {
-	text-align: center;
-}
+		.btn-send:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+			transform: none;
+		}
 
-.abhi .icon i {
-	color: #0b4587;
-	background: #fff;
-	font-size: 32px;
-	border-radius: 50%;
-	position: absolute;
-	bottom: -25px;
-	left: 0;
-	right: 0;
-	width: 100%;
-	margin: 0 auto;
-	padding: 15px 10px 15px 10px;
-}
+		.btn-select-all {
+			background: #1B3058;
+			color: white;
+			border: none;
+			padding: 8px 16px;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 12px;
+			cursor: pointer;
+			transition: all 0.3s;
+			min-height: 36px;
+			touch-action: manipulation;
+		}
 
-.abhi .icon input {
-	position: absolute;
-	left: 0;
-	opacity: 0;
-	width: 100%;
-	right: 0;
-	top: -18px;
-}
+		.btn-select-all:active {
+			transform: scale(0.97);
+		}
 
-.abhi .abhish .input-field {
-	padding-bottom: 0;
-}
+		.btn-select-all:hover {
+			background: #f21151;
+		}
 
-.abhi .abh {
-	margin-top: 35px;
-}
+		/* ============================================================
+        TABLE - MOBILE FIRST
+        ============================================================ */
+		.table-wrapper {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			margin: 12px -4px 0;
+			padding: 0 4px;
+		}
 
-.abhi .input-field input {
-	background-color: transparent;
-	border: none;
-	border-bottom: 1px solid #9e9e9e;
-	border-radius: 0;
-	outline: none;
-	width: 100%;
-	margin: 0 0 15px 0;
-	padding: 0;
-	box-shadow: none;
-	box-sizing: content-box;
-	transition: all .3s;
-}
+		.table {
+			width: 100%;
+			min-width: 550px;
+			border-collapse: collapse;
+			font-size: 13px;
+		}
 
-.abhi .input-field label {
-	color: #9e9e9e;
-}
+		.table th,
+		.table td {
+			padding: 10px 8px;
+			text-align: left;
+			border-bottom: 1px solid #f0f0f0;
+			vertical-align: middle;
+		}
 
-.abhi .icon {
-	position: relative;
-	left: 0;
-	bottom: 0;
-	width: 7%;
-	margin: 0 auto;
-	right: 0;
-	height: 0;
-	top: 0;
-}
+		.table th {
+			background: #f8f9fa;
+			font-weight: 700;
+			color: #1B3058;
+			font-size: 11px;
+			text-transform: uppercase;
+			letter-spacing: 0.3px;
+			position: sticky;
+			top: 0;
+		}
 
-.abhi .ab-2 {
-	background: #0b4587;
-	color: #fff;
-	width: 23%;
-	padding: 28px;
-	margin: 0 auto;
-}
+		.table td {
+			font-size: 13px;
+		}
 
-.abhi .imgage {
-	padding-bottom: 13px;
-}
+		.table tr:hover td {
+			background: #f8f9ff;
+		}
 
-.abhi .abb {
-	text-align: center;
-}
+		.table .checkbox-cell {
+			text-align: center;
+			width: 40px;
+		}
 
-.abhi .ab-3 {
-	margin-top: 30px;
-}
+		.table input[type="checkbox"] {
+			width: 18px;
+			height: 18px;
+			cursor: pointer;
+			accent-color: #1B3058;
+		}
 
-.abhi .plp {
-	margin-bottom: 80px;
-}
+		.table .parent-name {
+			font-weight: 600;
+		}
 
-.abhi .ab-3 .col-md-1 i {
-	font-size: 17px;
-	color: #000000d6;
-}
+		.table .parent-email {
+			color: #1B3058;
+			font-size: 12px;
+		}
 
-.abhi .ab-3 .col-md-4 i {
-	background: #F44336;
-	padding: 8px;
-	border-radius: 50%;
-	color: #fff;
-	font-size: 14px;
-}
+		/* ============================================================
+        PAGINATION - MOBILE FIRST
+        ============================================================ */
+		.pagination {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			justify-content: center;
+			margin-top: 16px;
+			padding: 12px 0;
+		}
 
-.abhi .ab-3 input {
-	color: rgba(0, 0, 0, 0.26);
-	border-bottom: 1px dotted rgba(0, 0, 0, 0.26);
-}
+		.pagination a,
+		.pagination span {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			padding: 6px 14px;
+			border: 1px solid #e0e0e0;
+			border-radius: 8px;
+			text-decoration: none;
+			color: #1B3058;
+			background: #fff;
+			font-size: 13px;
+			font-weight: 500;
+			min-height: 36px;
+			min-width: 36px;
+			transition: all 0.2s;
+		}
 
-.abhi button {
-	cursor: pointer;
-	float: right;
-	background: #1B3058;
-	color: #fff;
-}
+		.pagination a:active {
+			transform: scale(0.95);
+		}
 
-.abhi button:hover {
+		.pagination a:hover {
+			background: #f8f9ff;
+			border-color: #1B3058;
+		}
 
-	background: #1B3058;
-	color: #fff;
-}
+		.pagination .active {
+			background: #1B3058;
+			color: #fff;
+			border-color: #1B3058;
+		}
 
-.abhi button i {
-	padding-right: 45px;
-	font-size: 13px;
-}
+		.pagination .disabled {
+			color: #ccc;
+			cursor: not-allowed;
+		}
 
-.abhi .input-field {
-	padding-bottom: 20px;
-}
+		.pagination .info {
+			background: transparent;
+			border: none;
+			color: #666;
+		}
 
-.abhi .assde {
-	margin-top: 50px;
-}
+		/* ============================================================
+        ALERTS - MOBILE FIRST
+        ============================================================ */
+		.alert {
+			padding: 12px 16px;
+			border-radius: 12px;
+			margin-bottom: 16px;
+			font-size: 13px;
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+		}
 
-.abhi .ade {
-	margin-top: 40px;
-}
+		.alert i {
+			font-size: 18px;
+			margin-top: 2px;
+			flex-shrink: 0;
+		}
 
-.abhi .bgb {
-	text-align: center;
-	padding-top: 3px;
-}
+		.alert-success {
+			background: #d4edda;
+			color: #155724;
+			border-left: 4px solid #28a745;
+		}
 
-.abhi .bgb i {
-	color: #1B3058;
-	font-size: 19px;
-}
+		.alert-danger {
+			background: #f8d7da;
+			color: #721c24;
+			border-left: 4px solid #dc3545;
+		}
 
-@media all and (max-width: 724px) {
-	.abhi .nav-tabs > li > a > span {
-		display: none;
-	}
+		.alert-info {
+			background: #d1ecf1;
+			color: #0c5460;
+			border-left: 4px solid #17a2b8;
+		}
 
-	.abhi .nav-tabs > li > a {
-		padding: 5px 5px;
-	}
-}
+		/* ============================================================
+        EMPTY STATE - MOBILE FIRST
+        ============================================================ */
+		.empty-state {
+			text-align: center;
+			padding: 40px 20px;
+			color: #999;
+		}
 
+		.empty-state i {
+			font-size: 48px;
+			color: #ddd;
+			display: block;
+			margin-bottom: 12px;
+		}
 
-.page-title {
-    margin-bottom: 30px;
-}
-</style>
+		.empty-state h4 {
+			color: #666;
+			font-size: 16px;
+			margin-bottom: 4px;
+		}
+
+		.empty-state p {
+			font-size: 13px;
+		}
+
+		/* ============================================================
+        RECIPIENT COUNT - MOBILE FIRST
+        ============================================================ */
+		.recipient-info {
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+			align-items: center;
+			margin-bottom: 12px;
+			padding: 10px 14px;
+			background: #f8f9fa;
+			border-radius: 10px;
+		}
+
+		.recipient-info .count {
+			font-size: 13px;
+			color: #666;
+		}
+
+		.recipient-info .count strong {
+			color: #1B3058;
+		}
+
+		/* ============================================================
+        RESPONSIVE - TABLET (768px+)
+        ============================================================ */
+		@media (min-width: 768px) {
+			.email-container {
+				padding: 25px;
+			}
+
+			.page-header h2 {
+				font-size: 28px;
+			}
+
+			.tab-content {
+				padding: 24px;
+			}
+
+			.btn-send {
+				width: auto;
+				padding: 12px 40px;
+			}
+
+			.table {
+				min-width: auto;
+			}
+
+			.table th,
+			.table td {
+				padding: 12px 14px;
+			}
+		}
+
+		/* ============================================================
+        RESPONSIVE - DESKTOP (1024px+)
+        ============================================================ */
+		@media (min-width: 1024px) {
+			.email-container {
+				padding: 30px;
+			}
+		}
+
+		/* ============================================================
+        RESPONSIVE - SMALL MOBILE (480px-)
+        ============================================================ */
+		@media (max-width: 480px) {
+			.email-container {
+				padding: 10px;
+			}
+
+			.page-header h2 {
+				font-size: 20px;
+			}
+
+			.page-header p {
+				font-size: 12px;
+			}
+
+			.tab-btn {
+				font-size: 12px;
+				padding: 10px 8px;
+			}
+
+			.tab-btn i {
+				font-size: 14px;
+				margin-right: 4px;
+			}
+
+			.tab-btn span {
+				display: none;
+			}
+
+			.table {
+				font-size: 11px;
+				min-width: 400px;
+			}
+
+			.table th,
+			.table td {
+				padding: 6px 4px;
+			}
+
+			.table th {
+				font-size: 9px;
+			}
+
+			.table td {
+				font-size: 11px;
+			}
+
+			.table input[type="checkbox"] {
+				width: 16px;
+				height: 16px;
+			}
+
+			.pagination a,
+			.pagination span {
+				padding: 4px 10px;
+				font-size: 11px;
+				min-height: 30px;
+				min-width: 30px;
+			}
+
+			.form-group input[type="text"] {
+				font-size: 13px;
+				padding: 8px 12px;
+			}
+
+			.form-group textarea {
+				font-size: 13px;
+				padding: 10px 12px;
+				min-height: 100px;
+			}
+
+			.btn-send {
+				font-size: 13px;
+				padding: 10px 20px;
+				min-height: 42px;
+			}
+
+			.recipient-info {
+				padding: 8px 12px;
+				font-size: 12px;
+			}
+		}
+
+		/* ============================================================
+        PRINT STYLES
+        ============================================================ */
+		@media print {
+
+			.btn-send,
+			.btn-select-all,
+			.pagination,
+			.no-print {
+				display: none !important;
+			}
+
+			.tabs-container {
+				box-shadow: none !important;
+				border: 1px solid #ddd;
+			}
+
+			.tab-content {
+				padding: 10px;
+			}
+
+			body {
+				background: white;
+			}
+
+			.email-container {
+				padding: 0;
+			}
+		}
+	</style>
 </head>
+
 <body class="fixed-left">
-<div id="wrapper">
-    <?php include('inc.header.php'); ?>
-    <?php include('inc.sideleft.php'); ?>
-<div class="content-page">
-	<!-- Start content -->
-<div class="content">
-<div class="container">
-	<!-- Page-Title -->
-	<div class="row">
-		<div class="col-sm-12">
-			<h4 class="page-title licat" style="text-align: center;"><?php echo $PageTitle ?></h4>
-			<?php echo msg($stat);?>
+	<div id="wrapper">
+		<?php include('inc.header.php'); ?>
+		<?php include('inc.sideleft.php'); ?>
+		<div class="content-page">
+			<div class="content">
+				<div class="email-container">
+
+					<!-- Page Header -->
+					<div class="page-header">
+						<h2><i class="fa fa-envelope"></i> <?= htmlspecialchars($PageTitle) ?></h2>
+						<p>Send email messages to parents and staff members</p>
+					</div>
+
+					<?= showMessage($stat) ?>
+
+					<!-- Tabs -->
+					<div class="tabs-container">
+						<div class="tabs-header">
+							<button class="tab-btn <?= ($action == 'parents' || $action == '') ? 'active' : '' ?>" onclick="window.location.href='?action=parents'">
+								<i class="fa fa-users"></i> <span>Parents</span>
+							</button>
+							<button class="tab-btn <?= ($action == 'staff') ? 'active' : '' ?>" onclick="window.location.href='?action=staff'">
+								<i class="fa fa-user-md"></i> <span>Staff</span>
+							</button>
+						</div>
+
+						<div class="tab-content">
+							<?php if ($action == 'parents' || $action == ''): ?>
+								<!-- PARENTS TAB -->
+								<form method="POST" action="" id="parentEmailForm">
+									<div class="form-group">
+										<label><i class="fa fa-tag"></i> Subject <span class="required">*</span></label>
+										<input type="text" name="pSubject" placeholder="Enter email subject..." value="<?= htmlspecialchars($_POST['pSubject'] ?? '') ?>" required>
+									</div>
+
+									<div class="form-group">
+										<label><i class="fa fa-pencil"></i> Message <span class="required">*</span></label>
+										<textarea name="pMessage" placeholder="Type your message here..." required><?= htmlspecialchars($_POST['pMessage'] ?? '') ?></textarea>
+									</div>
+
+									<div class="recipient-info">
+										<span class="count"><i class="fa fa-users"></i> <strong><?= $totalParents ?></strong> parent(s) found</span>
+										<button type="button" class="btn-select-all" onclick="toggleAllParents()">
+											<i class="fa fa-check-square-o"></i> Select All
+										</button>
+									</div>
+
+									<div class="table-wrapper">
+										<table class="table" id="parentTable">
+											<thead>
+												<tr>
+													<th class="checkbox-cell"><input type="checkbox" id="selectAllParents" onchange="toggleAllParents()"></th>
+													<th>Parent ID</th>
+													<th>Name</th>
+													<th>Phone</th>
+													<th>Email</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php if (!empty($parentList)): ?>
+													<?php foreach ($parentList as $parent): ?>
+														<tr>
+															<td class="checkbox-cell">
+																<input type="checkbox" name="sendMAILToParent[]" value="<?= htmlspecialchars($parent['email']) ?>" class="parent-checkbox" <?= !empty($parent['email']) ? '' : 'disabled' ?>>
+															</td>
+															<td><strong><?= htmlspecialchars($parent['parent_id']) ?></strong></td>
+															<td class="parent-name"><?= htmlspecialchars($parent['first_name'] . ' ' . $parent['last_name']) ?></td>
+															<td><?= htmlspecialchars($parent['phone'] ?? 'N/A') ?></td>
+															<td class="parent-email"><?= htmlspecialchars($parent['email'] ?? 'N/A') ?></td>
+														</tr>
+													<?php endforeach; ?>
+												<?php else: ?>
+													<tr>
+														<td colspan="5" style="text-align:center; padding:30px; color:#999;">
+															<i class="fa fa-users" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+															No parents found
+														</td>
+													</tr>
+												<?php endif; ?>
+											</tbody>
+										</table>
+									</div>
+
+									<!-- Pagination -->
+									<?php if ($totalParentPages > 1): ?>
+										<div class="pagination">
+											<?php if ($page > 1): ?>
+												<a href="?action=parents&page=<?= $page - 1 ?>"><i class="fa fa-chevron-left"></i></a>
+											<?php else: ?>
+												<span class="disabled"><i class="fa fa-chevron-left"></i></span>
+											<?php endif; ?>
+
+											<?php for ($i = 1; $i <= $totalParentPages; $i++): ?>
+												<a href="?action=parents&page=<?= $i ?>" class="<?= ($i == $page) ? 'active' : '' ?>"><?= $i ?></a>
+											<?php endfor; ?>
+
+											<?php if ($page < $totalParentPages): ?>
+												<a href="?action=parents&page=<?= $page + 1 ?>"><i class="fa fa-chevron-right"></i></a>
+											<?php else: ?>
+												<span class="disabled"><i class="fa fa-chevron-right"></i></span>
+											<?php endif; ?>
+										</div>
+									<?php endif; ?>
+
+									<button type="submit" name="parentMAIL" class="btn-send">
+										<i class="fa fa-paper-plane"></i> Send Email to Selected Parents
+									</button>
+								</form>
+
+								<script>
+									function toggleAllParents() {
+										var checkbox = document.getElementById('selectAllParents');
+										var checkboxes = document.querySelectorAll('.parent-checkbox:not(:disabled)');
+										checkboxes.forEach(function(cb) {
+											cb.checked = checkbox.checked;
+										});
+									}
+
+									document.querySelectorAll('.parent-checkbox').forEach(function(cb) {
+										cb.addEventListener('change', function() {
+											var all = document.querySelectorAll('.parent-checkbox:not(:disabled)');
+											var checked = document.querySelectorAll('.parent-checkbox:checked');
+											document.getElementById('selectAllParents').checked = all.length === checked.length;
+										});
+									});
+								</script>
+
+							<?php else: ?>
+								<!-- STAFF TAB -->
+								<form method="POST" action="" id="staffEmailForm">
+									<div class="form-group">
+										<label><i class="fa fa-tag"></i> Subject <span class="required">*</span></label>
+										<input type="text" name="sSubject" placeholder="Enter email subject..." value="<?= htmlspecialchars($_POST['sSubject'] ?? '') ?>" required>
+									</div>
+
+									<div class="form-group">
+										<label><i class="fa fa-pencil"></i> Message <span class="required">*</span></label>
+										<textarea name="sMessage" placeholder="Type your message here..." required><?= htmlspecialchars($_POST['sMessage'] ?? '') ?></textarea>
+									</div>
+
+									<div class="recipient-info">
+										<span class="count"><i class="fa fa-user-md"></i> <strong><?= $totalStaff ?></strong> staff member(s) found</span>
+										<button type="button" class="btn-select-all" onclick="toggleAllStaff()">
+											<i class="fa fa-check-square-o"></i> Select All
+										</button>
+									</div>
+
+									<div class="table-wrapper">
+										<table class="table" id="staffTable">
+											<thead>
+												<tr>
+													<th class="checkbox-cell"><input type="checkbox" id="selectAllStaff" onchange="toggleAllStaff()"></th>
+													<th>Staff ID</th>
+													<th>Name</th>
+													<th>Phone</th>
+													<th>Email</th>
+												</tr>
+											</thead>
+											<tbody>
+												<?php if (!empty($staffList)): ?>
+													<?php foreach ($staffList as $staff): ?>
+														<tr>
+															<td class="checkbox-cell">
+																<input type="checkbox" name="sendMAILToStaff[]" value="<?= htmlspecialchars($staff['email']) ?>" class="staff-checkbox" <?= !empty($staff['email']) ? '' : 'disabled' ?>>
+															</td>
+															<td><strong><?= htmlspecialchars($staff['staff_id']) ?></strong></td>
+															<td class="parent-name"><?= htmlspecialchars($staff['first_name'] . ' ' . $staff['last_name']) ?></td>
+															<td><?= htmlspecialchars($staff['phone'] ?? 'N/A') ?></td>
+															<td class="parent-email"><?= htmlspecialchars($staff['email'] ?? 'N/A') ?></td>
+														</tr>
+													<?php endforeach; ?>
+												<?php else: ?>
+													<tr>
+														<td colspan="5" style="text-align:center; padding:30px; color:#999;">
+															<i class="fa fa-user-md" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+															No staff members found
+														</td>
+													</tr>
+												<?php endif; ?>
+											</tbody>
+										</table>
+									</div>
+
+									<!-- Staff Pagination -->
+									<?php if ($totalStaffPages > 1): ?>
+										<div class="pagination">
+											<?php if ($staffPage > 1): ?>
+												<a href="?action=staff&staff_page=<?= $staffPage - 1 ?>"><i class="fa fa-chevron-left"></i></a>
+											<?php else: ?>
+												<span class="disabled"><i class="fa fa-chevron-left"></i></span>
+											<?php endif; ?>
+
+											<?php for ($i = 1; $i <= $totalStaffPages; $i++): ?>
+												<a href="?action=staff&staff_page=<?= $i ?>" class="<?= ($i == $staffPage) ? 'active' : '' ?>"><?= $i ?></a>
+											<?php endfor; ?>
+
+											<?php if ($staffPage < $totalStaffPages): ?>
+												<a href="?action=staff&staff_page=<?= $staffPage + 1 ?>"><i class="fa fa-chevron-right"></i></a>
+											<?php else: ?>
+												<span class="disabled"><i class="fa fa-chevron-right"></i></span>
+											<?php endif; ?>
+										</div>
+									<?php endif; ?>
+
+									<button type="submit" name="staffEMAIL" class="btn-send">
+										<i class="fa fa-paper-plane"></i> Send Email to Selected Staff
+									</button>
+								</form>
+
+								<script>
+									function toggleAllStaff() {
+										var checkbox = document.getElementById('selectAllStaff');
+										var checkboxes = document.querySelectorAll('.staff-checkbox:not(:disabled)');
+										checkboxes.forEach(function(cb) {
+											cb.checked = checkbox.checked;
+										});
+									}
+
+									document.querySelectorAll('.staff-checkbox').forEach(function(cb) {
+										cb.addEventListener('change', function() {
+											var all = document.querySelectorAll('.staff-checkbox:not(:disabled)');
+											var checked = document.querySelectorAll('.staff-checkbox:checked');
+											document.getElementById('selectAllStaff').checked = all.length === checked.length;
+										});
+									});
+								</script>
+
+							<?php endif; ?>
+						</div>
+					</div>
+				</div>
+			</div>
+			<?php include('inc.footer.php'); ?>
 		</div>
 	</div>
-	<!-- Basic Form Wizard -->
-	<div class="abhi">
-		<div class="container">
-			<div class="row">
-				<div class="col-md-12">
-					<!-- Nav tabs -->
-					<div class="card">
-						<ul class="nav nav-tabs" role="tablist">
-							<li role="presentation" class="<?php if($_GET['action']=='' || $_GET['action']=='parents') { echo "active"; } ?>">
-								<a href="<?php echo $Filename; ?>?action=parents">
-									<i class="fa fa-exclamation-circle" aria-hidden="true"></i> <span>Parents</span>
-								</a>
-                            </li>
-							
-							<li role="presentation" class="<?php if($_GET['action']=='staff') { echo "active"; } ?>">
-								<a href="<?php echo $FileName; ?>?action=staff">
-									<i class="fa fa-users" aria-hidden="true"></i>
-                                    <span>Staff</span>
-								</a>
-							</li>
-						</ul>
-						<div class="tab-content">
-						<?php if($_GET['action']=='' || $_GET['action']=='parents') {
-						$iupdatedetails = $db->getRow("select * from  school_register where create_by_userid='".$create_by_userid."'"); 
-						?>
-						<!-- Tab panes -->
-						<div role="tabpanel" class="tab-pane active" id="home">
-                            <div class="ab-1">
-								<form action="" method="POST">
-								<div class="row">
-									<div class="col-md-1"></div>
-									<div class="col-md-10"></div>
-									<div class="col-md-1"></div>
-                                   <div class="col-md-12 col-xm-12"> 
-								
-								Subject
-								<input name="pSubject" value="<?php echo $_POST['pSubject']; ?>" class="form-control" placeholder="Type your subject here...">
-								<br>
-								Message
-								<textarea class="form-control" name="pSMS" placeholder="Type your message here..."><?php echo $_POST['text'];?></textarea>
-								
-							<br>
-								<button type="submit" name="parentMAIL"style="float:left;">SEND MAIL </button>
-							</div>
-                            	
-								 <div class="card-box table-responsive tablthisresponsive">
-                    				
-                                    <table  class="table table-striped table-bordered">
-								<thead>
-									<tr>
-										<th>#</th>
-										<th>Parent ID</th>
-										<th>First Name</th>
-										<th>Last Name</th>
-										<th>Phone</th>
-										<th>Email Id</th>
-									</tr>
-								</thead>
-								<tbody>
-								<?php $i=0;
-								$aryList=$db->getRows("select DISTINCT parent_id from student_guardian where create_by_userid='".$create_by_userid."'");
-								foreach($aryList as $iNeList)
-								{	$i=$i+1;
-									$aryPgAct["id"]=$iList['id'];
-									$iList=$db->getRow("select * from student_guardian where parent_id='".$iNeList['parent_id']."'");	
-								?>
-									<tr>
-										<td><input type="checkbox" name="sendMAILToParent[]" style="width:15px;height:15px" value="<?php echo $iList['email'];?>"></td>
-											
-											<td>
-												<?php echo $iList['parent_id'];  ?>
-											</td>
-											<td>
-												<?php echo $iList['first_name'];  ?>
-											</td>
-											<td>
-												<?php echo $iList['last_name'];  ?>
-											</td>
-											<td>
-												<?php echo $iList['phone'];  ?>
-											</td>
-											<td>
-												<?php echo $iList['email'];  ?>
-											</td>
-									</tr>
-                                    <?php } ?>
-								</tbody>
-								</table>
-								
-                                </div>
-                                </div>	
-                                </form>	
-								</div>
-							</div>
-						</div> 
-						<?php } elseif($_GET['action']=='staff') {
-						$iupdatedetails = $db->getRow("select * from  staff_mange where id='".$_SESSION['userid']."' and create_by_userid='".$create_by_userid."'"); 
-						?>
-							<!-- Tab panes -->
-							<div role="tabpanel" class="tab-pane active" id="home">
-                            <div class="ab-1">
-							<form action="" method="POST">
-							Subject
-							<input name="sSubject" value="<?php echo $_POST['pSubject']; ?>" class="form-control" placeholder="Type your subject here...">
-							<br>
-							Message
-							<textarea class="form-control" name="sSMS" placeholder="Type your message here..."><?php $_POST['text'];?></textarea>
-									<div class="card-box">
-									
-									
-									<button type="submit" name="staffEMAIL"style="float:left;">SEND EMAIL </button>
 
-									<table class="table table-striped table-bordered">
-									<thead>
-										<tr>
-											<th>#</th>
-											
-											
-											<th>Staff ID</th>											
-											<th>First Name</th>
-											<th>Last Name</th>
-											<th>Phone</th>
-											<th>Email</th>
-										</tr>
-									</thead>
-                                    <tbody>
-                                    <?php $i=0;
-				$aryList=$db->getRows("select * from staff_manage where create_by_userid='".$create_by_userid."'");
-						foreach($aryList as $iList)
-							{	$i=$i+1;
-							  
-							 ?>
-                                        <tr>
-											<td><input type="checkbox" name="sendMAILToStaff[]" value="<?php echo $iList['email']; ?>"></td>
-											 
-												
-													 
-												   <td>
-												 <?php  echo $iList['staff_id'];    ?>
-												 
-												 </td>
-											
-											<td>
-												 <?php  echo $iList['first_name'];    ?>
-												 
-												 </td>
-											<td>
-												 <?php  echo $iList['last_name'];    ?>
-												 
-												 </td>
-												 <td>
-												 <?php  echo $iList['phone'];    ?>
-												 
-												 </td>
-												 <td>
-												 <?php  echo $iList['email'];    ?>
-												 
-												 </td>
-                                        </tr>
-                                    <?php } ?>
-                                    </tbody>
-                                    </table>
-								</form>	
-								</div>
-								
-				 
-
-                        <?php } ?>
-						
-						
-						
-                    </div>
-                </div>
-			</div>
-		</div>
-   </div>
-</div>
-	<?php include('inc.footer.php'); ?>
-</div>
-</div>
 	<?php include('inc.js.php'); ?>
-<script> 
-function getClass()
-{
-	
-	var section_id = document.getElementById("section_id").value;
-
-	$.post("ajax.php",  
-			{	
-				"action"	     	:	"Action_getClass",
-				section_id	     	:	section_id,
-			},
-		function(data){
-			
-			$("#showclass").html(data);
-					
-				
-			});
-}
-
-
-
-</script>	
-
-<script> 
-function getassesment()
-{
-	
-	var session = document.getElementById("session").value;
-	
-
-	$.post("ajax.php",  
-			{	
-				"action"	     	:	"Action_getassesment",
-				session	     	:	session,
-			},
-		function(data){
-			
-			$("#getasses").html(data);
-					
-				
-			});
-}
-
-
-
-</script>	
 </body>
+
 </html>

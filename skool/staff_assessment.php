@@ -1,518 +1,778 @@
-<?php include('../config.php');
+<?php
+
+/**
+ * ============================================================================
+ * MANAGE ASSESSMENT - MODERN REDESIGN
+ * ============================================================================
+ * Description: Manage staff assessments with CRUD operations
+ * Version: 4.0 (Fully Mobile Responsive)
+ * ============================================================================
+ */
+
+include('../config.php');
 include('inc.session-create.php');
+
 $PageTitle = "Manage Assessment";
 $FileName = 'staff_assessment.php';
+
+// ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
+// ============================================================================
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+	$userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+	if ($userData && !empty($userData['create_by_userid'])) {
+		$create_by_userid = (int)$userData['create_by_userid'];
+	}
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+	$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+$create_by_usertype = (string)($_SESSION['usertype'] ?? '');
+$sessionUserId = (int)($_SESSION['userid'] ?? 0);
+
 $validate = new Validation();
-if($_SESSION['success']!="")
-{
+$stat = [];
+
+if (isset($_SESSION['success']) && $_SESSION['success'] != "") {
 	$stat['success'] = $_SESSION['success'];
 	unset($_SESSION['success']);
 }
-if(isset($_POST['addnewrecord']))
-{
-    
-	$validate->addRule($_POST['assessment'],'','Assessment',true);
-	$validate->addRule($_POST['mark'],'','Mark',true);
 
-    if($validate->validate() && count($stat) == 0)
-    {
-        
-				$iLastId=$db->getVal("select id from manage_student order by id desc")+1;		
-				$randomId=randomFix(15).'-'.$iLastId;
+// ============================================================================
+// ADD NEW ASSESSMENT
+// ============================================================================
+if (isset($_POST['addnewrecord'])) {
+	$validate->addRule($_POST['assessment'] ?? '', '', 'Assessment', true);
+	$validate->addRule($_POST['mark'] ?? '', 'num', 'Mark', true);
+	$validate->addRule($_POST['min_mark'] ?? '', 'num', 'Min Mark', true);
 
-		
-		$aryData = array(
-					'assessment'     	 	         			 =>	$_POST['assessment'],
-					'min_mark'     	 	         			     	 =>	$_POST['min_mark'],
-					'mark'     	 	         			     	 =>	$_POST['mark'],
- 					'create_by_userid'                           => $create_by_userid,
-					'create_by_usertype'                         => $create_by_usertype,
-					'randomid'									 =>	$randomId,
- 					);
-				
-				$flgIn = $db->insertAry("staff_assessment", $aryData);		
-				
-				$_SESSION['success']="Save successfully.";
-				redirect($FileName);
-    }
-    else
-	{
-		$stat['error'] = $validate->errors();
-	}
-}
-elseif(isset($_POST['updaterecord'])) 
-{
-   
-	$validate->addRule($_POST['assessment'],'','Assessment',true);
-	$validate->addRule($_POST['mark'],'','Mark',true);
-    if($validate->validate() && count($stat) == 0)
-		{
+	if ($validate->validate() && count($stat) == 0) {
+		$iLastId = db_get_val("SELECT id FROM staff_assessment ORDER BY id DESC") + 1;
+		$randomId = randomFix(15) . '-' . $iLastId;
 
-		$aryData = array(
-								'assessment'     	 	         			 =>	$_POST['assessment'],
-								'min_mark'     	 	         			     	 =>	$_POST['min_mark'],
-								'mark'     	 	         			     	 =>	$_POST['mark'],
-								'create_by_userid'                           => $create_by_userid,
-								'create_by_usertype'                         => $create_by_usertype,
-						);
-			$flgIn2 = $db->updateAry("staff_assessment", $aryData, "where randomid='".$_GET['randomid']."'");
-			
-			$_SESSION['success']="Save successfully.";
+		$aryData = [
+			'assessment' => trim($_POST['assessment']),
+			'min_mark' => floatval($_POST['min_mark']),
+			'mark' => floatval($_POST['mark']),
+			'create_by_userid' => $create_by_userid,
+			'create_by_usertype' => $create_by_usertype,
+			'randomid' => $randomId,
+		];
+
+		$flgIn = db_insert("staff_assessment", $aryData);
+
+		if ($flgIn) {
+			$_SESSION['success'] = "Assessment saved successfully.";
 			redirect($FileName);
+		} else {
+			$stat['error'] = "Failed to save assessment. Please try again.";
 		}
-    else
-	{
+	} else {
 		$stat['error'] = $validate->errors();
 	}
-	
-   
-}
-elseif($_GET['action']=='delete_mas') 
-{
-	$flgIn1 = $db->delete("staff_assessment", "where randomid='".$_GET['randomid']."'");
-	$_SESSION['success'] = 'Deleted Successfully';
-    redirect($FileName);
-    
 }
 
+// ============================================================================
+// UPDATE ASSESSMENT
+// ============================================================================
+if (isset($_POST['updaterecord']) && !empty($_GET['randomid'])) {
+	$validate->addRule($_POST['assessment'] ?? '', '', 'Assessment', true);
+	$validate->addRule($_POST['mark'] ?? '', 'num', 'Mark', true);
+	$validate->addRule($_POST['min_mark'] ?? '', 'num', 'Min Mark', true);
+
+	if ($validate->validate() && count($stat) == 0) {
+		$aryData = [
+			'assessment' => trim($_POST['assessment']),
+			'min_mark' => floatval($_POST['min_mark']),
+			'mark' => floatval($_POST['mark']),
+			'create_by_userid' => $create_by_userid,
+			'create_by_usertype' => $create_by_usertype,
+		];
+
+		$flgIn = db_update("staff_assessment", $aryData, "randomid = ?", [$_GET['randomid']]);
+
+		if ($flgIn !== false) {
+			$_SESSION['success'] = "Assessment updated successfully.";
+			redirect($FileName);
+		} else {
+			$stat['error'] = "Failed to update assessment. Please try again.";
+		}
+	} else {
+		$stat['error'] = $validate->errors();
+	}
+}
+
+// ============================================================================
+// DELETE ASSESSMENT
+// ============================================================================
+if (isset($_GET['action']) && $_GET['action'] == 'delete_mas' && !empty($_GET['randomid'])) {
+	$flgIn = db_delete("staff_assessment", "randomid = ?", [$_GET['randomid']]);
+	if ($flgIn !== false) {
+		$_SESSION['success'] = 'Assessment deleted successfully.';
+	} else {
+		$_SESSION['error'] = 'Failed to delete assessment.';
+	}
+	redirect($FileName);
+}
+
+// ============================================================================
+// GET ASSESSMENTS
+// ============================================================================
+$assessments = db_get_rows(
+	"SELECT * FROM staff_assessment WHERE create_by_userid = ? ORDER BY id DESC",
+	[$create_by_userid]
+);
+
+// Get editing record if any
+$editRecord = null;
+if (!empty($_GET['randomid'])) {
+	$editRecord = db_get_row(
+		"SELECT * FROM staff_assessment WHERE randomid = ? AND create_by_userid = ?",
+		[$_GET['randomid'], $create_by_userid]
+	);
+}
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
-<?php include('inc.meta.php'); ?>
-<script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
-<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Droid+Serif" />
-<style>
+	<?php include('inc.meta.php'); ?>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+	<style>
+		/* ============================================================
+        RESET & BASE - MOBILE FIRST
+        ============================================================ */
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
 
-body, label, span, a, .gwt-Button {
-	
-	 font-family: 'Droid Serif' !important; 
-}
-.abhi .nav-tabs {
-	border-bottom: 2px solid #DDD;
-}
+		body {
+			background: #f0f2f5;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		}
 
-.abhi .nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover {
-	border-width: 0;
-}
+		.assessment-container {
+			max-width: 1000px;
+			margin: 0 auto;
+			padding: 15px;
+		}
 
-.abhi .nav.nav-tabs > li > a:hover, .nav.tabs-vertical > li > a:hover {
-	color: #1B3058 !important;
-}
+		/* ============================================================
+        PAGE HEADER - MOBILE FIRST
+        ============================================================ */
+		.page-header {
+			margin-bottom: 20px;
+		}
 
-.abhi .nav-tabs > li > a {
-	border: none;
-	color: #1B3058 !important;
-}
+		.page-header h2 {
+			color: #1B3058;
+			margin: 0;
+			font-size: 22px;
+			font-weight: 700;
+		}
 
-.abhi .nav-tabs > li.active > a, .nav-tabs > li.active > a:focus, .nav-tabs > li.active > a:hover, .tabs-vertical > li.active > a, .tabs-vertical > li.active > a:focus, .tabs-vertical > li.active > a:hover {
-	color: #1B3058 !important;
-}
+		.page-header h2 i {
+			margin-right: 8px;
+		}
 
-.abhi .nav > li > a i {
-	font-size: 16px;
-	padding-right: 5px;
-}
+		.page-header p {
+			color: #666;
+			margin-top: 4px;
+			font-size: 14px;
+		}
 
-.abhi .nav-tabs > li > a::after {
-	content: "";
-	background: #1B3058;
-	height: 2px;
-	position: absolute;
-	width: 100%;
-	left: 0px;
-	bottom: -1px;
-	transition: all 250ms ease 0s;
-	transform: scale(0);
-}
+		/* ============================================================
+        CARD - MOBILE FIRST
+        ============================================================ */
+		.card {
+			background: #fff;
+			border-radius: 16px;
+			box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+			overflow: hidden;
+			margin-bottom: 20px;
+		}
 
-.abhi .nav-tabs > li.active > a::after, .nav-tabs > a::after {
-	transform: scale(1);
-}
+		.card-header {
+			padding: 14px 18px;
+			background: linear-gradient(135deg, #1B3058, #2a4780);
+			color: white;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
 
-.abhi .tab-nav > li > a::after {
-	background: # #5a4080 none repeat scroll 0% 0%;
-	color: #fff;
-}
+		.card-header i {
+			font-size: 18px;
+		}
 
-.abhi .tab-pane {
-	padding: 25px 0;
-}
+		.card-header h3 {
+			margin: 0;
+			font-size: 16px;
+			font-weight: 600;
+		}
 
-.abhi .tab-content {
-	padding: 20px;
-}
+		.card-body {
+			padding: 16px;
+		}
 
-.abhi .nav-tabs > li {
-	
-	text-align: center;
-}
+		/* ============================================================
+        FORM - MOBILE FIRST
+        ============================================================ */
+		.form-grid {
+			display: grid;
+			grid-template-columns: 1fr;
+			gap: 14px;
+		}
 
-.abhi .card {
-	background: #FFF none repeat scroll 0% 0%;
-	box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.3);
-	margin-bottom: 30px;
-}
+		.form-group {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
 
-.abhi body {
-	background: #EDECEC;
-	padding: 50px;
-}
+		.form-group label {
+			font-weight: 600;
+			font-size: 13px;
+			color: #333;
+		}
 
-.abhi .ass .select-hide {
-	display: none;
-}
+		.form-group label .required {
+			color: #dc3545;
+		}
 
-.abhi .ass .custom-select select {
-	display: none;
-}
+		.form-group input[type="text"],
+		.form-group input[type="number"] {
+			width: 100%;
+			padding: 10px 14px;
+			border: 2px solid #e0e0e0;
+			border-radius: 10px;
+			font-size: 14px;
+			transition: all 0.2s;
+			background: #fafafa;
+		}
 
-.abhi .ass .select-selected {
-	border-bottom: 1px solid #9e9e9e;
-}
+		.form-group input[type="text"]:focus,
+		.form-group input[type="number"]:focus {
+			outline: none;
+			border-color: #1B3058;
+			background: #fff;
+			box-shadow: 0 0 0 3px rgba(27, 48, 88, 0.1);
+		}
 
-.abhi .ass .ytr {
-	margin-top: 22px;
-}
+		.btn {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 8px;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 10px;
+			font-size: 14px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.3s;
+			text-decoration: none;
+			min-height: 44px;
+			touch-action: manipulation;
+		}
 
-.abhi .fdg {
-	border-bottom: 1px solid #9e9e9e2b;
-}
+		.btn:active {
+			transform: scale(0.97);
+		}
 
-.abhi .shg p {
-	color: #1B3058;
-}
+		.btn-primary {
+			background: #1B3058;
+			color: white;
+		}
 
-.abhi .ass .bgb i {
-	color: #1B3058;
-	font-size: 19px;
-}
+		.btn-primary:hover {
+			background: #f21151;
+		}
 
-.abhi .ass .col-md-4 i {
-	background: #F44336;
-	padding: 8px;
-	border-radius: 50%;
-	color: #fff;
-	font-size: 14px;
-}
+		.btn-success {
+			background: #28a745;
+			color: white;
+		}
 
-.abhi .ass .shg {
-	padding-top: 29px;
-}
+		.btn-success:hover {
+			background: #218838;
+		}
 
-.abhi .ass .select-items {
-	border: 1px solid #ddd;
-	padding: 9px;
-	position: relative;
-	bottom: 20px;
-	background: #fff;
-}
+		.btn-danger {
+			background: #dc3545;
+			color: white;
+		}
 
-.abhi .ass .select-items div {
-	padding-bottom: 7px;
-}
+		.btn-danger:hover {
+			background: #c82333;
+		}
 
-.abhi .ab-1 {
-	text-align: center;
-}
+		.btn-outline {
+			background: transparent;
+			color: #1B3058;
+			border: 2px solid #1B3058;
+		}
 
-.abhi .icon i {
-	color: #0b4587;
-	background: #fff;
-	font-size: 32px;
-	border-radius: 50%;
-	position: absolute;
-	bottom: -25px;
-	left: 0;
-	right: 0;
-	width: 100%;
-	margin: 0 auto;
-	padding: 15px 10px 15px 10px;
-}
+		.btn-outline:hover {
+			background: #1B3058;
+			color: white;
+		}
 
-.abhi .icon input {
-	position: absolute;
-	left: 0;
-	opacity: 0;
-	width: 100%;
-	right: 0;
-	top: -18px;
-}
+		.btn-sm {
+			padding: 6px 12px;
+			font-size: 12px;
+			min-height: 32px;
+		}
 
-.abhi .abhish .input-field {
-	padding-bottom: 0;
-}
+		.btn-block {
+			width: 100%;
+			justify-content: center;
+		}
 
-.abhi .abh {
-	margin-top: 35px;
-}
+		.form-actions {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			margin-top: 10px;
+		}
 
-.abhi .input-field input {
-	background-color: transparent;
-	border: none;
-	border-bottom: 1px solid #9e9e9e;
-	border-radius: 0;
-	outline: none;
-	width: 100%;
-	margin: 0 0 15px 0;
-	padding: 0;
-	box-shadow: none;
-	box-sizing: content-box;
-	transition: all .3s;
-}
+		/* ============================================================
+        TABLE - MOBILE FIRST
+        ============================================================ */
+		.table-wrapper {
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
+			margin: 0 -4px;
+			padding: 0 4px;
+		}
 
-.abhi .input-field label {
-	color: #9e9e9e;
-}
+		.table {
+			width: 100%;
+			min-width: 400px;
+			border-collapse: collapse;
+			font-size: 13px;
+		}
 
-.abhi .icon {
-	position: relative;
-	left: 0;
-	bottom: 0;
-	width: 7%;
-	margin: 0 auto;
-	right: 0;
-	height: 0;
-	top: 0;
-}
+		.table th,
+		.table td {
+			padding: 10px 8px;
+			text-align: left;
+			border-bottom: 1px solid #f0f0f0;
+			vertical-align: middle;
+		}
 
-.abhi .ab-2 {
-	background: #0b4587;
-	color: #fff;
-	width: 23%;
-	padding: 28px;
-	margin: 0 auto;
-}
+		.table th {
+			background: #f8f9fa;
+			font-weight: 700;
+			color: #1B3058;
+			font-size: 11px;
+			text-transform: uppercase;
+			letter-spacing: 0.3px;
+			position: sticky;
+			top: 0;
+		}
 
-.abhi .imgage {
-	padding-bottom: 13px;
-}
+		.table td {
+			font-size: 13px;
+		}
 
-.abhi .abb {
-	text-align: center;
-}
+		.table tr:hover td {
+			background: #f8f9ff;
+		}
 
-.abhi .ab-3 {
-	margin-top: 30px;
-}
+		.table .action-cell {
+			white-space: nowrap;
+			display: flex;
+			gap: 6px;
+			flex-wrap: wrap;
+		}
 
-.abhi .plp {
-	margin-bottom: 80px;
-}
+		.table .action-cell .btn {
+			min-height: 30px;
+			padding: 4px 10px;
+			font-size: 12px;
+		}
 
-.abhi .ab-3 .col-md-1 i {
-	font-size: 17px;
-	color: #000000d6;
-}
+		.table .edit-input {
+			width: 100%;
+			padding: 6px 10px;
+			border: 2px solid #1B3058;
+			border-radius: 6px;
+			font-size: 13px;
+			background: #fff;
+		}
 
-.abhi .ab-3 .col-md-4 i {
-	background: #F44336;
-	padding: 8px;
-	border-radius: 50%;
-	color: #fff;
-	font-size: 14px;
-}
+		.table .edit-input:focus {
+			outline: none;
+			box-shadow: 0 0 0 3px rgba(27, 48, 88, 0.1);
+		}
 
-.abhi .ab-3 input {
-	color: rgba(0, 0, 0, 0.26);
-	border-bottom: 1px dotted rgba(0, 0, 0, 0.26);
-}
+		/* ============================================================
+        ALERTS - MOBILE FIRST
+        ============================================================ */
+		.alert {
+			padding: 12px 16px;
+			border-radius: 12px;
+			margin-bottom: 16px;
+			font-size: 13px;
+			display: flex;
+			align-items: flex-start;
+			gap: 10px;
+		}
 
-.abhi button {
-	cursor: pointer;
-	float: right;
-	background: #1B3058;
-	color: #fff;
-}
+		.alert i {
+			font-size: 18px;
+			margin-top: 2px;
+			flex-shrink: 0;
+		}
 
-.abhi button:hover {
+		.alert-success {
+			background: #d4edda;
+			color: #155724;
+			border-left: 4px solid #28a745;
+		}
 
-	background: #1B3058;
-	color: #fff;
-}
+		.alert-danger {
+			background: #f8d7da;
+			color: #721c24;
+			border-left: 4px solid #dc3545;
+		}
 
-.abhi button i {
-	padding-right: 45px;
-	font-size: 13px;
-}
+		.alert-info {
+			background: #d1ecf1;
+			color: #0c5460;
+			border-left: 4px solid #17a2b8;
+		}
 
-.abhi .input-field {
-	padding-bottom: 20px;
-}
+		/* ============================================================
+        EMPTY STATE - MOBILE FIRST
+        ============================================================ */
+		.empty-state {
+			text-align: center;
+			padding: 40px 20px;
+			color: #999;
+		}
 
-.abhi .assde {
-	margin-top: 50px;
-}
+		.empty-state i {
+			font-size: 48px;
+			color: #ddd;
+			display: block;
+			margin-bottom: 12px;
+		}
 
-.abhi .ade {
-	margin-top: 40px;
-}
+		.empty-state h4 {
+			color: #666;
+			font-size: 16px;
+			margin-bottom: 4px;
+		}
 
-.abhi .bgb {
-	text-align: center;
-	padding-top: 3px;
-}
+		.empty-state p {
+			font-size: 13px;
+		}
 
-.abhi .bgb i {
-	color: #1B3058;
-	font-size: 19px;
-}
+		/* ============================================================
+        RESPONSIVE - TABLET (768px+)
+        ============================================================ */
+		@media (min-width: 768px) {
+			.assessment-container {
+				padding: 25px;
+			}
 
-@media all and (max-width: 724px) {
-	.abhi .nav-tabs > li > a > span {
-		display: none;
-	}
+			.page-header h2 {
+				font-size: 28px;
+			}
 
-	.abhi .nav-tabs > li > a {
-		padding: 5px 5px;
-	}
-}
+			.form-grid {
+				grid-template-columns: 1fr 1fr;
+				gap: 18px;
+			}
 
+			.form-group.full-width {
+				grid-column: 1 / -1;
+			}
 
-.page-title {
-    margin-bottom: 30px;
-}
-</style>
+			.form-actions {
+				flex-direction: row;
+				justify-content: flex-end;
+			}
+
+			.form-actions .btn {
+				width: auto;
+			}
+
+			.card-body {
+				padding: 24px;
+			}
+
+			.table {
+				min-width: auto;
+			}
+
+			.table th,
+			.table td {
+				padding: 12px 14px;
+			}
+
+			.table .action-cell {
+				flex-wrap: nowrap;
+			}
+		}
+
+		/* ============================================================
+        RESPONSIVE - DESKTOP (1024px+)
+        ============================================================ */
+		@media (min-width: 1024px) {
+			.assessment-container {
+				padding: 30px;
+			}
+		}
+
+		/* ============================================================
+        RESPONSIVE - SMALL MOBILE (480px-)
+        ============================================================ */
+		@media (max-width: 480px) {
+			.assessment-container {
+				padding: 10px;
+			}
+
+			.page-header h2 {
+				font-size: 20px;
+			}
+
+			.page-header p {
+				font-size: 12px;
+			}
+
+			.card-body {
+				padding: 12px;
+			}
+
+			.table {
+				font-size: 11px;
+				min-width: 350px;
+			}
+
+			.table th,
+			.table td {
+				padding: 6px 4px;
+			}
+
+			.table th {
+				font-size: 9px;
+			}
+
+			.table td {
+				font-size: 11px;
+			}
+
+			.table .edit-input {
+				font-size: 11px;
+				padding: 4px 6px;
+			}
+
+			.table .action-cell .btn {
+				font-size: 10px;
+				padding: 3px 8px;
+				min-height: 26px;
+			}
+
+			.btn {
+				font-size: 13px;
+				padding: 8px 16px;
+				min-height: 40px;
+			}
+
+			.form-group input[type="text"],
+			.form-group input[type="number"] {
+				font-size: 13px;
+				padding: 8px 12px;
+			}
+		}
+
+		/* ============================================================
+        PRINT STYLES
+        ============================================================ */
+		@media print {
+
+			.btn,
+			.form-actions,
+			.no-print {
+				display: none !important;
+			}
+
+			.card {
+				box-shadow: none !important;
+				border: 1px solid #ddd;
+			}
+
+			.card-header {
+				-webkit-print-color-adjust: exact;
+				print-color-adjust: exact;
+			}
+
+			body {
+				background: white;
+			}
+
+			.assessment-container {
+				padding: 0;
+			}
+		}
+	</style>
 </head>
-<body class="fixed-left">
-<div id="wrapper">
-<?php include('inc.header.php'); ?>
-<?php include('inc.sideleft.php'); ?>
-  <div class="content-page">
-  <!-- Start content -->
-  <div class="content">
-  <div class="container"> 
-    <!-- Page-Title -->
-    <div class="row">
-      <div class="col-sm-12">
-        <h4 class="page-title licat" style="text-align: center;"><?php echo $PageTitle ?></h4>
-        <?php echo msg($stat);?> </div>
-    </div>
-    <!-- Basic Form Wizard -->
-    <div class="abhi">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-12"> 
-            <!-- Nav tabs -->
-            <div class="card">
-              <ul class="nav nav-tabs" role="tablist">
-                <li role="presentation" class="<?php if($_GET['action']=='' || $_GET['action']=='manage_trait') { echo "active"; } ?>"> <a href="<?php echo $Filename; ?>?action=manage_trait"> <i class="fa fa-exclamation-circle" aria-hidden="true"></i> <span>Principal Signature And Next Term Begins</span> </a> </li>
-              </ul>
-              <div class="tab-content">
- 
-                <div role="tabpanel" class="tab-pane active" id="home">
-                  <div class="ab-1">
-                 
-                    <form action="" method="POST" enctype="multipart/form-data">
-                      <div class="row">
-                        <div class="col-md-1"></div>
-                        <div class="col-md-10 col-xs-12">
-                           
-                          
-                            <div class="form-group clearfix">
-                            <label class="col-lg-2 control-label " for="userName">Assessment</label>
-                            <div class="col-lg-10">
-                              <input type="text" class="form-control required" id="assessment" name="assessment"  value="<?php echo $_POST['assessment']; ?>">
-                            </div>
-                          </div>
-                           
-                          <div class="form-group clearfix">
-                            <label class="col-lg-2 control-label " for="userName">Mark</label>
-                            <div class="col-lg-10">
-                              <input type="text" class="form-control required" id="mark" name="mark"  value="<?php echo $_POST['mark']; ?>">
-                            </div>
-                          </div>
-                          
-                           <div class="form-group clearfix">
-                            <label class="col-lg-2 control-label " for="userName">Min Mark</label>
-                            <div class="col-lg-10">
-                              <input type="text" class="form-control required" id="min_mark" name="min_mark"  value="<?php echo $_POST['min_mark']; ?>">
-                            </div>
-                          </div>
-                          
-                          
-                          <div class="form-group clearfix bfrcs ">
-                            <div class="col-lg-12 ">
-                              <button type="submit" name="addnewrecord" class="btn"> <i class="fa fa-plus" aria-hidden="true"></i><span>Save</span> </button>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="col-md-1"></div>
-                      </div>
-                    </form>
-               
-                    <div class="row">
-                      <div class="col-md-12 col-xs-12">
-                       
-                          <div class="card-box table-responsive tablthisresponsive">
-                            <table class="table table-striped table-bordered">
-                              <thead>
-                                <tr>
-                                  <th>#</th>
-                                  <th>Assessment</th>
-                                  <th>Mark</th>  
-                                  <th>Min Mark</th>
-                                  <th>Edit</th>
-                                  <th>Remove</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <?php $i=0;
-				$NewcrearyLisCredtet=$db->getRows("select * from staff_assessment where create_by_userid='".$create_by_userid."' order by id desc");
-						foreach($NewcrearyLisCredtet as $iList)
-							{	$i=$i+1;
-								 
-							 ?>
-                              <form action="" method="POST">
-                                <tr>
-                                  <td><?php echo $i ?></td>
-                                   <td>
-                                   <?php if($_GET['randomid']==$iList['randomid']) { ?>
-                                   <input type="text" name="assessment" value="<?php echo $iList['assessment']; ?>" class="form-control">
-                                    <?php } else { echo $iList['assessment']; } ?></td>
-                                   <td>
-                                   <?php if($_GET['randomid']==$iList['randomid']) { ?>
-                                   <input type="text" name="mark" value="<?php echo $iList['mark']; ?>" class="form-control">
-                                    <?php } else { echo $iList['mark']; } ?></td>
-                                    
-                                    <td>
-                                   <?php if($_GET['randomid']==$iList['randomid']) { ?>
-                                   <input type="text" name="min_mark" value="<?php echo $iList['min_mark']; ?>" class="form-control">
-                                    <?php } else { echo $iList['min_mark']; } ?></td>
-                                 
-                                 
-                                 
-                                  <td><?php if($_GET['randomid']==$iList['randomid']) { ?>
-                                    <input type="submit" name="updaterecord" value="SAVE" class="btn btn-primary" style="color:white;">
-                                    <?php } else { ?>
-                                    <a href="<?php echo $FileName; ?>?action=manage_trait&randomid=<?php echo $iList['randomid']; ?>" class="table-action-btn"> <i class="fa fa-pencil"></i> </a>
-                                    <?php } ?></td>
-                                    
-                                    
-                                  <td><a href="javascript:del('<?php echo $FileName; ?>?action=delete_mas&randomid=<?php echo $iList['randomid']; ?>')" class="table-action-btn"> <i class="fa fa-times"></i> </a></td>
-                                </tr>
-                                 </form>
-                                <?php } ?>
-                              </tbody>
-                            </table>
-                          </div>
-                       
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                 
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <?php include('inc.footer.php'); ?>
-    </div>
-  </div>
-   </div>
-    </div>
 
-  <?php include('inc.js.php'); ?>
+<body class="fixed-left">
+	<div id="wrapper">
+		<?php include('inc.header.php'); ?>
+		<?php include('inc.sideleft.php'); ?>
+		<div class="content-page">
+			<div class="content">
+				<div class="assessment-container">
+
+					<!-- Page Header -->
+					<div class="page-header">
+						<h2><i class="fa fa-tasks"></i> <?= htmlspecialchars($PageTitle) ?></h2>
+						<p>Create and manage staff assessment types with their marks</p>
+					</div>
+
+					<?= showMessage($stat) ?>
+
+					<!-- Add/Edit Form -->
+					<div class="card">
+						<div class="card-header">
+							<i class="fa fa-<?= (!empty($editRecord)) ? 'pencil' : 'plus-circle' ?>"></i>
+							<h3><?= (!empty($editRecord)) ? 'Edit Assessment' : 'Add New Assessment' ?></h3>
+						</div>
+						<div class="card-body">
+							<form method="POST" action="<?= (!empty($editRecord)) ? '?randomid=' . urlencode($editRecord['randomid']) : '' ?>" id="assessmentForm">
+								<div class="form-grid">
+									<div class="form-group full-width">
+										<label>Assessment Name <span class="required">*</span></label>
+										<input type="text" name="assessment" placeholder="Enter assessment name..."
+											value="<?= htmlspecialchars($editRecord['assessment'] ?? $_POST['assessment'] ?? '') ?>" required>
+									</div>
+									<div class="form-group">
+										<label>Mark (Max) <span class="required">*</span></label>
+										<input type="number" name="mark" placeholder="Maximum mark..." step="0.01" min="0"
+											value="<?= htmlspecialchars($editRecord['mark'] ?? $_POST['mark'] ?? '') ?>" required>
+									</div>
+									<div class="form-group">
+										<label>Minimum Mark <span class="required">*</span></label>
+										<input type="number" name="min_mark" placeholder="Minimum mark..." step="0.01" min="0"
+											value="<?= htmlspecialchars($editRecord['min_mark'] ?? $_POST['min_mark'] ?? '') ?>" required>
+									</div>
+								</div>
+								<div class="form-actions">
+									<?php if (!empty($editRecord)): ?>
+										<button type="submit" name="updaterecord" class="btn btn-primary">
+											<i class="fa fa-save"></i> Update Assessment
+										</button>
+										<a href="<?= $FileName ?>" class="btn btn-outline">
+											<i class="fa fa-times"></i> Cancel
+										</a>
+									<?php else: ?>
+										<button type="submit" name="addnewrecord" class="btn btn-primary">
+											<i class="fa fa-plus"></i> Save Assessment
+										</button>
+									<?php endif; ?>
+								</div>
+							</form>
+						</div>
+					</div>
+
+					<!-- Assessments List -->
+					<div class="card">
+						<div class="card-header">
+							<i class="fa fa-list"></i>
+							<h3>Assessment List</h3>
+							<span style="margin-left: auto; background: rgba(255,255,255,0.2); padding: 2px 14px; border-radius: 20px; font-size: 12px;">
+								<?= count($assessments) ?>
+							</span>
+						</div>
+						<div class="card-body">
+							<?php if (!empty($assessments)): ?>
+								<div class="table-wrapper">
+									<table class="table" id="assessmentTable">
+										<thead>
+											<tr>
+												<th style="width:40px;">#</th>
+												<th>Assessment</th>
+												<th>Max Mark</th>
+												<th>Min Mark</th>
+												<th style="width:140px;">Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											<?php $i = 0;
+											foreach ($assessments as $assessment): $i++; ?>
+												<tr>
+													<td><?= $i ?></td>
+													<td><strong><?= htmlspecialchars($assessment['assessment']) ?></strong></td>
+													<td><?= number_format($assessment['mark'], 2) ?></td>
+													<td><?= number_format($assessment['min_mark'], 2) ?></td>
+													<td>
+														<div class="action-cell">
+															<a href="?action=manage_trait&randomid=<?= urlencode($assessment['randomid']) ?>" class="btn btn-primary btn-sm">
+																<i class="fa fa-pencil"></i>
+															</a>
+															<a href="javascript:void(0)" onclick="confirmDelete('<?= $FileName ?>?action=delete_mas&randomid=<?= urlencode($assessment['randomid']) ?>')" class="btn btn-danger btn-sm">
+																<i class="fa fa-times"></i>
+															</a>
+														</div>
+													</td>
+												</tr>
+											<?php endforeach; ?>
+										</tbody>
+									</table>
+								</div>
+							<?php else: ?>
+								<div class="empty-state">
+									<i class="fa fa-inbox"></i>
+									<h4>No Assessments Found</h4>
+									<p>Add your first assessment using the form above.</p>
+								</div>
+							<?php endif; ?>
+						</div>
+					</div>
+				</div>
+			</div>
+			<?php include('inc.footer.php'); ?>
+		</div>
+	</div>
+
+	<?php include('inc.js.php'); ?>
+	<script>
+		function confirmDelete(url) {
+			if (confirm('Are you sure you want to delete this assessment? This action cannot be undone.')) {
+				window.location.href = url;
+			}
+		}
+
+		// Auto-calculate min_mark when mark is entered
+		document.addEventListener('DOMContentLoaded', function() {
+			var markInput = document.querySelector('input[name="mark"]');
+			var minMarkInput = document.querySelector('input[name="min_mark"]');
+
+			if (markInput && minMarkInput) {
+				markInput.addEventListener('input', function() {
+					var val = parseFloat(this.value);
+					if (!isNaN(val) && val > 0) {
+						// Set min_mark to a percentage of max (e.g., 40%)
+						var minVal = Math.round(val * 0.4);
+						minMarkInput.value = minVal;
+					}
+				});
+			}
+		});
+	</script>
 </body>
+
 </html>
