@@ -31,7 +31,25 @@ $requestedStudentId = trim((string)($_GET['student_id'] ?? ''));
 $requestedSessionId = (int)($_GET['session'] ?? 0);
 $requestedTermId = (int)($_GET['term_id'] ?? 0);
 $requestedClassId = (int)($_GET['class_id'] ?? 0);
-$sessionSchoolId = (int)($_SESSION['create_by_userid'] ?? $_SESSION['userid'] ?? 0);
+
+// ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (EXACTLY MATCHES dashboard.php)
+// ============================================================================
+// Use the same method as class_teacher_roll_call_bulk.php
+$sessionSchoolId = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($sessionSchoolId == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $sessionSchoolId = (int)$userData['create_by_userid'];
+    }
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($sessionSchoolId == 0) {
+    $sessionSchoolId = (int)($_SESSION['userid'] ?? 0);
+}
 
 // ============================================================================
 // GET STUDENT - USE RANDOMID APPROACH LIKE TERM RESULT
@@ -51,8 +69,7 @@ if ($requestedRandomId !== '') {
     $iStudent = db_get_row($randomQuery . " ORDER BY id DESC LIMIT 1", $randomParams);
 }
 
-
-// THIRD: Try by student_id (fallback)
+// SECOND: Try by student_id (fallback)
 if (empty($iStudent) && $requestedStudentId !== '') {
     $studentParams = [$requestedStudentId];
     $studentQuery = "SELECT * FROM manage_student WHERE student_id = ?";
@@ -65,7 +82,7 @@ if (empty($iStudent) && $requestedStudentId !== '') {
     $iStudent = db_get_row($studentQuery . " ORDER BY id DESC LIMIT 1", $studentParams);
 }
 
-// FOURTH: Try with session and term filters
+// THIRD: Try with session and term filters
 if (empty($iStudent) && $requestedStudentId !== '' && $requestedSessionId > 0 && $requestedTermId > 0) {
     $studentQuery = "SELECT * FROM manage_student WHERE student_id = ?";
     $studentParams = [$requestedStudentId];
@@ -93,7 +110,7 @@ if (empty($iStudent) && $requestedStudentId !== '' && $requestedSessionId > 0 &&
     $iStudent = db_get_row($studentQuery . " ORDER BY id DESC LIMIT 1", $studentParams);
 }
 
-// FIFTH: Try with student_id and session only
+// FOURTH: Try with student_id and session only
 if (empty($iStudent) && $requestedStudentId !== '' && $requestedSessionId > 0) {
     $studentParams = [$requestedStudentId, $requestedSessionId];
     $studentQuery = "SELECT * FROM manage_student WHERE student_id = ? AND session = ?";
@@ -106,7 +123,7 @@ if (empty($iStudent) && $requestedStudentId !== '' && $requestedSessionId > 0) {
     $iStudent = db_get_row($studentQuery . " ORDER BY id DESC LIMIT 1", $studentParams);
 }
 
-// SIXTH: Try with student_id and term only
+// FIFTH: Try with student_id and term only
 if (empty($iStudent) && $requestedStudentId !== '' && $requestedTermId > 0) {
     $studentParams = [$requestedStudentId, $requestedTermId];
     $studentQuery = "SELECT * FROM manage_student WHERE student_id = ? AND term_id = ?";
@@ -120,7 +137,7 @@ if (empty($iStudent) && $requestedStudentId !== '' && $requestedTermId > 0) {
 }
 
 if (empty($iStudent)) {
-    die("Student not found.here");
+    die("Student not found.");
 }
 
 // ============================================================================
