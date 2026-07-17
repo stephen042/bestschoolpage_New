@@ -14,6 +14,15 @@ if (!defined('DS')) {
     require_once dirname(__DIR__) . '/config.php';
 }
 
+// Logout to login page if user is not logged in and if url is /skool 
+if (!isset($_SESSION['userid']) || empty($_SESSION['userid'])) {
+    header("Location: " . SKOOL_URL . "login.php");
+    exit();
+}elseif ($_SERVER['REQUEST_URI'] === '/skool/') {
+    header("Location: " . SKOOL_URL . "dashboard.php");
+    exit();
+};
+
 // Get school name with proper fallback
 $skoolname = [];
 $schoolName = 'School Management System';
