@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Chunked bulk result PDF export by class.
  *
@@ -11,6 +12,25 @@
 require_once('../config.php');
 require_once('inc.session-create.php');
 
+// ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (EXACTLY MATCHES dashboard.php)
+// ============================================================================
+// Use the same method as class_teacher_roll_call_bulk.php
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $create_by_userid = (int)$userData['create_by_userid'];
+    }
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
 header('Content-Type: application/json; charset=utf-8');
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -19,7 +39,7 @@ if (!in_array($action, ['start', 'process', 'status'], true)) {
     exit;
 }
 
-$schoolId = (int)($create_by_userid ?? 0);
+$schoolId = $create_by_userid;
 if ($schoolId <= 0) {
     echo json_encode(['ok' => false, 'message' => 'Invalid school context']);
     exit;
@@ -43,6 +63,8 @@ if ($action === 'start') {
     $termId = (int)($_POST['term_id'] ?? 0);
     $classId = (int)($_POST['class_id'] ?? 0);
     $assesmentsRaw = trim((string)($_POST['assesments'] ?? ''));
+    // Get the school ID from POST if provided, otherwise use the resolved one
+    $schoolIdParam = (int)($_POST['create_by_userid'] ?? $schoolId);
 
     if ($sessionId <= 0 || $termId <= 0 || $classId <= 0 || $assesmentsRaw === '') {
         echo json_encode(['ok' => false, 'message' => 'Missing required filters']);
@@ -59,8 +81,11 @@ if ($action === 'start') {
 
     $ownerIds = array_values(array_unique(array_filter([
         (int)$schoolId,
+        (int)$schoolIdParam,
         (int)($_SESSION['userid'] ?? 0),
-    ], function ($v) { return $v > 0; })));
+    ], function ($v) {
+        return $v > 0;
+    })));
     $ownerPrimary = $ownerIds[0] ?? $schoolId;
     $ownerSecondary = $ownerIds[1] ?? $ownerPrimary;
 
@@ -361,6 +386,8 @@ for ($i = $processed; $i < $end; $i++) {
         'term_id' => (int)($filters['term_id'] ?? 0),
         'class_id' => (int)($filters['class_id'] ?? 0),
         'assesments' => (string)($filters['assesments'] ?? ''),
+        'create_by_userid' => $schoolId,
+        'paper_mode' => 'legacy_auto',
     ];
 
     $pdfResponse = fetchPdfBinary(SKOOL_URL . 'skool_term_result_pdf.php', $query, $sessionCookieName, $sessionCookieId);
