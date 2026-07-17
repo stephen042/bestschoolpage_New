@@ -15,7 +15,6 @@ require_once('inc.session-create.php');
 // ============================================================================
 // FIX: USE CORRECT USER IDENTIFICATION (EXACTLY MATCHES dashboard.php)
 // ============================================================================
-// Use the same method as class_teacher_roll_call_bulk.php
 $create_by_userid = (int)($_SESSION['userid'] ?? 0);
 
 // If create_by_userid is not set in session, try to get it from the user record
@@ -30,6 +29,9 @@ if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
 if ($create_by_userid == 0) {
     $create_by_userid = (int)($_SESSION['userid'] ?? 0);
 }
+
+$create_by_usertype = (string)($_SESSION['usertype'] ?? '');
+$sessionUserId = (int)($_SESSION['userid'] ?? 0);
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -63,7 +65,6 @@ if ($action === 'start') {
     $termId = (int)($_POST['term_id'] ?? 0);
     $classId = (int)($_POST['class_id'] ?? 0);
     $assesmentsRaw = trim((string)($_POST['assesments'] ?? ''));
-    // Get the school ID from POST if provided, otherwise use the resolved one
     $schoolIdParam = (int)($_POST['create_by_userid'] ?? $schoolId);
 
     if ($sessionId <= 0 || $termId <= 0 || $classId <= 0 || $assesmentsRaw === '') {
@@ -379,6 +380,9 @@ for ($i = $processed; $i < $end; $i++) {
     $studentId = (string)($student['student_id'] ?? 'student_' . $i);
     $randomid = (string)($student['randomid'] ?? '');
 
+    // ============================================================================
+    // MATCH THE EXACT PARAMETERS THAT term_result.php AND skool_term_result_pdf.php EXPECT
+    // ============================================================================
     $query = [
         'randomid' => $randomid,
         'student_id' => $studentId,
@@ -386,7 +390,6 @@ for ($i = $processed; $i < $end; $i++) {
         'term_id' => (int)($filters['term_id'] ?? 0),
         'class_id' => (int)($filters['class_id'] ?? 0),
         'assesments' => (string)($filters['assesments'] ?? ''),
-        'create_by_userid' => $schoolId,
         'paper_mode' => 'legacy_auto',
     ];
 
