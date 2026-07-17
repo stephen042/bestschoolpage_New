@@ -2,10 +2,10 @@
 
 /**
  * ============================================================================
- * SKOOL TERM RESULT PDF - WITH WORKING LOGO HEADER & WATERMARK BACKGROUND
+ * SKOOL TERM RESULT PDF - OPTIMIZED FOR 80% A4 FILL
  * ============================================================================
- * FIXED: Page break issues, table scattering, and multi-page rendering
- * Version: 4.1 (Signature at Bottom Right)
+ * FIXED: 80% A4 fill, compact traits table, better space utilization
+ * Version: 5.0 (80% A4 Optimized)
  * ============================================================================
  */
 
@@ -513,14 +513,14 @@ $totalColumns = 1 + count($totalAssesment) + 2 +
     ($showLowestAvg ? 1 : 0) + ($showHighestAvg ? 1 : 0) +
     ($showClassAvg ? 1 : 0);
 
-// Force A3 if too many columns or rows
+// Force A4 with optimized settings
 $forceA3Paper = false;
-if ($totalColumns > 12 || $totalRows > 30) {
+if ($totalColumns > 14 || $totalRows > 35) {
     $forceA3Paper = true;
 }
 
-// Split table if too many rows for one page
-$rowsPerPage = 20;
+// Split table only if absolutely necessary
+$rowsPerPage = 30;
 $tablePages = [];
 if ($totalRows > $rowsPerPage) {
     $tablePages = array_chunk($subjectScoresData, $rowsPerPage);
@@ -732,101 +732,60 @@ function getImagePath($filename)
     return '';
 }
 
-// Layout metrics parsing
-$assessmentCount = count($totalAssesment);
-$extraCols = 3 + ($showPos ? 1 : 0) + ($showOutOf ? 1 : 0) + ($showLowestAvg ? 1 : 0) + ($showHighestAvg ? 1 : 0) + ($showClassAvg ? 1 : 0);
-$columnCount = 1 + $assessmentCount + $extraCols;
-$subjectCountForLayout = (int)$iCountSubject;
+// ============================================================================
+// OPTIMIZED A4 LAYOUT SETTINGS (80% fill with dynamic adjustments)
+// ============================================================================
+$paperSize = 'A4';
+$compactMode = false;
 
-$paperMode = strtolower(trim((string)($_GET['paper_mode'] ?? 'smart')));
-$autoPaperMode = in_array($paperMode, ['smart', 'auto', 'legacy_auto', ''], true);
-$forceA3Paper = $forceA3Paper || in_array($paperMode, ['a3', 'a3_portrait'], true);
-$forceCompactForSchoolIds = in_array((int)$SCHOOL_ID, [30, 64], true);
-$assessmentCountForLayout = max(1, count($totalAssesment));
-$denseLayout = $forceCompactForSchoolIds || ($subjectCountForLayout >= 10) || ($assessmentCountForLayout >= 4 && $columnCount >= 13) || ($columnCount >= 14) || ($totalRows > 20);
-$useA3Page = $forceA3Paper || ($autoPaperMode && $denseLayout);
-$paperSize = $useA3Page ? 'A3' : 'A4';
-$compactMode = $denseLayout || $forceCompactForSchoolIds || $totalRows > 25;
-$traitsMarginTop = $compactMode ? '15px' : '30px';
-$brandImageScale = 1.55;
+// Base compact settings for 80% fill
+$pageMargin = '6mm';
+$baseFont = '9.5pt';
+$lineHeight = '1.15';
+$headerNameSize = '14pt';
+$tableFont = '7.5pt';
+$tablePadding = '1.5px';
+$logoMax = '65px';
+$photoSize = '60px';
+$watermarkScale = '35%';
+$traitsMarginTop = '6px';
 
-$pageMargin = '10mm';
-$baseFont = '10.5pt';
-$lineHeight = '1.28';
-$headerNameSize = '18pt';
-$tableFont = '9.0pt';
-$tablePadding = '3px';
-$logoMax = '130px';
-$photoSize = '130px';
-$watermarkScale = '45%';
-
-// Adjust for compact mode
-if ($compactMode) {
-    $pageMargin = $useA3Page ? '5mm' : '4.8mm';
-    $baseFont = '10.4pt';
-    $lineHeight = '1.2';
-    $headerNameSize = '15.5pt';
-    $tableFont = '8.0pt';
+// Adjust based on content density for optimal 80% fill
+if ($totalRows > 20) {
+    $tableFont = '6.8pt';
+    $baseFont = '8.5pt';
+    $pageMargin = '5mm';
     $tablePadding = '1px';
-    $logoMax = '70px';
-    $photoSize = '66px';
-    $watermarkScale = '36%';
-}
-
-// Further reduce for very large tables
-if ($totalRows > 25) {
-    $tableFont = '7.5pt';
-    $baseFont = '9.5pt';
-    $tablePadding = '1px';
-    $pageMargin = '4mm';
-}
-
-if ($columnCount <= 10) {
-    $pageMargin = '8mm';
-    $baseFont = '11.7pt';
-    $lineHeight = '1.3';
-    $headerNameSize = '19pt';
-    $tableFont = '10.3pt';
-    $tablePadding = '4px';
-    $logoMax = '96px';
-    $photoSize = '88px';
-    $watermarkScale = '48%';
-} elseif ($columnCount <= 12) {
-    $pageMargin = '7.5mm';
-    $baseFont = '11.3pt';
-    $lineHeight = '1.29';
-    $headerNameSize = '18.5pt';
-    $tableFont = '9.9pt';
-    $tablePadding = '3px';
-    $logoMax = '92px';
-    $photoSize = '86px';
-    $watermarkScale = '46%';
-}
-if ($columnCount >= 16) {
+    $headerNameSize = '12pt';
+    $logoMax = '50px';
+    $photoSize = '45px';
+} elseif ($totalRows > 12) {
+    $tableFont = '7.2pt';
+    $baseFont = '9pt';
     $pageMargin = '5.5mm';
-    $baseFont = '9.9pt';
-    $lineHeight = '1.22';
-    $headerNameSize = '15pt';
-    $tableFont = '8.0pt';
-    $tablePadding = '2px';
-    $logoMax = '74px';
-    $photoSize = '72px';
-    $watermarkScale = '40%';
-} elseif ($columnCount >= 13) {
-    $pageMargin = '6.2mm';
-    $baseFont = '10.5pt';
-    $lineHeight = '1.24';
-    $headerNameSize = '16pt';
+    $tablePadding = '1.2px';
+    $headerNameSize = '13pt';
+    $logoMax = '55px';
+    $photoSize = '50px';
+} elseif ($totalRows <= 8) {
     $tableFont = '8.5pt';
-    $tablePadding = '2px';
-    $logoMax = '80px';
-    $photoSize = '78px';
-    $watermarkScale = '42%';
+    $baseFont = '10.5pt';
+    $pageMargin = '7mm';
+    $headerNameSize = '15pt';
+    $logoMax = '75px';
+    $photoSize = '70px';
 }
 
-$logoMax = round((float)$logoMax * $brandImageScale, 2) . 'px';
-$photoSize = round((float)$photoSize * $brandImageScale, 2) . 'px';
+if ($totalColumns > 12) {
+    $tableFont = '6.5pt';
+    $tablePadding = '1px';
+}
 
+// Ensure we stay within 80% of A4
+$logoMax = round((float)$logoMax * 1.2, 2) . 'px';
+$photoSize = round((float)$photoSize * 1.2, 2) . 'px';
+
+// Get signature and images
 $principalSignaturePath = '';
 $signTermRow = db_get_row("SELECT sign FROM principal_sign_nextTerm WHERE create_by_userid = ? ORDER BY id DESC", [$SCHOOL_ID]);
 if (is_array($signTermRow) && !empty($signTermRow['sign'])) {
@@ -862,10 +821,11 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             width: 100%;
             position: relative;
             z-index: 2;
+            max-height: 80vh;
         }
 
         /* ============================================================================
-         * PAGE BREAK CONTROL - FIXED
+         * PAGE BREAK CONTROL
          * ============================================================================ */
         .page-break {
             page-break-after: always;
@@ -886,7 +846,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             page-break-after: auto;
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
             font-size: <?= $tableFont ?>;
             table-layout: auto;
         }
@@ -915,6 +875,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             border: 1px solid #2a4780;
             font-weight: bold;
             text-align: center;
+            font-size: <?= $tableFont ?>;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
         }
@@ -928,19 +889,19 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             left: 50%;
             transform: translate(-50%, -30%);
             z-index: -1000;
-            opacity: 0.06;
+            opacity: 0.04;
             text-align: center;
             width: 100%;
         }
 
         .watermark img {
-            width: 450px;
+            width: 280px;
             height: auto;
         }
 
         .header {
-            margin-bottom: 6px;
-            padding-bottom: 4px;
+            margin-bottom: 3px;
+            padding-bottom: 2px;
         }
 
         .header-table {
@@ -951,7 +912,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
         .header-table td {
             border: none;
             vertical-align: middle;
-            padding: 2px;
+            padding: 1px;
         }
 
         .logo-cell {
@@ -973,26 +934,27 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             font-size: <?= $headerNameSize ?>;
             font-weight: bold;
             color: #1B3058;
-            margin-bottom: 2px;
+            margin-bottom: 0px;
         }
 
         .school-moto {
-            font-size: 9.5pt;
+            font-size: 7.5pt;
             color: #666;
             font-style: italic;
         }
 
         .school-address {
-            font-size: 8.5pt;
+            font-size: 6.5pt;
             color: #444;
         }
 
         .report-title {
-            font-size: 11pt;
+            font-size: 8.5pt;
             font-weight: bold;
-            margin-top: 4px;
+            margin-top: 1px;
             color: #1B3058;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .photo-cell {
@@ -1003,37 +965,38 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
         .student-photo {
             width: <?= $photoSize ?>;
             height: <?= $photoSize ?>;
-            border-radius: 6px;
+            border-radius: 50%;
             object-fit: cover;
-            border: 1px solid #1B3058;
+            border: 2px solid #1B3058;
         }
 
         .info-grid {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 4px;
-            background: rgba(248, 250, 252, 0.85);
+            margin-bottom: 2px;
+            background: #f8fafc;
             border: 1px solid #dde4ee;
-            font-size: <?= $compactMode ? '9.5pt' : '11pt' ?>;
+            font-size: 7.5pt;
         }
 
         .info-grid td {
             border: 1px solid #eef3f8;
-            padding: <?= $compactMode ? '3px 4px' : '5px 7px' ?>;
-            vertical-align: top;
+            padding: 2px 4px;
+            vertical-align: middle;
         }
 
         .info-label {
             font-weight: bold;
             color: #555;
-            width: 35%;
-            font-size: <?= $compactMode ? '9.5pt' : '11.9pt' ?>;
+            width: 28%;
+            font-size: 7.5pt;
         }
 
         .info-value {
-            color: #333;
-            width: 65%;
-            font-size: <?= $compactMode ? '10pt' : '12.7pt' ?>;
+            color: #1B3058;
+            width: 72%;
+            font-size: 8pt;
+            font-weight: 500;
         }
 
         .left-column {
@@ -1043,35 +1006,35 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
         .term-badges {
             width: 100%;
             border-collapse: collapse;
-            margin: 3px 0 5px 0;
+            margin: 2px 0 3px 0;
         }
 
         .term-badges td {
             width: 25%;
             border: none;
-            padding: 0 3px 0 0;
+            padding: 0 2px 0 0;
             vertical-align: top;
         }
 
         .term-badge {
             border: 1px solid #d8e0ec;
             background: #f4f7fc;
-            border-radius: 4px;
-            padding: 3px 4px;
+            border-radius: 3px;
+            padding: 2px 3px;
             text-align: center;
-            font-size: <?= $compactMode ? '8pt' : '9pt' ?>;
         }
 
         .term-badge-label {
-            font-size: 7pt;
+            font-size: 5.5pt;
             color: #6d7787;
             text-transform: uppercase;
-            margin-bottom: 1px;
+            margin-bottom: 0px;
             line-height: 1;
+            letter-spacing: 0.3px;
         }
 
         .term-badge-value {
-            font-size: <?= $compactMode ? '9pt' : '11.1pt' ?>;
+            font-size: 8.5pt;
             font-weight: bold;
             color: #1B3058;
             line-height: 1.1;
@@ -1084,7 +1047,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             border: 1px solid #2a4780;
             font-weight: bold;
             text-align: center;
-            font-size: <?= $compactMode ? '7.5pt' : '9pt' ?>;
+            font-size: <?= $tableFont ?>;
         }
 
         .subjects-table td {
@@ -1093,40 +1056,54 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             text-align: center;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: <?= $compactMode ? '7.5pt' : '9pt' ?>;
+            font-size: <?= $tableFont ?>;
         }
 
         .subjects-table .subject-name {
             text-align: left;
-            font-weight: bold;
-            background: #f5f5f5;
+            font-weight: 600;
+            background: #f5f7fa;
             white-space: normal;
-            font-size: <?= $compactMode ? '8pt' : '9.5pt' ?>;
+            font-size: <?= $tableFont ?>;
         }
 
         .subjects-table .remark-col {
             text-align: left;
             white-space: normal;
-            font-size: <?= $compactMode ? '7pt' : '8.5pt' ?>;
+            font-size: <?= $tableFont ?>;
         }
 
         .total-cell {
             font-weight: bold;
             background: #e8f0fe;
+            color: #1B3058;
+        }
+
+        .grade-cell {
+            font-weight: bold;
+            background: #e3f2fd;
+            color: #0d47a1;
+        }
+
+        .position-cell {
+            font-weight: bold;
+            background: #fff3e0;
+            color: #e65100;
         }
 
         .grade-details {
-            margin-bottom: 4px;
-            padding: 3px;
-            background: rgba(249, 249, 249, 0.9);
+            margin-bottom: 2px;
+            padding: 2px 4px;
+            background: #f9fafb;
             border: 1px solid #e3e9f2;
-            font-size: <?= $compactMode ? '7.5pt' : '8.7pt' ?>;
+            font-size: 6.5pt;
+            border-radius: 2px;
         }
 
         .remarks-section {
-            margin-top: <?= $compactMode ? '15px' : '25px' ?>;
+            margin-top: 4px;
             border-top: 1px solid #ddd;
-            padding-top: 4px;
+            padding-top: 2px;
         }
 
         .remarks-table {
@@ -1136,79 +1113,106 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
 
         .remarks-table td {
             border: none;
-            padding: <?= $compactMode ? '2px' : '3px 2px' ?>;
+            padding: 1px 2px;
             vertical-align: top;
-            font-size: <?= $compactMode ? '10pt' : '12.5pt' ?>;
         }
 
         .remarks-label {
             font-weight: bold;
-            width: 30%;
+            width: 20%;
             color: #555;
-            font-size: <?= $compactMode ? '10pt' : '12.5pt' ?>;
+            font-size: 7.5pt;
+            white-space: nowrap;
         }
 
         .remarks-value {
-            width: 70%;
-            font-size: <?= $compactMode ? '11pt' : '14.7pt' ?>;
-            line-height: 1.3;
+            width: 80%;
+            font-size: 8pt;
+            line-height: 1.2;
+        }
+
+        /* ============================================================================
+         * COMPACT TRAITS TABLE - FIXED TO PREVENT OVERFLOW
+         * ============================================================================ */
+        .traits-container {
+            margin-top: <?= $traitsMarginTop ?>;
+            width: 100%;
+        }
+
+        .traits-container table {
+            width: 100%;
+            border-collapse: collapse;
+            border: none;
+        }
+
+        .traits-container td {
+            border: none;
+            padding: 0 2px;
+            vertical-align: top;
+            width: 50%;
+        }
+
+        .traits-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: <?= $tableFont ?>;
+            margin-top: 0px;
+        }
+
+        .traits-table td {
+            border: 1px solid #000;
+            padding: 0.5px 3px;
+            font-size: <?= $tableFont ?>;
+        }
+
+        .traits-table .trait-label {
+            font-weight: bold;
+            background: #f4f7fc;
+            font-size: <?= $tableFont ?>;
+        }
+
+        .traits-table .trait-rating {
+            text-align: center;
+            text-transform: capitalize;
+            width: 30%;
+            font-size: <?= $tableFont ?>;
         }
 
         /* ============================================================================
          * SIGNATURE SECTION - BOTTOM RIGHT (NOT FIXED)
          * ============================================================================ */
         .signature-wrapper {
-            width: 100%;
-            margin-top: 15px;
             text-align: right;
+            margin-top: 5px;
+            padding-top: 3px;
+            border-top: 1px solid #ddd;
         }
 
-        .signature-content {
+        .signature-wrapper .sign-content {
             display: inline-block;
             text-align: center;
-            min-width: 200px;
+            min-width: 150px;
         }
 
-        .signature-content .sign-img {
-            max-width: 280px;
-            max-height: 80px;
+        .signature-wrapper .sign-img {
+            max-width: 130px;
+            max-height: 35px;
             object-fit: contain;
             display: block;
-            margin: 0 auto 2px auto;
+            margin: 0 auto;
         }
 
-        .signature-content .sign-label {
-            font-size: 10pt;
+        .signature-wrapper .sign-label {
+            font-size: 6.5pt;
             color: #444;
-            border-top: 1px solid #555;
-            padding-top: 2px;
-            line-height: 1.1;
+            margin-top: 1px;
+            font-weight: 500;
         }
 
-        .signature-content .next-term {
-            margin-top: 6px;
-            font-size: 10pt;
-            line-height: 1.2;
+        .signature-wrapper .next-term {
+            font-size: 6.5pt;
+            margin-top: 2px;
             color: #333;
-            text-align: center;
-        }
-
-        body.compact-layout .signature-wrapper {
-            margin-top: 8px;
-        }
-
-        body.compact-layout .signature-content .sign-img {
-            max-width: 200px;
-            max-height: 55px;
-        }
-
-        body.compact-layout .signature-content .sign-label {
-            font-size: 8.5pt;
-        }
-
-        body.compact-layout .signature-content .next-term {
-            font-size: 8.5pt;
-            margin-top: 3px;
         }
 
         @media print {
@@ -1225,52 +1229,51 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
     </style>
 </head>
 
-<body class="<?php echo $compactMode ? 'compact-layout' : ''; ?>">
+<body>
 
     <?php if (!empty($schoolLogoPath)): ?>
         <div class="watermark">
-            <img src="<?php echo '../uploads/' . (isset($iSchool['logo']) ? $iSchool['logo'] : ''); ?>" style="width: 450px; height: auto;" />
+            <img src="<?php echo '../uploads/' . (isset($iSchool['logo']) ? $iSchool['logo'] : ''); ?>" style="width: 280px; height: auto;" />
         </div>
     <?php endif; ?>
 
     <div class="sheet">
 
+        <!-- HEADER -->
         <div class="header">
             <table class="header-table">
                 <tr>
                     <td class="logo-cell">
                         <?php if (!empty($schoolLogoPath)): ?>
-                            <img class="logo-img" src="<?php echo $schoolLogoPath; ?>" alt="School Logo Header">
-                        <?php else: ?>
-                            <div style="width: 80px; height: 80px; border: 1px dashed #ccc; background: #fafafa;"></div>
+                            <img class="logo-img" src="<?php echo $schoolLogoPath; ?>" alt="School Logo">
                         <?php endif; ?>
                     </td>
                     <td class="school-info-cell">
-                        <div class="school-name"><?php echo htmlspecialchars($iSchool['name'] ?? 'School Name Placeholder'); ?></div>
+                        <div class="school-name"><?php echo htmlspecialchars($iSchool['name'] ?? 'School Name'); ?></div>
                         <div class="school-moto"><?php echo htmlspecialchars($iSchool['moto'] ?? 'Excellence in Education'); ?></div>
-                        <div class="school-address"><?php echo htmlspecialchars($iSchool['location'] ?? 'Location Address'); ?>, <?php echo htmlspecialchars($statename); ?></div>
+                        <div class="school-address"><?php echo htmlspecialchars($iSchool['location'] ?? ''); ?><?php echo !empty($statename) ? ', ' . htmlspecialchars($statename) : ''; ?></div>
                         <div class="report-title">REPORT SHEET FOR <?php echo htmlspecialchars($termRow['term'] ?? 'TERM'); ?> <?php echo htmlspecialchars($iSession['session'] ?? 'SESSION'); ?> ACADEMIC SESSION</div>
                     </td>
                     <td class="photo-cell">
                         <?php if (!empty($studentPhotoPath)): ?>
-                            <img class="student-photo" src="<?php echo $studentPhotoPath; ?>" alt="Student Photo" style="border-radius: 50%;">
+                            <img class="student-photo" src="<?php echo $studentPhotoPath; ?>" alt="Student Photo">
                         <?php endif; ?>
                     </td>
                 </tr>
             </table>
         </div>
 
-        <!-- Student Info Grid -->
+        <!-- STUDENT INFO - COMPACT -->
         <table class="info-grid">
             <tr>
-                <td class="left-column">
+                <td class="left-column" style="width:50%;">
                     <table style="width:100%; border-collapse:collapse;">
                         <tr>
-                            <td class="info-label">NAME:</td>
-                            <td class="info-value"><?php echo htmlspecialchars(($iStudent['first_name'] ?? '') . ' ' . ($iStudent['last_name'] ?? '')); ?></td>
+                            <td class="info-label" style="width:30%;">NAME:</td>
+                            <td class="info-value" style="width:70%;"><?php echo htmlspecialchars(($iStudent['first_name'] ?? '') . ' ' . ($iStudent['last_name'] ?? '')); ?></td>
                         </tr>
                         <tr>
-                            <td class="info-label">ADMISSION NO:</td>
+                            <td class="info-label">ADM NO:</td>
                             <td class="info-value"><?php echo htmlspecialchars($iStudent['student_id'] ?? 'N/A'); ?></td>
                         </tr>
                         <?php if ($showClass): ?>
@@ -1279,44 +1282,26 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
                                 <td class="info-value"><?php echo htmlspecialchars($iClass['name'] ?? 'N/A'); ?></td>
                             </tr>
                         <?php endif; ?>
+                    </table>
+                </td>
+                <td style="width:50%;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <?php if ($showSession): ?>
+                            <tr>
+                                <td class="info-label" style="width:30%;">SESSION:</td>
+                                <td class="info-value" style="width:70%;"><?php echo htmlspecialchars($iSession['session'] ?? 'N/A'); ?></td>
+                            </tr>
+                        <?php endif; ?>
                         <?php if ($showTerms): ?>
                             <tr>
                                 <td class="info-label">TERM:</td>
                                 <td class="info-value"><?php echo htmlspecialchars($termRow['term'] ?? 'N/A'); ?></td>
                             </tr>
                         <?php endif; ?>
-                        <?php if ($showFinalAverage): ?>
-                            <tr>
-                                <td class="info-label">AVERAGE:</td>
-                                <td class="info-value"><?php echo round($ggrade, 2); ?></td>
-                            </tr>
-                        <?php endif; ?>
-                    </table>
-                </td>
-                <td>
-                    <table style="width:100%; border-collapse:collapse;">
-                        <?php if ($showSession): ?>
-                            <tr>
-                                <td class="info-label">SESSION:</td>
-                                <td class="info-value"><?php echo htmlspecialchars($iSession['session'] ?? 'N/A'); ?></td>
-                            </tr>
-                        <?php endif; ?>
                         <?php if ($showTotalScore): ?>
                             <tr>
-                                <td class="info-label">TOTAL SCORE:</td>
-                                <td class="info-value"><?php echo $iFinalScore; ?></td>
-                            </tr>
-                        <?php endif; ?>
-                        <?php if ($showGrade): ?>
-                            <tr>
-                                <td class="info-label">GRADE:</td>
-                                <td class="info-value"><strong><?php echo $gradeLetter; ?></strong></td>
-                            </tr>
-                        <?php endif; ?>
-                        <?php if ($showPosition): ?>
-                            <tr>
-                                <td class="info-label">POSITION:</td>
-                                <td class="info-value"><?php echo $studentPosition; ?></td>
+                                <td class="info-label">TOTAL:</td>
+                                <td class="info-value"><strong><?php echo number_format($iFinalScore, 0); ?></strong></td>
                             </tr>
                         <?php endif; ?>
                     </table>
@@ -1324,19 +1309,19 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             </tr>
         </table>
 
-        <!-- Term Badges -->
+        <!-- TERM BADGES - COMPACT -->
         <table class="term-badges">
             <tr>
                 <td>
                     <div class="term-badge">
-                        <div class="term-badge-label">Total</div>
+                        <div class="term-badge-label">Total Score</div>
                         <div class="term-badge-value"><?php echo number_format($iFinalScore, 0); ?></div>
                     </div>
                 </td>
                 <td>
                     <div class="term-badge">
-                        <div class="term-badge-label">Avg</div>
-                        <div class="term-badge-value"><?php echo number_format($ggrade, 2); ?></div>
+                        <div class="term-badge-label">Average</div>
+                        <div class="term-badge-value"><?php echo number_format($ggrade, 1); ?></div>
                     </div>
                 </td>
                 <td>
@@ -1356,9 +1341,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             </tr>
         </table>
 
-        <!-- ============================================================================
-        SUBJECTS TABLE - SPLIT INTO MULTIPLE PAGES IF NEEDED
-        ============================================================================ -->
+        <!-- SUBJECTS TABLE -->
         <?php
         $colspan = 1 + count($totalAssesment) + 2;
         if ($showPos) $colspan++;
@@ -1369,213 +1352,189 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
         $colspan++;
         ?>
 
-        <?php $pageCounter = 0;
-        foreach ($tablePages as $pageIndex => $pageData): ?>
-            <?php if ($pageIndex > 0): ?>
-                <div class="page-break"></div>
-            <?php endif; ?>
-
-            <?php if ($pageIndex > 0): ?>
-                <!-- Repeat header on subsequent pages -->
-                <div class="header" style="margin-bottom:4px;">
-                    <div style="text-align:center; font-size:10pt; font-weight:bold; color:#1B3058;">
-                        <?php echo htmlspecialchars($iSchool['name'] ?? 'School Name'); ?> - Report Sheet (Continued)
-                    </div>
-                </div>
-            <?php endif; ?>
-
-            <table class="subjects-table">
-                <colgroup>
-                    <col style="width:<?php echo $compactMode ? '15%' : '18%'; ?>;">
-                    <?php foreach ($totalAssesment as $Val): ?>
-                        <col style="width:<?php echo $compactMode ? '4%' : '5%'; ?>;">
-                    <?php endforeach; ?>
-                    <col style="width:<?php echo $compactMode ? '5%' : '6%'; ?>;">
-                    <col style="width:<?php echo $compactMode ? '4%' : '5%'; ?>;">
-                    <?php if ($showPos): ?>
-                        <col style="width:4%;"><?php endif; ?>
-                    <?php if ($showOutOf): ?>
-                        <col style="width:4%;"><?php endif; ?>
-                    <?php if ($showLowestAvg): ?>
-                        <col style="width:5%;"><?php endif; ?>
-                    <?php if ($showHighestAvg): ?>
-                        <col style="width:5%;"><?php endif; ?>
-                    <?php if ($showClassAvg): ?>
-                        <col style="width:6%;"><?php endif; ?>
-                    <col style="width:<?php echo $compactMode ? '12%' : '10%'; ?>;">
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th>SUBJECT</th>
-                        <?php foreach ($totalAssesment as $Val):
-                            $assName = $assessmentNameMap[(int)$Val] ?? '';
-                        ?>
-                            <th><?php echo htmlspecialchars($assName ?: 'CA'); ?></th>
-                        <?php endforeach; ?>
-                        <th>TOTAL</th>
-                        <th>GRD</th>
-                        <?php if ($showPos): ?><th>POS</th><?php endif; ?>
-                        <?php if ($showOutOf): ?><th>OUT OF</th><?php endif; ?>
-                        <?php if ($showLowestAvg): ?><th>LOW</th><?php endif; ?>
-                        <?php if ($showHighestAvg): ?><th>HIGH</th><?php endif; ?>
-                        <?php if ($showClassAvg): ?><th>CLASS AVG</th><?php endif; ?>
-                        <th>REMARKS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($pageData)): ?>
-                        <tr>
-                            <td colspan="<?= $colspan ?>" style="text-align:center; padding:8px;">No subject score data found for this student.</td>
-                        </tr>
-                    <?php endif; ?>
-                    <?php foreach ($pageData as $data):
-                        $subjectTotal = $data['total'];
-                        $subjectGradeScore = (float)($data['grade_score'] ?? $subjectTotal);
-                        $subjectGradeInfo = resolveGradeScaleInfo($SCHOOL_ID, $subjectGradeScore);
-                        $subjectGrade = $subjectGradeInfo['grade'];
-                        $subjectRemark = $subjectGradeInfo['description'] ?: '-';
+        <table class="subjects-table">
+            <colgroup>
+                <col style="width:<?php echo $totalColumns > 13 ? '12%' : '15%'; ?>;">
+                <?php foreach ($totalAssesment as $Val): ?>
+                    <col style="width:<?php echo $totalColumns > 13 ? '3%' : '4%'; ?>;">
+                <?php endforeach; ?>
+                <col style="width:<?php echo $totalColumns > 13 ? '4%' : '5%'; ?>;">
+                <col style="width:<?php echo $totalColumns > 13 ? '3%' : '4%'; ?>;">
+                <?php if ($showPos): ?>
+                    <col style="width:3.5%;"><?php endif; ?>
+                <?php if ($showOutOf): ?>
+                    <col style="width:3.5%;"><?php endif; ?>
+                <?php if ($showLowestAvg): ?>
+                    <col style="width:4%;"><?php endif; ?>
+                <?php if ($showHighestAvg): ?>
+                    <col style="width:4%;"><?php endif; ?>
+                <?php if ($showClassAvg): ?>
+                    <col style="width:5%;"><?php endif; ?>
+                <col style="width:<?php echo $totalColumns > 13 ? '10%' : '12%'; ?>;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>SUBJECT</th>
+                    <?php foreach ($totalAssesment as $Val):
+                        $assName = $assessmentNameMap[(int)$Val] ?? '';
                     ?>
-                        <tr>
-                            <td class="subject-name"><?php echo htmlspecialchars($data['subject']); ?></td>
-                            <?php foreach ($totalAssesment as $Val): ?>
-                                <td><?php echo $data['scores'][$Val] ?? 0; ?></td>
-                            <?php endforeach; ?>
-                            <td class="total-cell"><?php echo round($subjectTotal); ?></td>
-                            <td><strong><?php echo $subjectGrade; ?></strong></td>
-                            <?php if ($showPos): ?><td><?php echo htmlspecialchars(formatOrdinal((int)($data['position'] ?? 0))); ?></td><?php endif; ?>
-                            <?php if ($showOutOf): ?><td><?php echo (int)($data['out_of'] ?? 0); ?></td><?php endif; ?>
-                            <?php if ($showLowestAvg): ?><td><?php echo round((float)($data['low'] ?? 0), 2); ?></td><?php endif; ?>
-                            <?php if ($showHighestAvg): ?><td><?php echo round((float)($data['high'] ?? 0), 2); ?></td><?php endif; ?>
-                            <?php if ($showClassAvg): ?><td><?php echo round((float)($data['class_avg'] ?? 0), 2); ?></td><?php endif; ?>
-                            <td class="remark-col"><?php echo htmlspecialchars($subjectRemark); ?></td>
-                        </tr>
+                        <th><?php echo htmlspecialchars($assName ?: 'CA'); ?></th>
                     <?php endforeach; ?>
-                </tbody>
-            </table>
-
-            <?php $pageCounter++; ?>
-        <?php endforeach; ?>
-
-        <!-- ============================================================================
-        AFFECTIVE & PSYCHOMOTOR TRAITS - FORCED TO STAY TOGETHER
-        ============================================================================ -->
-        <div class="no-page-break">
-            <?php if ($showAffective || $showPsychomotor): ?>
-                <div style="margin-top: <?php echo $traitsMarginTop; ?>;">
-                    <table style="width:100%; border-collapse:collapse; border:none;">
-                        <tr>
-                            <td style="width:50%; vertical-align:top; border:none; padding-right:4px;">
-                                <?php if ($showAffective): ?>
-                                    <table style="width:95%; border-collapse:collapse; font-size: <?php echo $tableFont; ?>;">
-                                        <tr>
-                                            <td style="border:1px solid #000; font-weight:bold; background:#f4f7fc;"><?php echo htmlspecialchars($title4); ?></td>
-                                            <td style="border:1px solid #000; font-weight:bold; text-align:center; width:24%; background:#f4f7fc;">RATING</td>
-                                        </tr>
-                                        <?php if (!empty($affectiveRows)): ?>
-                                            <?php foreach ($affectiveRows as $traitRow): ?>
-                                                <tr>
-                                                    <td style="border:1px solid #000;"><?php echo htmlspecialchars($traitRow['trait'] ?? ''); ?></td>
-                                                    <td style="border:1px solid #000; text-align:center; text-transform:capitalize;"><?php echo htmlspecialchars($affectiveRatings[(int)($traitRow['id'] ?? 0)] ?? '-'); ?></td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr>
-                                                <td style="border:1px solid #000;" colspan="2">No affective traits found.</td>
-                                            </tr>
-                                        <?php endif; ?>
-                                    </table>
-                                    <?php else: ?>&nbsp;<?php endif; ?>
-                            </td>
-                            <td style="width:50%; vertical-align:top; border:none; padding-left:4px;">
-                                <?php if ($showPsychomotor): ?>
-                                    <table style="width:95%; border-collapse:collapse; font-size: <?php echo $tableFont; ?>;">
-                                        <tr>
-                                            <td style="border:1px solid #000; font-weight:bold; background:#f4f7fc;"><?php echo htmlspecialchars($title5); ?></td>
-                                            <td style="border:1px solid #000; font-weight:bold; text-align:center; width:24%; background:#f4f7fc;">RATING</td>
-                                        </tr>
-                                        <?php if (!empty($psychomotorRows)): ?>
-                                            <?php foreach ($psychomotorRows as $skillRow): ?>
-                                                <tr>
-                                                    <td style="border:1px solid #000;"><?php echo htmlspecialchars($skillRow['phycomotor'] ?? ''); ?></td>
-                                                    <td style="border:1px solid #000; text-align:center; text-transform:capitalize;"><?php echo htmlspecialchars($psychomotorRatings[(int)($skillRow['id'] ?? 0)] ?? '-'); ?></td>
-                                                </tr>
-                                            <?php endforeach; ?>
-                                        <?php else: ?>
-                                            <tr>
-                                                <td style="border:1px solid #000;" colspan="2">No psychomotor skills found.</td>
-                                            </tr>
-                                        <?php endif; ?>
-                                    </table>
-                                    <?php else: ?>&nbsp;<?php endif; ?>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- ============================================================================
-        GRADE DETAILS - FORCED TO STAY TOGETHER
-        ============================================================================ -->
-        <div class="no-page-break">
-            <?php if ($showGradeDetails || $showNoOfSubjects): ?>
-                <div class="grade-details">
-                    <?php if ($showGradeDetails): ?>
-                        <strong>GRADE DETAILS:</strong><br>
-                        <?php
-                        if (is_array($gradeDetailsRows)) {
-                            $gradeText = [];
-                            foreach ($gradeDetailsRows as $iList) {
-                                $gradeText[] = ($iList['grade'] ?? '') . ' = ' . ($iList['minimum_number'] ?? 0) . '-' . ($iList['maximum_number'] ?? 0);
-                            }
-                            echo implode(', ', $gradeText);
-                        }
-                        ?>
-                    <?php endif; ?>
-                    <?php if ($showNoOfSubjects): ?>
-                        <div style="margin-top: 3px;"><strong>NO. OF SUBJECTS:</strong> <?php echo $tSub; ?></div>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-
-        <!-- ============================================================================
-        REMARKS SECTION - FORCED TO STAY TOGETHER
-        ============================================================================ -->
-        <div class="no-page-break">
-            <div class="remarks-section">
-                <table class="remarks-table">
+                    <th>TOTAL</th>
+                    <th>GRD</th>
+                    <?php if ($showPos): ?><th>POS</th><?php endif; ?>
+                    <?php if ($showOutOf): ?><th>OUT</th><?php endif; ?>
+                    <?php if ($showLowestAvg): ?><th>LOW</th><?php endif; ?>
+                    <?php if ($showHighestAvg): ?><th>HIGH</th><?php endif; ?>
+                    <?php if ($showClassAvg): ?><th>AVG</th><?php endif; ?>
+                    <th>REMARKS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (empty($subjectScoresData)): ?>
                     <tr>
-                        <td class="remarks-label"><?php echo htmlspecialchars($title1); ?>:</td>
-                        <td class="remarks-value"><?php echo htmlspecialchars((is_array($classTeacherInfo) ? trim(($classTeacherInfo['first_name'] ?? '') . ' ' . ($classTeacherInfo['last_name'] ?? '')) : 'N/A')); ?></td>
+                        <td colspan="<?= $colspan ?>" style="text-align:center; padding:3px;">No subject score data found for this student.</td>
                     </tr>
+                <?php endif; ?>
+                <?php foreach ($subjectScoresData as $data):
+                    $subjectTotal = $data['total'];
+                    $subjectGradeScore = (float)($data['grade_score'] ?? $subjectTotal);
+                    $subjectGradeInfo = resolveGradeScaleInfo($SCHOOL_ID, $subjectGradeScore);
+                    $subjectGrade = $subjectGradeInfo['grade'];
+                    $subjectRemark = $subjectGradeInfo['description'] ?: '-';
+                ?>
                     <tr>
-                        <td class="remarks-label"><?php echo htmlspecialchars($title2); ?>:</td>
-                        <td class="remarks-value"><?php echo htmlspecialchars($classTeacherComment !== '' ? $classTeacherComment : 'No remarks entered.'); ?></td>
+                        <td class="subject-name"><?php echo htmlspecialchars($data['subject']); ?></td>
+                        <?php foreach ($totalAssesment as $Val): ?>
+                            <td><?php echo $data['scores'][$Val] ?? 0; ?></td>
+                        <?php endforeach; ?>
+                        <td class="total-cell"><?php echo round($subjectTotal); ?></td>
+                        <td class="grade-cell"><strong><?php echo $subjectGrade; ?></strong></td>
+                        <?php if ($showPos): ?><td class="position-cell"><?php echo htmlspecialchars(formatOrdinal((int)($data['position'] ?? 0))); ?></td><?php endif; ?>
+                        <?php if ($showOutOf): ?><td><?php echo (int)($data['out_of'] ?? 0); ?></td><?php endif; ?>
+                        <?php if ($showLowestAvg): ?><td><?php echo round((float)($data['low'] ?? 0), 1); ?></td><?php endif; ?>
+                        <?php if ($showHighestAvg): ?><td><?php echo round((float)($data['high'] ?? 0), 1); ?></td><?php endif; ?>
+                        <?php if ($showClassAvg): ?><td><?php echo round((float)($data['class_avg'] ?? 0), 1); ?></td><?php endif; ?>
+                        <td class="remark-col"><?php echo htmlspecialchars($subjectRemark); ?></td>
                     </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <!-- AFFECTIVE & PSYCHOMOTOR TRAITS - COMPACT SIDE BY SIDE -->
+        <?php if ($showAffective || $showPsychomotor): ?>
+            <div class="traits-container">
+                <table>
                     <tr>
-                        <td class="remarks-label"><?php echo htmlspecialchars($title3); ?>:</td>
-                        <td class="remarks-value">
-                            <?php
-                            if (!empty($principalRemark)) {
-                                echo htmlspecialchars($principalRemark);
-                            } else {
-                                $defaultComment = $overallGradeInfo['comment'] ?? '';
-                                echo htmlspecialchars($defaultComment !== '' ? $defaultComment : 'Keep up the good work!');
-                            }
-                            ?>
+                        <td style="width:50%; padding-right:3px;">
+                            <?php if ($showAffective): ?>
+                                <table class="traits-table">
+                                    <tr>
+                                        <td class="trait-label" style="border:1px solid #000; font-weight:bold; background:#f4f7fc; font-size:<?= $tableFont ?>; padding:0.5px 3px;"><?php echo htmlspecialchars($title4); ?></td>
+                                        <td class="trait-label trait-rating" style="border:1px solid #000; font-weight:bold; text-align:center; background:#f4f7fc; font-size:<?= $tableFont ?>; padding:0.5px 3px;">RATING</td>
+                                    </tr>
+                                    <?php if (!empty($affectiveRows)): ?>
+                                        <?php $traitCount = 0; ?>
+                                        <?php foreach ($affectiveRows as $traitRow): ?>
+                                            <?php if ($traitCount >= 8) break; ?>
+                                            <tr>
+                                                <td style="border:1px solid #000; padding:0.5px 3px; font-size:<?= $tableFont ?>;"><?php echo htmlspecialchars($traitRow['trait'] ?? ''); ?></td>
+                                                <td style="border:1px solid #000; text-align:center; text-transform:capitalize; padding:0.5px 3px; font-size:<?= $tableFont ?>;"><?php echo htmlspecialchars($affectiveRatings[(int)($traitRow['id'] ?? 0)] ?? '-'); ?></td>
+                                            </tr>
+                                            <?php $traitCount++; ?>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td style="border:1px solid #000; padding:0.5px 3px; font-size:<?= $tableFont ?>;" colspan="2">No traits found.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </table>
+                            <?php endif; ?>
+                        </td>
+                        <td style="width:50%; padding-left:3px;">
+                            <?php if ($showPsychomotor): ?>
+                                <table class="traits-table">
+                                    <tr>
+                                        <td class="trait-label" style="border:1px solid #000; font-weight:bold; background:#f4f7fc; font-size:<?= $tableFont ?>; padding:0.5px 3px;"><?php echo htmlspecialchars($title5); ?></td>
+                                        <td class="trait-label trait-rating" style="border:1px solid #000; font-weight:bold; text-align:center; background:#f4f7fc; font-size:<?= $tableFont ?>; padding:0.5px 3px;">RATING</td>
+                                    </tr>
+                                    <?php if (!empty($psychomotorRows)): ?>
+                                        <?php $skillCount = 0; ?>
+                                        <?php foreach ($psychomotorRows as $skillRow): ?>
+                                            <?php if ($skillCount >= 8) break; ?>
+                                            <tr>
+                                                <td style="border:1px solid #000; padding:0.5px 3px; font-size:<?= $tableFont ?>;"><?php echo htmlspecialchars($skillRow['phycomotor'] ?? ''); ?></td>
+                                                <td style="border:1px solid #000; text-align:center; text-transform:capitalize; padding:0.5px 3px; font-size:<?= $tableFont ?>;"><?php echo htmlspecialchars($psychomotorRatings[(int)($skillRow['id'] ?? 0)] ?? '-'); ?></td>
+                                            </tr>
+                                            <?php $skillCount++; ?>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td style="border:1px solid #000; padding:0.5px 3px; font-size:<?= $tableFont ?>;" colspan="2">No skills found.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </table>
+                            <?php endif; ?>
                         </td>
                     </tr>
                 </table>
             </div>
+        <?php endif; ?>
+
+        <!-- GRADE DETAILS - COMPACT -->
+        <?php if ($showGradeDetails || $showNoOfSubjects): ?>
+            <div class="grade-details">
+                <?php if ($showGradeDetails): ?>
+                    <strong>GRADE DETAILS:</strong>
+                    <?php
+                    if (is_array($gradeDetailsRows)) {
+                        $gradeText = [];
+                        foreach ($gradeDetailsRows as $iList) {
+                            $gradeText[] = ($iList['grade'] ?? '') . ' = ' . ($iList['minimum_number'] ?? 0) . '-' . ($iList['maximum_number'] ?? 0);
+                        }
+                        echo implode(', ', $gradeText);
+                    }
+                    ?>
+                <?php endif; ?>
+                <?php if ($showNoOfSubjects): ?>
+                    &nbsp;|&nbsp; <strong>NO. OF SUBJECTS:</strong> <?php echo $tSub; ?>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+
+        <!-- REMARKS SECTION - COMPACT -->
+        <div class="remarks-section">
+            <table class="remarks-table">
+                <tr>
+                    <td class="remarks-label"><?php echo htmlspecialchars($title1); ?>:</td>
+                    <td class="remarks-value"><?php echo htmlspecialchars((is_array($classTeacherInfo) ? trim(($classTeacherInfo['first_name'] ?? '') . ' ' . ($classTeacherInfo['last_name'] ?? '')) : 'N/A')); ?></td>
+                </tr>
+                <tr>
+                    <td class="remarks-label"><?php echo htmlspecialchars($title2); ?>:</td>
+                    <td class="remarks-value"><?php echo htmlspecialchars($classTeacherComment !== '' ? $classTeacherComment : 'No remarks entered.'); ?></td>
+                </tr>
+                <tr>
+                    <td class="remarks-label"><?php echo htmlspecialchars($title3); ?>:</td>
+                    <td class="remarks-value">
+                        <?php
+                        if (!empty($principalRemark)) {
+                            echo htmlspecialchars($principalRemark);
+                        } else {
+                            $defaultComment = $overallGradeInfo['comment'] ?? '';
+                            echo htmlspecialchars($defaultComment !== '' ? $defaultComment : 'Keep up the good work!');
+                        }
+                        ?>
+                    </td>
+                </tr>
+            </table>
         </div>
 
         <!-- ============================================================================
         SIGNATURE SECTION - BOTTOM RIGHT (NOT FIXED)
         ============================================================================ -->
-        <div class="signature-wrapper">
-            <?php if (!empty($principalSignaturePath) || !empty($nextTermRow)): ?>
-                <div class="signature-content">
+        <?php if (!empty($principalSignaturePath) || !empty($nextTermRow)): ?>
+            <div class="signature-wrapper">
+                <div class="sign-content">
                     <?php if (!empty($principalSignaturePath)): ?>
                         <img class="sign-img" src="<?php echo $principalSignaturePath; ?>" alt="Principal Signature">
                         <div class="sign-label">Principal's Signature</div>
@@ -1587,8 +1546,8 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
                         </div>
                     <?php endif; ?>
                 </div>
-            <?php endif; ?>
-        </div>
+            </div>
+        <?php endif; ?>
 
     </div>
 
@@ -1609,7 +1568,7 @@ $options->set('dpi', 96);
 $options->set('enable_css_float', true);
 $dompdf->setOptions($options);
 $dompdf->load_html($html);
-$dompdf->setPaper($paperSize, 'portrait');
+$dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 
 $pdfPerfMs = (microtime(true) - $pdfPerfStart) * 1000;

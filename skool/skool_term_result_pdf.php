@@ -2,10 +2,10 @@
 
 /**
  * ============================================================================
- * SKOOL TERM RESULT PDF - WITH WORKING LOGO HEADER & WATERMARK BACKGROUND
+ * SKOOL TERM RESULT PDF - SINGLE A4 PAGE OPTIMIZED (REDUCED FONTS)
  * ============================================================================
- * FIXED: Signature at bottom right, optimized A4 layout (80% fill)
- * Version: 4.1 (A4 Optimized)
+ * FIXED: Fonts reduced by 10% from current sizes, traits section visually distinct
+ * Version: 6.3 (Single A4 Page - Reduced Fonts + Distinct Traits)
  * ============================================================================
  */
 
@@ -513,21 +513,6 @@ $totalColumns = 1 + count($totalAssesment) + 2 +
     ($showLowestAvg ? 1 : 0) + ($showHighestAvg ? 1 : 0) +
     ($showClassAvg ? 1 : 0);
 
-// Force A4 with optimized settings
-$forceA3Paper = false;
-if ($totalColumns > 14 || $totalRows > 35) {
-    $forceA3Paper = true;
-}
-
-// Split table only if absolutely necessary
-$rowsPerPage = 30;
-$tablePages = [];
-if ($totalRows > $rowsPerPage) {
-    $tablePages = array_chunk($subjectScoresData, $rowsPerPage);
-} else {
-    $tablePages = [$subjectScoresData];
-}
-
 // ============================================================================
 // ABSOLUTE FILE PATHS FOR IMAGES
 // ============================================================================
@@ -733,46 +718,50 @@ function getImagePath($filename)
 }
 
 // ============================================================================
-// OPTIMIZED A4 LAYOUT SETTINGS (80% fill)
+// SINGLE A4 PAGE - FONTS REDUCED BY 10% FROM CURRENT SIZES
 // ============================================================================
 $paperSize = 'A4';
-$compactMode = false;
+$pageMargin = '5.5mm';
 
-$pageMargin = '8mm';
-$baseFont = '10.5pt';
+// Font sizes reduced by 10% from current values
+$baseFont = '9.8pt';        // Was 10.9pt, reduced by 10%
 $lineHeight = '1.25';
-$headerNameSize = '16pt';
-$tableFont = '8.5pt';
-$tablePadding = '2.5px';
-$logoMax = '80px';
-$photoSize = '75px';
-$watermarkScale = '40%';
-$traitsMarginTop = '12px';
+$headerNameSize = '15.5pt'; // Was 17.25pt, reduced by 10%
+$tableFont = '8.1pt';       // Was 8.97pt, reduced by 10%
+$tablePadding = '2.1px';    // Was 2.3px, reduced by 10%
+$logoMax = '67.3px';        // Was 74.75px, reduced by 10%
+$photoSize = '62.1px';      // Was 69px, reduced by 10%
+$traitsMarginTop = '4.1px'; // Was 4.6px, reduced by 10%
 
-// Adjust based on content density
-if ($totalRows > 15) {
-    $tableFont = '7.8pt';
-    $baseFont = '10pt';
-    $pageMargin = '6mm';
-    $tablePadding = '2px';
+// Adjust for more subjects
+if ($totalRows > 20) {
+    $tableFont = '7.25pt';      // Was 8.05pt, reduced by 10%
+    $baseFont = '9.3pt';        // Was 10.35pt, reduced by 10%
+    $tablePadding = '1.55px';   // Was 1.73px, reduced by 10%
 }
 
-if ($totalColumns > 12) {
-    $tableFont = '7.5pt';
-    $tablePadding = '1.5px';
+if ($totalRows > 30) {
+    $tableFont = '7.0pt';       // Was 7.82pt, reduced by 10%
+    $baseFont = '8.8pt';        // Was 9.78pt, reduced by 10%
+    $tablePadding = '1.25px';   // Was 1.38px, reduced by 10%
+    $headerNameSize = '13.5pt'; // Was 14.95pt, reduced by 10%
+    $logoMax = '56.9px';        // Was 63.25px, reduced by 10%
+    $photoSize = '51.8px';      // Was 57.5px, reduced by 10%
 }
 
+// If very few subjects, use larger fonts but still reduced
 if ($totalRows <= 8 && $totalColumns <= 10) {
-    $tableFont = '9.5pt';
-    $baseFont = '11.5pt';
-    $pageMargin = '10mm';
-    $headerNameSize = '18pt';
-    $logoMax = '100px';
-    $photoSize = '90px';
+    $tableFont = '9.3pt';       // Was 10.35pt, reduced by 10%
+    $baseFont = '10.9pt';       // Was 12.08pt, reduced by 10%
+    $pageMargin = '6.8mm';
+    $headerNameSize = '17.6pt'; // Was 19.55pt, reduced by 10%
+    $logoMax = '77.6px';        // Was 86.25px, reduced by 10%
+    $photoSize = '72.5px';      // Was 80.5px, reduced by 10%
 }
 
-$logoMax = round((float)$logoMax * 1.4, 2) . 'px';
-$photoSize = round((float)$photoSize * 1.4, 2) . 'px';
+// Apply the 10% reduction to these as well (they were already increased by 15% in the original)
+$logoMax = round((float)$logoMax * 1.0, 2) . 'px';
+$photoSize = round((float)$photoSize * 1.0, 2) . 'px';
 
 $principalSignaturePath = '';
 $signTermRow = db_get_row("SELECT sign FROM principal_sign_nextTerm WHERE create_by_userid = ? ORDER BY id DESC", [$SCHOOL_ID]);
@@ -795,13 +784,17 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             margin: <?= $pageMargin ?>;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
             font-family: 'DejaVu Sans', 'Segoe UI', Arial, sans-serif;
             font-size: <?= $baseFont ?>;
             line-height: <?= $lineHeight ?>;
-            color: #333;
+            color: #222;
             background: white;
         }
 
@@ -811,84 +804,27 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             z-index: 2;
         }
 
-        /* ============================================================================
-         * PAGE BREAK CONTROL
-         * ============================================================================ */
-        .page-break {
-            page-break-after: always;
-        }
-
-        .no-page-break {
-            page-break-inside: avoid;
-        }
-
-        .no-page-break table,
-        .no-page-break tr,
-        .no-page-break td {
-            page-break-inside: avoid;
-        }
-
-        .subjects-table {
-            page-break-inside: auto;
-            page-break-after: auto;
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-            font-size: <?= $tableFont ?>;
-            table-layout: auto;
-        }
-
-        .subjects-table tbody tr {
-            page-break-inside: avoid;
-            page-break-after: auto;
-        }
-
-        .subjects-table thead {
-            display: table-header-group;
-        }
-
-        .subjects-table tfoot {
-            display: table-footer-group;
-        }
-
-        .subjects-table tr {
-            page-break-inside: avoid;
-        }
-
-        .subjects-table thead th {
-            background: #1B3058 !important;
-            color: white !important;
-            padding: <?= $tablePadding ?>;
-            border: 1px solid #2a4780;
-            font-weight: bold;
-            text-align: center;
-            font-size: <?= $tableFont ?>;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-
-        /* ============================================================================
-         * WATERMARK BACKGROUND STYLING
-         * ============================================================================ */
+        /* WATERMARK BACKGROUND */
         .watermark {
             position: fixed;
-            top: 30%;
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -30%);
             z-index: -1000;
-            opacity: 0.05;
+            opacity: 0.1;
             text-align: center;
             width: 100%;
         }
 
         .watermark img {
-            width: 350px;
+            width: 300px;
             height: auto;
         }
 
+        /* HEADER */
         .header {
-            margin-bottom: 5px;
-            padding-bottom: 3px;
+            margin-bottom: 3px;
+            padding-bottom: 2px;
         }
 
         .header-table {
@@ -899,7 +835,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
         .header-table td {
             border: none;
             vertical-align: middle;
-            padding: 2px;
+            padding: 1px 2px;
         }
 
         .logo-cell {
@@ -922,26 +858,27 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             font-weight: bold;
             color: #1B3058;
             margin-bottom: 1px;
+            letter-spacing: 0.5px;
         }
 
         .school-moto {
-            font-size: 8.5pt;
-            color: #666;
+            font-size: 7.7pt;
+            color: #555;
             font-style: italic;
         }
 
         .school-address {
-            font-size: 7.5pt;
+            font-size: 7.0pt;
             color: #444;
         }
 
         .report-title {
-            font-size: 9.5pt;
+            font-size: 8.8pt;
             font-weight: bold;
-            margin-top: 3px;
+            margin-top: 2px;
             color: #1B3058;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         .photo-cell {
@@ -957,32 +894,33 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             border: 2px solid #1B3058;
         }
 
+        /* INFO GRID */
         .info-grid {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
             background: #f8fafc;
             border: 1px solid #dde4ee;
-            font-size: 8.5pt;
+            font-size: 8.1pt;
         }
 
         .info-grid td {
             border: 1px solid #eef3f8;
-            padding: 3px 6px;
+            padding: 2px 5px;
             vertical-align: middle;
         }
 
         .info-label {
             font-weight: bold;
-            color: #555;
-            width: 28%;
-            font-size: 8.5pt;
+            color: #444;
+            width: 24%;
+            font-size: 7.7pt;
         }
 
         .info-value {
             color: #1B3058;
-            width: 72%;
-            font-size: 9pt;
+            width: 76%;
+            font-size: 8.3pt;
             font-weight: 500;
         }
 
@@ -990,51 +928,64 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             border-right: 1px solid #ddd;
         }
 
+        /* TERM BADGES */
         .term-badges {
             width: 100%;
             border-collapse: collapse;
-            margin: 3px 0 4px 0;
+            margin: 2px 0 2px 0;
         }
 
         .term-badges td {
             width: 25%;
             border: none;
-            padding: 0 3px 0 0;
+            padding: 0 2px 0 0;
             vertical-align: top;
         }
 
         .term-badge {
             border: 1px solid #d8e0ec;
             background: #f4f7fc;
-            border-radius: 4px;
-            padding: 3px 4px;
+            border-radius: 3px;
+            padding: 2px 3px;
             text-align: center;
         }
 
         .term-badge-label {
-            font-size: 6.5pt;
+            font-size: 6.0pt;
             color: #6d7787;
             text-transform: uppercase;
             margin-bottom: 1px;
             line-height: 1;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .term-badge-value {
-            font-size: 9.5pt;
+            font-size: 9.3pt;
             font-weight: bold;
             color: #1B3058;
-            line-height: 1.1;
+            line-height: 1.2;
         }
 
-        .subjects-table th {
-            background: #1B3058;
-            color: white;
+        /* SUBJECTS TABLE */
+        .subjects-table {
+            page-break-inside: avoid;
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2px;
+            font-size: <?= $tableFont ?>;
+            table-layout: auto;
+        }
+
+        .subjects-table thead th {
+            background: #1B3058 !important;
+            color: white !important;
             padding: <?= $tablePadding ?>;
             border: 1px solid #2a4780;
             font-weight: bold;
             text-align: center;
             font-size: <?= $tableFont ?>;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         .subjects-table td {
@@ -1052,12 +1003,14 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             background: #f5f7fa;
             white-space: normal;
             font-size: <?= $tableFont ?>;
+            padding-left: 4px;
         }
 
         .subjects-table .remark-col {
             text-align: left;
             white-space: normal;
             font-size: <?= $tableFont ?>;
+            padding-left: 3px;
         }
 
         .total-cell {
@@ -1078,19 +1031,21 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             color: #e65100;
         }
 
+        /* GRADE DETAILS */
         .grade-details {
-            margin-bottom: 3px;
-            padding: 3px 6px;
+            margin-bottom: 2px;
+            padding: 2px 5px;
             background: #f9fafb;
             border: 1px solid #e3e9f2;
-            font-size: 7pt;
-            border-radius: 3px;
+            font-size: 6.8pt;
+            border-radius: 2px;
         }
 
+        /* REMARKS SECTION */
         .remarks-section {
-            margin-top: 6px;
+            margin-top: 2px;
             border-top: 1px solid #ddd;
-            padding-top: 3px;
+            padding-top: 2px;
         }
 
         .remarks-table {
@@ -1100,99 +1055,155 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
 
         .remarks-table td {
             border: none;
-            padding: 2px 3px;
+            padding: 1px 3px;
             vertical-align: top;
         }
 
         .remarks-label {
             font-weight: bold;
-            width: 20%;
-            color: #555;
-            font-size: 8.5pt;
+            width: 16%;
+            color: #444;
+            font-size: 7.7pt;
             white-space: nowrap;
         }
 
         .remarks-value {
-            width: 80%;
-            font-size: 9pt;
+            width: 84%;
+            font-size: 8.3pt;
             line-height: 1.3;
         }
 
-        .traits-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: <?= $tableFont ?>;
-            margin-top: 2px;
-        }
-
-        .traits-table td {
-            border: 1px solid #000;
-            padding: 1.5px 4px;
-            font-size: <?= $tableFont ?>;
-        }
-
-        .traits-table .trait-label {
-            font-weight: bold;
-            background: #f4f7fc;
-        }
-
-        .traits-table .trait-rating {
-            text-align: center;
-            text-transform: capitalize;
-            width: 24%;
-        }
-
+        /* ============================================================================
+         * TRAITS - VISUALLY DISTINCT WITH COLOR AND STYLING
+         * ============================================================================ */
         .traits-container {
             margin-top: <?= $traitsMarginTop ?>;
+            padding: 4px 8px;
+            background: #e8f0fe;
+            border: 2px solid #1B3058;
+            border-radius: 4px;
+            font-size: 7.5pt;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .traits-container table {
+        .traits-container .traits-header {
+            font-weight: bold;
+            color: #1B3058;
+            font-size: 7.7pt;
+            margin-bottom: 2px;
+            border-bottom: 1px solid #1B3058;
+            padding-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .traits-container .traits-row {
+            display: inline-block;
             width: 100%;
-            border-collapse: collapse;
-            border: none;
+            margin: 2px 0;
         }
 
-        .traits-container td {
-            border: none;
-            padding: 0 3px;
+        .traits-container .traits-label {
+            font-weight: bold;
+            color: #0d47a1;
+            display: inline-block;
+            min-width: 110px;
             vertical-align: top;
-            width: 50%;
+            font-size: 7.8pt;
+            background: #dce8f5;
+            padding: 0 4px;
+            border-radius: 2px;
         }
 
-        /* ============================================================================
-         * SIGNATURE SECTION - BOTTOM RIGHT (NOT FIXED)
-         * ============================================================================ */
+        .traits-container .traits-items {
+            display: inline-block;
+            vertical-align: top;
+            max-width: 89%;
+        }
+
+        .traits-container .trait-item {
+            display: inline-block;
+            margin: 0 4.1px 1px 0;
+            padding: 0 3.2px;
+            border-right: 1px solid #b0c4de;
+            font-size: 7.0pt;
+        }
+
+        .traits-container .trait-item:last-child {
+            border-right: none;
+        }
+
+        .traits-container .trait-name {
+            color: #333;
+        }
+
+        .traits-container .trait-rating {
+            font-weight: bold;
+            color: #1B3058;
+            text-transform: capitalize;
+            margin-left: 2px;
+            padding: 0 3px;
+            background: #fff;
+            border-radius: 2px;
+        }
+
+        .traits-container .trait-rating.excellent {
+            color: #1B8A1B;
+            background: #e8f5e9;
+        }
+
+        .traits-container .trait-rating.good {
+            color: #2E7D32;
+            background: #e8f5e9;
+        }
+
+        .traits-container .trait-rating.fair {
+            color: #F9A825;
+            background: #fff8e1;
+        }
+
+        .traits-container .trait-rating.poor {
+            color: #C62828;
+            background: #ffebee;
+        }
+
+        .traits-container .traits-divider {
+            border-top: 2px solid #b0c4de;
+            margin: 3px 0;
+        }
+
+        /* SIGNATURE SECTION */
         .signature-wrapper {
             text-align: right;
-            margin-top: 8px;
-            padding-top: 4px;
+            margin-top: 3px;
+            padding-top: 2px;
             border-top: 1px solid #ddd;
         }
 
         .signature-wrapper .sign-content {
             display: inline-block;
             text-align: center;
-            min-width: 180px;
+            min-width: 150px;
         }
 
         .signature-wrapper .sign-img {
-            max-width: 160px;
-            max-height: 45px;
+            max-width: 130px;
+            max-height: 38px;
             object-fit: contain;
             display: block;
             margin: 0 auto;
         }
 
         .signature-wrapper .sign-label {
-            font-size: 7.5pt;
+            font-size: 7.0pt;
             color: #444;
-            margin-top: 2px;
+            margin-top: 1px;
             font-weight: 500;
         }
 
         .signature-wrapper .next-term {
-            font-size: 7.5pt;
-            margin-top: 4px;
+            font-size: 7.0pt;
+            margin-top: 2px;
             color: #333;
         }
 
@@ -1206,6 +1217,12 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
+
+            .traits-container {
+                background: #e8f0fe !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
         }
     </style>
 </head>
@@ -1214,7 +1231,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
 
     <?php if (!empty($schoolLogoPath)): ?>
         <div class="watermark">
-            <img src="<?php echo '../uploads/' . (isset($iSchool['logo']) ? $iSchool['logo'] : ''); ?>" style="width: 350px; height: auto;" />
+            <img src="<?php echo '../uploads/' . (isset($iSchool['logo']) ? $iSchool['logo'] : ''); ?>" style="width: 300px; height: auto;" />
         </div>
     <?php endif; ?>
 
@@ -1353,7 +1370,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
 
         <table class="subjects-table">
             <colgroup>
-                <col style="width:<?php echo $totalColumns > 13 ? '13%' : '16%'; ?>;">
+                <col style="width:<?php echo $totalColumns > 13 ? '14%' : '17%'; ?>;">
                 <?php foreach ($totalAssesment as $Val): ?>
                     <col style="width:<?php echo $totalColumns > 13 ? '3.5%' : '4.5%'; ?>;">
                 <?php endforeach; ?>
@@ -1382,17 +1399,17 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
                     <th>TOTAL</th>
                     <th>GRD</th>
                     <?php if ($showPos): ?><th>POS</th><?php endif; ?>
-                    <?php if ($showOutOf): ?><th>OUT OF</th><?php endif; ?>
+                    <?php if ($showOutOf): ?><th>OUT</th><?php endif; ?>
                     <?php if ($showLowestAvg): ?><th>LOW</th><?php endif; ?>
                     <?php if ($showHighestAvg): ?><th>HIGH</th><?php endif; ?>
-                    <?php if ($showClassAvg): ?><th>CLASS AVG</th><?php endif; ?>
+                    <?php if ($showClassAvg): ?><th>AVG</th><?php endif; ?>
                     <th>REMARKS</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($subjectScoresData)): ?>
                     <tr>
-                        <td colspan="<?= $colspan ?>" style="text-align:center; padding:4px;">No subject score data found for this student.</td>
+                        <td colspan="<?= $colspan ?>" style="text-align:center; padding:3px;">No subject score data found for this student.</td>
                     </tr>
                 <?php endif; ?>
                 <?php foreach ($subjectScoresData as $data):
@@ -1420,57 +1437,66 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             </tbody>
         </table>
 
-        <!-- AFFECTIVE & PSYCHOMOTOR TRAITS -->
+        <!-- ============================================================================
+        TRAITS - VISUALLY DISTINCT WITH COLOR AND STYLING
+        ============================================================================ -->
         <?php if ($showAffective || $showPsychomotor): ?>
             <div class="traits-container">
-                <table>
-                    <tr>
-                        <td>
-                            <?php if ($showAffective): ?>
-                                <table class="traits-table">
-                                    <tr>
-                                        <td class="trait-label" style="border:1px solid #000; font-weight:bold; background:#f4f7fc;"><?php echo htmlspecialchars($title4); ?></td>
-                                        <td class="trait-label trait-rating" style="border:1px solid #000; font-weight:bold; text-align:center; background:#f4f7fc;">RATING</td>
-                                    </tr>
-                                    <?php if (!empty($affectiveRows)): ?>
-                                        <?php foreach ($affectiveRows as $traitRow): ?>
-                                            <tr>
-                                                <td style="border:1px solid #000; padding:1px 4px;"><?php echo htmlspecialchars($traitRow['trait'] ?? ''); ?></td>
-                                                <td style="border:1px solid #000; text-align:center; text-transform:capitalize; padding:1px 4px;"><?php echo htmlspecialchars($affectiveRatings[(int)($traitRow['id'] ?? 0)] ?? '-'); ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td style="border:1px solid #000; padding:1px 4px;" colspan="2">No affective traits found.</td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </table>
-                            <?php endif; ?>
-                        </td>
-                        <td>
-                            <?php if ($showPsychomotor): ?>
-                                <table class="traits-table">
-                                    <tr>
-                                        <td class="trait-label" style="border:1px solid #000; font-weight:bold; background:#f4f7fc;"><?php echo htmlspecialchars($title5); ?></td>
-                                        <td class="trait-label trait-rating" style="border:1px solid #000; font-weight:bold; text-align:center; background:#f4f7fc;">RATING</td>
-                                    </tr>
-                                    <?php if (!empty($psychomotorRows)): ?>
-                                        <?php foreach ($psychomotorRows as $skillRow): ?>
-                                            <tr>
-                                                <td style="border:1px solid #000; padding:1px 4px;"><?php echo htmlspecialchars($skillRow['phycomotor'] ?? ''); ?></td>
-                                                <td style="border:1px solid #000; text-align:center; text-transform:capitalize; padding:1px 4px;"><?php echo htmlspecialchars($psychomotorRatings[(int)($skillRow['id'] ?? 0)] ?? '-'); ?></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <tr>
-                                            <td style="border:1px solid #000; padding:1px 4px;" colspan="2">No psychomotor skills found.</td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </table>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                </table>
+                <div class="traits-header">STUDENT TRAITS & SKILLS ASSESSMENT</div>
+
+                <?php if ($showAffective && !empty($affectiveRows)): ?>
+                    <div class="traits-row">
+                        <span class="traits-label"><?php echo htmlspecialchars($title4); ?>:</span>
+                        <span class="traits-items">
+                            <?php
+                            $affectiveCount = 0;
+                            foreach ($affectiveRows as $traitRow):
+                                $traitId = (int)($traitRow['id'] ?? 0);
+                                $rating = $affectiveRatings[$traitId] ?? '-';
+                                $ratingClass = '';
+                                $ratingLower = strtolower($rating);
+                                if (in_array($ratingLower, ['excellent', 'outstanding'])) $ratingClass = 'excellent';
+                                elseif (in_array($ratingLower, ['good', 'very good', 'great'])) $ratingClass = 'good';
+                                elseif (in_array($ratingLower, ['fair', 'average', 'satisfactory'])) $ratingClass = 'fair';
+                                elseif (in_array($ratingLower, ['poor', 'needs improvement', 'unsatisfactory'])) $ratingClass = 'poor';
+                                $affectiveCount++;
+                            ?>
+                                <span class="trait-item">
+                                    <span class="trait-name"><?php echo htmlspecialchars($traitRow['trait'] ?? ''); ?>:</span>
+                                    <span class="trait-rating <?php echo $ratingClass; ?>"><?php echo htmlspecialchars($rating); ?></span>
+                                </span>
+                            <?php endforeach; ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
+
+                <?php if ($showAffective && !empty($affectiveRows) && $showPsychomotor && !empty($psychomotorRows)): ?>
+                    <div class="traits-divider"></div>
+                <?php endif; ?>
+
+                <?php if ($showPsychomotor && !empty($psychomotorRows)): ?>
+                    <div class="traits-row">
+                        <span class="traits-label"><?php echo htmlspecialchars($title5); ?>:</span>
+                        <span class="traits-items">
+                            <?php
+                            foreach ($psychomotorRows as $skillRow):
+                                $skillId = (int)($skillRow['id'] ?? 0);
+                                $rating = $psychomotorRatings[$skillId] ?? '-';
+                                $ratingClass = '';
+                                $ratingLower = strtolower($rating);
+                                if (in_array($ratingLower, ['excellent', 'outstanding'])) $ratingClass = 'excellent';
+                                elseif (in_array($ratingLower, ['good', 'very good', 'great'])) $ratingClass = 'good';
+                                elseif (in_array($ratingLower, ['fair', 'average', 'satisfactory'])) $ratingClass = 'fair';
+                                elseif (in_array($ratingLower, ['poor', 'needs improvement', 'unsatisfactory'])) $ratingClass = 'poor';
+                            ?>
+                                <span class="trait-item">
+                                    <span class="trait-name"><?php echo htmlspecialchars($skillRow['phycomotor'] ?? ''); ?>:</span>
+                                    <span class="trait-rating <?php echo $ratingClass; ?>"><?php echo htmlspecialchars($rating); ?></span>
+                                </span>
+                            <?php endforeach; ?>
+                        </span>
+                    </div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 
@@ -1522,9 +1548,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             </table>
         </div>
 
-        <!-- ============================================================================
-        SIGNATURE SECTION - BOTTOM RIGHT (NOT FIXED)
-        ============================================================================ -->
+        <!-- SIGNATURE SECTION -->
         <?php if (!empty($principalSignaturePath) || !empty($nextTermRow)): ?>
             <div class="signature-wrapper">
                 <div class="sign-content">
