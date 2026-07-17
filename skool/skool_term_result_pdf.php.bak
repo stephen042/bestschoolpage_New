@@ -1,680 +1,1673 @@
 <?php
-namespace Dompdf;
-include('../config.php');
-require_once ('dompdf_New/autoload.inc.php');
+
+/**
+ * ============================================================================
+ * SKOOL TERM RESULT PDF - WITH WORKING LOGO HEADER & WATERMARK BACKGROUND
+ * ============================================================================
+ * FIXED: Page break issues, table scattering, and multi-page rendering
+ * Version: 4.0 (Fixed Page Rendering)
+ * ============================================================================
+ */
+
+// ============================================================================
+// Dompdf Autoload
+// ============================================================================
+$dompdfPath = dirname(__DIR__) . '/dompdf_New/autoload.inc.php';
+
+if (!file_exists($dompdfPath)) {
+    die("Dompdf not found at: " . $dompdfPath);
+}
+
+require_once($dompdfPath);
+
+use Dompdf\Dompdf;
+use Dompdf\Options;
+
+$pdfPerfStart = microtime(true);
+
 ob_start();
-define('WP_MEMORY_LIMIT', '512M');
 
-include('inc.session-create.php');
+require_once('../config.php');
 
+$requestedRandomId = trim((string)($_GET['randomid'] ?? ''));
+$requestedStudentId = trim((string)($_GET['student_id'] ?? ''));
+$requestedSessionId = (int)($_GET['session'] ?? 0);
+$requestedTermId = (int)($_GET['term_id'] ?? 0);
+$requestedClassId = (int)($_GET['class_id'] ?? 0);
 
-$iSchool = $db->getRow("select * from school_register where id='".$create_by_userid."'"); 
-$iState = $db->getRow("select * from state where id='".$iSchool['state']."'");
-$statename=$iState['title'];
-$iStudent=$db->getRow("select * from manage_student where randomid='".$_GET['randomid']."'");
-$iSession=$db->getRow("select * from school_session where id='".$_GET['session']."' and create_by_userid='".$create_by_userid."' ");
-if(isset($_GET['term_id']) && $_GET['term_id'] != 'all'){
-    $term_id=$db->getRow("select * from school_term where id='".$_GET['term_id']."' and create_by_userid='".$create_by_userid."' ");
-    $term_select = " and term_id='".$_GET['term_id']."' ";
-    $term_select2 = " and student.term_id='".$_GET['term_id']."' ";
-}else{
-    $term_select = "";
-    $term_select2 = "";
-}
-$iClass=$db->getRow("select * from school_class where id='".$iStudent['class']."'  and create_by_userid='".$create_by_userid."'");
- $iSchoolPDFsetting=$db->getRow("select * from school_pdfsetting where section_id = '".$iClass['section_id']."'");
+// ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (EXACTLY MATCHES dashboard.php)
+// ============================================================================
+$sessionSchoolId = (int)($_SESSION['userid'] ?? 0);
 
-
-$assesmentALL=$_GET['assesments'];
-$totalAssesment=explode('-',$assesmentALL);
-$assesmentIn=implode(',',$totalAssesment);
-$iCountAsses = count($totalAssesment);
-
-function toUnique($array,$property) {
-  $tempArray = array_unique(array_column($array, $property));
-  $moreUniqueArray = array_values(array_intersect_key($array, $tempArray));
-  return $moreUniqueArray;
+// If create_by_userid is not set in session, try to get it from the user record
+if ($sessionSchoolId == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $sessionSchoolId = (int)$userData['create_by_userid'];
+    }
 }
 
-$_query = "select student.id as studentId, student.*, schoolClass.*, classScore.* 
-FROM input_score_class_teacher AS classScore 
-INNER JOIN manage_student AS student ON classScore.student_id  = student.id 
-INNER JOIN school_class AS  schoolClass ON student.class = schoolClass.id 
-WHERE schoolClass.id ='".$iStudent['class']."' AND classScore.create_by_userid = '".$create_by_userid."' $term_select2 AND student.session = '".$_GET['session']."'
- order by student.first_name asc;";
-$allQuery = $db->getRows($_query);
+// Fallback: if still 0, use the user's own ID
+if ($sessionSchoolId == 0) {
+    $sessionSchoolId = (int)($_SESSION['userid'] ?? 0);
+}
 
-// echo "QUERY QUERY  QUERY". $_query;
-//    exit;  
+// ============================================================================
+// GET STUDENT - USE RANDOMID APPROACH LIKE TERM RESULT
+// ============================================================================
+$iStudent = [];
 
-//$iSchoolPDFsetting= $allQuery[0];
-//$iStudent = $allQuery[0];
-$subjectdetails=$db->getRows("select * from school_subject where class_id = '" .$iStudent['class']. "' and create_by_userid='".$create_by_userid."'");
-//$subjectdetails = toUnique($allQuery, "subjectId");
-$studentIds = toUnique($allQuery, "studentId");
-$scoreData = $allQuery;
+// FIRST: Try to get student by randomid
+if ($requestedRandomId !== '') {
+    $randomParams = [$requestedRandomId];
+    $randomQuery = "SELECT * FROM manage_student WHERE randomid = ?";
 
-    $tStuden= count($studentIds);
-    
-    
-$totalScore = array();
-  $highestAvg= 0;
-  $lowestAvg= 0;
-foreach ($subjectdetails as $Ilists) { 
-$aiiisub=$Ilists['id'];
-$i=0;
+    if ($sessionSchoolId > 0) {
+        $randomQuery .= " AND create_by_userid = ?";
+        $randomParams[] = $sessionSchoolId;
+    }
 
+    $iStudent = db_get_row($randomQuery . " ORDER BY id DESC LIMIT 1", $randomParams);
+}
 
+// SECOND: Try by student_id (fallback)
+if (empty($iStudent) && $requestedStudentId !== '') {
+    $studentParams = [$requestedStudentId];
+    $studentQuery = "SELECT * FROM manage_student WHERE student_id = ?";
 
+    if ($sessionSchoolId > 0) {
+        $studentQuery .= " AND create_by_userid = ?";
+        $studentParams[] = $sessionSchoolId;
+    }
 
+    $iStudent = db_get_row($studentQuery . " ORDER BY id DESC LIMIT 1", $studentParams);
+}
 
-  $scoreTotal= 0;
-  foreach($studentIds as $iList)
-  {
-      foreach($totalAssesment as $Val) 
-      { 
-              
-        foreach($allQuery as $_All) {
-          if($iList['subject_id'] == $Ilists['id'] && $iList['studentId'] == $_All['studentId'] && $_All['assesment_id'] == $Val){
-            ${"$aiiisub".$iList['studentId']}+=$_All['score'];
-            $scoreTotal += 1;;
-          
-            
-              $iInputScore=$db->getVal("select SUM(score) from input_score_class_teacher where  student_id='".$_All['studentId']."' $term_select 
- and class_id='".$_GET['class_id']."' and create_by_userid='".$create_by_userid."'");
+// THIRD: Try with session and term filters
+if (empty($iStudent) && $requestedStudentId !== '' && $requestedSessionId > 0 && $requestedTermId > 0) {
+    $studentQuery = "SELECT * FROM manage_student WHERE student_id = ?";
+    $studentParams = [$requestedStudentId];
 
+    if ($sessionSchoolId > 0) {
+        $studentQuery .= " AND create_by_userid = ?";
+        $studentParams[] = $sessionSchoolId;
+    }
 
-            $average = round($iInputScore/$tStuden,2);
-            $totalScore[$iList['studentId']] = $average; 
-            
-            // if($average > $highestAvg){
-            //     $highestAvg = $average;
-            // }
-            // if($lowestAvg > $average){
-            //     $lowestAvg = $average;
-            // }
-            
-            break;
-          }
+    if ($requestedSessionId > 0) {
+        $studentQuery .= " AND session = ?";
+        $studentParams[] = $requestedSessionId;
+    }
+
+    if ($requestedTermId > 0) {
+        $studentQuery .= " AND term_id = ?";
+        $studentParams[] = $requestedTermId;
+    }
+
+    if ($requestedClassId > 0) {
+        $studentQuery .= " AND class = ?";
+        $studentParams[] = $requestedClassId;
+    }
+
+    $iStudent = db_get_row($studentQuery . " ORDER BY id DESC LIMIT 1", $studentParams);
+}
+
+// FOURTH: Try with student_id and session only
+if (empty($iStudent) && $requestedStudentId !== '' && $requestedSessionId > 0) {
+    $studentParams = [$requestedStudentId, $requestedSessionId];
+    $studentQuery = "SELECT * FROM manage_student WHERE student_id = ? AND session = ?";
+
+    if ($sessionSchoolId > 0) {
+        $studentQuery .= " AND create_by_userid = ?";
+        $studentParams[] = $sessionSchoolId;
+    }
+
+    $iStudent = db_get_row($studentQuery . " ORDER BY id DESC LIMIT 1", $studentParams);
+}
+
+// FIFTH: Try with student_id and term only
+if (empty($iStudent) && $requestedStudentId !== '' && $requestedTermId > 0) {
+    $studentParams = [$requestedStudentId, $requestedTermId];
+    $studentQuery = "SELECT * FROM manage_student WHERE student_id = ? AND term_id = ?";
+
+    if ($sessionSchoolId > 0) {
+        $studentQuery .= " AND create_by_userid = ?";
+        $studentParams[] = $sessionSchoolId;
+    }
+
+    $iStudent = db_get_row($studentQuery . " ORDER BY id DESC LIMIT 1", $studentParams);
+}
+
+if (empty($iStudent)) {
+    die("Student not found.");
+}
+
+// ============================================================================
+// GET SCHOOL INFO
+// ============================================================================
+$SCHOOL_ID = (int)($iStudent['create_by_userid'] ?? 0);
+
+if (empty($SCHOOL_ID)) {
+    die("School not found.");
+}
+
+$iSchool = db_get_row("SELECT * FROM school_register WHERE id = ?", [$SCHOOL_ID]);
+
+if (empty($iSchool)) {
+    die("School not found.");
+}
+
+$iState = db_get_row("SELECT * FROM state WHERE id = ?", [$iSchool['state'] ?? 0]);
+$statename = is_array($iState) ? ($iState['title'] ?? '') : '';
+
+// ============================================================================
+// GET SESSION, TERM, CLASS
+// ============================================================================
+$sessionId = $requestedSessionId > 0 ? $requestedSessionId : (int)($iStudent['session'] ?? 0);
+$termId = $requestedTermId > 0 ? $requestedTermId : (int)($iStudent['term_id'] ?? 0);
+$classId = $requestedClassId > 0 ? $requestedClassId : (int)($iStudent['class'] ?? 0);
+$assesmentsParam = $_GET['assesments'] ?? '';
+
+$iSession = db_get_row("SELECT * FROM school_session WHERE id = ?", [$sessionId]);
+$termRow = db_get_row("SELECT * FROM school_term WHERE id = ?", [$termId]);
+$iClass = db_get_row("SELECT * FROM school_class WHERE id = ?", [$classId]);
+
+// ============================================================================
+// GET ASSESSMENTS
+// ============================================================================
+$totalAssesment = !empty($assesmentsParam) ? explode('-', $assesmentsParam) : [];
+$totalAssesment = array_values(array_filter(array_map('intval', $totalAssesment), function ($id) {
+    return $id > 0;
+}));
+
+if (empty($totalAssesment)) {
+    $allAssessments = db_get_rows(
+        "SELECT id FROM school_assessment WHERE create_by_userid = ? AND (class_id = ? OR class_id IS NULL OR class_id = 0) ORDER BY id ASC",
+        [$SCHOOL_ID, $classId]
+    );
+    if (is_array($allAssessments)) {
+        foreach ($allAssessments as $assessRow) {
+            $assessmentId = (int)($assessRow['id'] ?? 0);
+            if ($assessmentId > 0) {
+                $totalAssesment[] = $assessmentId;
+            }
         }
-      }
-      $a=$iList['studentId'];
-      $student_two["$a"] = ${"$aiiisub".$iList['studentId']}; 
-  }
-${"classTotal".$Ilists['id']} = $scoreTotal;
-${"highLows".$Ilists['id']}[]= $scoreTotal;
-
-$getClasAvg[]= ${"classTotal".$Ilists['id']}/$tStuden;
-
-
-
-
-$rankedScoresNew = setPositionNew($student_two);
-
-
-foreach ($rankedScoresNew as $studentwa => $data) {
-	
-
-	if($iStudent['id']==$studentwa){
-	 $_SESSION["$aiiisub"] = $rank;
-	}
-	
-}
+    }
 }
 
+// ============================================================================
+// GET PDF SETTINGS
+// ============================================================================
+$sectionId = is_array($iClass) ? ($iClass['section_id'] ?? 0) : 0;
+$pdfSettings = [];
 
-	
-function setPositionNew($standings) {
-    $rankings = array();
+if ($sectionId > 0) {
+    $pdfSettings = db_get_row(
+        "SELECT * FROM school_pdfsetting WHERE section_id = ? AND create_by_userid = ? ORDER BY id DESC LIMIT 1",
+        [$sectionId, $SCHOOL_ID]
+    );
+
+    if (!is_array($pdfSettings) || empty($pdfSettings)) {
+        $pdfSettings = db_get_row(
+            "SELECT * FROM school_pdfsetting WHERE create_by_userid = ? ORDER BY id DESC LIMIT 1",
+            [$SCHOOL_ID]
+        );
+    }
+}
+
+if (!is_array($pdfSettings) || empty($pdfSettings)) {
+    $pdfSettings = [
+        'is_grade' => '1',
+        'is_class' => '1',
+        'is_position' => '1',
+        'is_totalscore' => '1',
+        'is_session' => '1',
+        'is_finalaverage' => '1',
+        'is_terms' => '1',
+        'is_profilepic' => '1',
+        'is_affective' => '1',
+        'is_phycomotor' => '1',
+        'is_grade_details' => '1',
+        'is_no_of_subjects' => '1',
+        'is_pos' => '1',
+        'is_out' => '1',
+        'is_lowest_avg' => '1',
+        'is_highest_avg' => '1',
+        'is_class_avg' => '1',
+        'title_1' => 'Class Teacher',
+        'title_2' => "Class Teacher's Remarks",
+        'title_3' => "Principal's Remarks",
+        'title_4' => 'AFFECTIVE TRAITS',
+        'title_5' => 'PSYCHOMOTOR'
+    ];
+}
+
+// Extract settings
+$showProfilePic = ($pdfSettings['is_profilepic'] ?? '0') == '1';
+$showClass = ($pdfSettings['is_class'] ?? '0') == '1';
+$showSession = ($pdfSettings['is_session'] ?? '0') == '1';
+$showTerms = ($pdfSettings['is_terms'] ?? '0') == '1';
+$showPosition = ($pdfSettings['is_position'] ?? '0') == '1';
+$showTotalScore = ($pdfSettings['is_totalscore'] ?? '0') == '1';
+$showFinalAverage = ($pdfSettings['is_finalaverage'] ?? '0') == '1';
+$showGrade = ($pdfSettings['is_grade'] ?? '0') == '1';
+$showPos = ($pdfSettings['is_pos'] ?? '0') == '1';
+$showOutOf = ($pdfSettings['is_out'] ?? '0') == '1';
+$showLowestAvg = ($pdfSettings['is_lowest_avg'] ?? '0') == '1';
+$showHighestAvg = ($pdfSettings['is_highest_avg'] ?? '0') == '1';
+$showClassAvg = ($pdfSettings['is_class_avg'] ?? '0') == '1';
+$showGradeDetails = ($pdfSettings['is_grade_details'] ?? '0') == '1';
+$showNoOfSubjects = ($pdfSettings['is_no_of_subjects'] ?? '0') == '1';
+$showAffective = ($pdfSettings['is_affective'] ?? '0') == '1';
+$showPsychomotor = ($pdfSettings['is_phycomotor'] ?? '0') == '1';
+
+$title1 = $pdfSettings['title_1'] ?? 'Class Teacher';
+$title2 = $pdfSettings['title_2'] ?? "Class Teacher's Remarks";
+$title3 = $pdfSettings['title_3'] ?? "Principal's Remarks";
+$title4 = $pdfSettings['title_4'] ?? 'AFFECTIVE TRAITS';
+$title5 = $pdfSettings['title_5'] ?? 'PSYCHOMOTOR';
+
+// ============================================================================
+// CALCULATE ASSESSMENTS MAX TOTAL
+// ============================================================================
+$assessmentMaxTotal = 0;
+$assessmentNameMap = [];
+if (!empty($totalAssesment)) {
+    $assessmentPlaceholders = implode(',', array_fill(0, count($totalAssesment), '?'));
+    $assessmentRows = db_get_rows(
+        "SELECT id, assesment, percentage FROM school_assessment WHERE id IN ($assessmentPlaceholders) AND create_by_userid = ?",
+        array_merge($totalAssesment, [$SCHOOL_ID])
+    );
+    if (is_array($assessmentRows)) {
+        foreach ($assessmentRows as $assessmentRow) {
+            $assessmentId = (int)($assessmentRow['id'] ?? 0);
+            if ($assessmentId > 0) {
+                $assessmentNameMap[$assessmentId] = (string)($assessmentRow['assesment'] ?? '');
+            }
+            $maxScore = (float)($assessmentRow['percentage'] ?? 0);
+            $assessmentMaxTotal += $maxScore > 0 ? $maxScore : 100;
+        }
+    }
+}
+
+// ============================================================================
+// GET SUBJECT DETAILS
+// ============================================================================
+$subjectdetail = db_get_rows("SELECT * FROM school_subject WHERE class_id = ? AND create_by_userid = ?", [$classId, $SCHOOL_ID]);
+if (!is_array($subjectdetail)) $subjectdetail = [];
+
+$iFinalScore = 0;
+$subjectScoresData = [];
+$subjectStats = [];
+
+$classStudents = db_get_rows(
+    "SELECT id FROM manage_student WHERE class = ? AND session = ? AND term_id = ? AND create_by_userid = ?",
+    [$classId, $sessionId, $termId, $SCHOOL_ID]
+);
+if (!is_array($classStudents)) $classStudents = [];
+
+$classStudentIds = [];
+foreach ($classStudents as $classStudent) {
+    if (is_array($classStudent) && !empty($classStudent['id'])) {
+        $classStudentIds[] = (int)$classStudent['id'];
+    }
+}
+
+$removedStudentMap = [];
+$classScoreMap = [];
+$selectedScoreMap = [];
+
+if (!empty($subjectdetail) && !empty($classStudentIds)) {
+    $subjectIds = [];
+    foreach ($subjectdetail as $subjectRow) {
+        $subjectId = (int)($subjectRow['id'] ?? 0);
+        if ($subjectId > 0) $subjectIds[] = $subjectId;
+    }
+
+    if (!empty($subjectIds)) {
+        $subjectPlaceholders = implode(',', array_fill(0, count($subjectIds), '?'));
+
+        $removedRows = db_get_rows(
+            "SELECT subjectid, studentid FROM student_subject_remove WHERE create_by_userid = ? AND subjectid IN ($subjectPlaceholders)",
+            array_merge([$SCHOOL_ID], $subjectIds)
+        );
+        if (is_array($removedRows)) {
+            foreach ($removedRows as $removedRow) {
+                $removedSubjectId = (int)($removedRow['subjectid'] ?? 0);
+                $removedStudentId = (int)($removedRow['studentid'] ?? 0);
+                if ($removedSubjectId > 0 && $removedStudentId > 0) {
+                    $removedStudentMap[$removedSubjectId][$removedStudentId] = true;
+                }
+            }
+        }
+
+        $classScoreRows = db_get_rows(
+            "SELECT student_id, subject_id, COALESCE(SUM(score), 0) AS total_score
+             FROM input_score_class_teacher
+             WHERE class_id = ? AND session_id = ? AND term_id = ? AND create_by_userid = ?
+             AND subject_id IN ($subjectPlaceholders)
+             GROUP BY student_id, subject_id",
+            array_merge([$classId, $sessionId, $termId, $SCHOOL_ID], $subjectIds)
+        );
+        if (is_array($classScoreRows)) {
+            foreach ($classScoreRows as $scoreRow) {
+                $studentId = (int)($scoreRow['student_id'] ?? 0);
+                $subjectId = (int)($scoreRow['subject_id'] ?? 0);
+                if ($studentId > 0 && $subjectId > 0) {
+                    $classScoreMap[$subjectId][$studentId] = (float)($scoreRow['total_score'] ?? 0);
+                }
+            }
+        }
+
+        if (!empty($totalAssesment)) {
+            $assessmentPlaceholders = implode(',', array_fill(0, count($totalAssesment), '?'));
+            $selectedScoreRows = db_get_rows(
+                "SELECT subject_id, assesment_id, COALESCE(SUM(score), 0) AS total_score
+                 FROM input_score_class_teacher
+                 WHERE student_id = ? AND class_id = ? AND session_id = ? AND term_id = ? AND create_by_userid = ?
+                 AND subject_id IN ($subjectPlaceholders)
+                 AND assesment_id IN ($assessmentPlaceholders)
+                 GROUP BY subject_id, assesment_id",
+                array_merge([$iStudent['id'], $classId, $sessionId, $termId, $SCHOOL_ID], $subjectIds, $totalAssesment)
+            );
+            if (is_array($selectedScoreRows)) {
+                foreach ($selectedScoreRows as $scoreRow) {
+                    $subjectId = (int)($scoreRow['subject_id'] ?? 0);
+                    $assessmentId = (int)($scoreRow['assesment_id'] ?? 0);
+                    if ($subjectId > 0 && $assessmentId > 0) {
+                        $selectedScoreMap[$subjectId][$assessmentId] = (float)($scoreRow['total_score'] ?? 0);
+                    }
+                }
+            }
+        }
+    }
+}
+
+foreach ($subjectdetail as $subjectRow) {
+    if (!is_array($subjectRow) || empty($subjectRow['id'])) continue;
+
+    $subjectId = (int)$subjectRow['id'];
+    $removedStudentIds = $removedStudentMap[$subjectId] ?? [];
+
+    $eligibleStudentIds = [];
+    foreach ($classStudentIds as $classStudentId) {
+        if (!isset($removedStudentIds[$classStudentId])) {
+            $eligibleStudentIds[] = $classStudentId;
+        }
+    }
+
+    $studentTotals = [];
+    $classTotalForSubject = 0;
+    foreach ($eligibleStudentIds as $eligibleStudentId) {
+        $studentSubjectTotal = (float)($classScoreMap[$subjectId][$eligibleStudentId] ?? 0);
+        $studentTotals[$eligibleStudentId] = $studentSubjectTotal;
+        $classTotalForSubject += $studentSubjectTotal;
+    }
+
+    $outOfCount = count($eligibleStudentIds);
+    $subjectStats[$subjectId] = [
+        'rankings' => buildRankings($studentTotals),
+        'out_of' => $outOfCount,
+        'low' => $outOfCount > 0 ? min($studentTotals) : 0,
+        'high' => $outOfCount > 0 ? max($studentTotals) : 0,
+        'class_avg' => $outOfCount > 0 ? ($classTotalForSubject / $outOfCount) : 0,
+    ];
+}
+
+foreach ($subjectdetail as $Ilist) {
+    if (!is_array($Ilist)) continue;
+    $subjectId = (int)($Ilist['id'] ?? 0);
+    $subjectTotal = 0;
+    $subjectScores = [];
+    foreach ($totalAssesment as $Val) {
+        $assessmentId = (int)$Val;
+        $score = (float)($selectedScoreMap[$subjectId][$assessmentId] ?? 0);
+        $subjectTotal += $score;
+        $subjectScores[$assessmentId] = $score;
+    }
+    $subjectGradeScore = round($subjectTotal, 2);
+    $currentSubjectStats = $subjectStats[$subjectId] ?? ['rankings' => [], 'out_of' => 0, 'low' => 0, 'high' => 0, 'class_avg' => 0];
+    $subjectScoresData[] = [
+        'subject_id' => $subjectId,
+        'subject' => $Ilist['subject'],
+        'scores' => $subjectScores,
+        'total' => $subjectTotal,
+        'grade_score' => $subjectGradeScore,
+        'position' => $currentSubjectStats['rankings'][$iStudent['id']]['rank'] ?? 0,
+        'out_of' => $currentSubjectStats['out_of'] ?? 0,
+        'low' => $currentSubjectStats['low'] ?? 0,
+        'high' => $currentSubjectStats['high'] ?? 0,
+        'class_avg' => $currentSubjectStats['class_avg'] ?? 0
+    ];
+    $iFinalScore += $subjectTotal;
+}
+
+$iCountSubject = count($subjectdetail);
+$ggrade = $iCountSubject > 0 ? $iFinalScore / $iCountSubject : 0;
+$overallMaxTotal = $iCountSubject > 0 ? ($iCountSubject * $assessmentMaxTotal) : 0;
+$overallGradeScore = round($ggrade, 2);
+$overallGradeInfo = resolveGradeScaleInfo($SCHOOL_ID, $overallGradeScore);
+$gradeLetter = $overallGradeInfo['grade'];
+
+$classTeacherRow = db_get_row("SELECT staff_id FROM class_teacher WHERE school_class = ? AND school_session = ? AND create_by_userid = ?", [$classId, $sessionId, $SCHOOL_ID]);
+$classTeacherInfo = db_get_row("SELECT first_name, last_name FROM staff_manage WHERE id = ? AND create_by_userid = ?", [is_array($classTeacherRow) ? ($classTeacherRow['staff_id'] ?? 0) : 0, $SCHOOL_ID]);
+$classTeacherComment = trim((string)(db_get_val("SELECT comments FROM clas_teacher_make_comment WHERE student_id = ?", [$iStudent['id']]) ?: ''));
+$principalRoleRow = db_get_row("SELECT staff_id FROM assign_role WHERE principal = '1' AND create_by_userid = ?", [$SCHOOL_ID]);
+$principalInfo = db_get_row("SELECT first_name, last_name FROM staff_manage WHERE id = ? AND create_by_userid = ?", [is_array($principalRoleRow) ? ($principalRoleRow['staff_id'] ?? 0) : 0, $SCHOOL_ID]);
+$principalRemark = trim((string)(db_get_val("SELECT comments FROM principle_remarks WHERE student_id = ?", [$iStudent['id']]) ?: ''));
+$nextTermRow = db_get_row("SELECT nextTerm FROM principal_set_nextTerm WHERE create_by_userid = ? AND session_id = ? AND term_id = ? ORDER BY id DESC", [$SCHOOL_ID, $sessionId, $termId]);
+$gradeDetailsRows = db_get_rows("SELECT grade, minimum_number, maximum_number FROM school_grade WHERE create_by_userid = ? ORDER BY id DESC", [$SCHOOL_ID]);
+
+$affectiveRows = [];
+$psychomotorRows = [];
+$affectiveRatings = [];
+$psychomotorRatings = [];
+
+if ($showAffective) {
+    $affectiveRows = db_get_rows("SELECT id, trait FROM manage_traits WHERE create_by_userid = ? ORDER BY id ASC", [$SCHOOL_ID]);
+    $studentAffectiveRatings = db_get_rows("SELECT traits_id, trait FROM student_traits_class_teacher WHERE session_id = ? AND term_id = ? AND class_id = ? AND student_id = ? AND create_by_userid = ?", [$sessionId, $termId, $classId, $iStudent['id'], $SCHOOL_ID]);
+    if (is_array($studentAffectiveRatings)) {
+        foreach ($studentAffectiveRatings as $ratingRow) {
+            $affectiveRatings[(int)($ratingRow['traits_id'] ?? 0)] = (string)($ratingRow['trait'] ?? '');
+        }
+    }
+}
+
+if ($showPsychomotor) {
+    $psychomotorRows = db_get_rows("SELECT id, phycomotor FROM manage_phycomotor WHERE create_by_userid = ? ORDER BY id ASC", [$SCHOOL_ID]);
+    $studentPsychomotorRatings = db_get_rows("SELECT pyschmotor_id, pyschmotor FROM student_pyschomotor_class_teacher WHERE session_id = ? AND term_id = ? AND class_id = ? AND student_id = ? AND create_by_userid = ?", [$sessionId, $termId, $classId, $iStudent['id'], $SCHOOL_ID]);
+    if (is_array($studentPsychomotorRatings)) {
+        foreach ($studentPsychomotorRatings as $ratingRow) {
+            $psychomotorRatings[(int)($ratingRow['pyschmotor_id'] ?? 0)] = (string)($ratingRow['pyschmotor'] ?? '');
+        }
+    }
+}
+
+$positionQuery = "SELECT student_id, SUM(score) as total FROM input_score_class_teacher WHERE class_id = ? AND session_id = ? AND term_id = ? AND create_by_userid = ? GROUP BY student_id";
+$allStudentScores = db_get_rows($positionQuery, [$classId, $sessionId, $termId, $SCHOOL_ID]);
+$scores = [];
+if (is_array($allStudentScores)) {
+    foreach ($allStudentScores as $s) {
+        $scores[$s['student_id']] = $s['total'];
+    }
+}
+arsort($scores);
+$position = 1;
+$studentPosition = 0;
+foreach ($scores as $sid => $total) {
+    if ($sid == $iStudent['id']) {
+        $studentPosition = $position;
+        break;
+    }
+    $position++;
+}
+
+$tSub = count($subjectdetail);
+
+// ============================================================================
+// DETERMINE IF WE NEED TO SPLIT THE TABLE
+// ============================================================================
+$totalRows = count($subjectScoresData);
+$totalColumns = 1 + count($totalAssesment) + 2 +
+    ($showPos ? 1 : 0) + ($showOutOf ? 1 : 0) +
+    ($showLowestAvg ? 1 : 0) + ($showHighestAvg ? 1 : 0) +
+    ($showClassAvg ? 1 : 0);
+
+// Force A3 if too many columns or rows
+$forceA3Paper = false;
+if ($totalColumns > 12 || $totalRows > 30) {
+    $forceA3Paper = true;
+}
+
+// Split table if too many rows for one page
+$rowsPerPage = 20;
+$tablePages = [];
+if ($totalRows > $rowsPerPage) {
+    $tablePages = array_chunk($subjectScoresData, $rowsPerPage);
+} else {
+    $tablePages = [$subjectScoresData];
+}
+
+// ============================================================================
+// ABSOLUTE FILE PATHS FOR IMAGES
+// ============================================================================
+$uploadsPathCandidates = [];
+$documentRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
+if (!empty($documentRoot)) {
+    $uploadsPathCandidates[] = rtrim($documentRoot, '/') . '/bestschoolpage/uploads/';
+}
+$uploadsPathCandidates[] = str_replace('\\', '/', dirname(__DIR__) . '/uploads/');
+
+function toFileUri($path)
+{
+    $cleanPath = str_replace('\\', '/', $path);
+    if (preg_match('/^[A-Za-z]:\//', $cleanPath)) {
+        return 'file:///' . $cleanPath;
+    }
+    return 'file://' . $cleanPath;
+}
+
+function getMimeTypeFromPath($path)
+{
+    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+    if ($ext === 'png') return 'image/png';
+    if ($ext === 'jpg' || $ext === 'jpeg') return 'image/jpeg';
+    if ($ext === 'gif') return 'image/gif';
+    if ($ext === 'webp') return 'image/webp';
+    if ($ext === 'svg') return 'image/svg+xml';
+    return 'application/octet-stream';
+}
+
+function fileToDataUri($path)
+{
+    static $dataUriCache = [];
+    $cacheKey = str_replace('\\', '/', (string)$path);
+    if (array_key_exists($cacheKey, $dataUriCache)) {
+        return $dataUriCache[$cacheKey];
+    }
+    if (!is_file($path) || !is_readable($path)) {
+        $dataUriCache[$cacheKey] = '';
+        return '';
+    }
+    $raw = @file_get_contents($path);
+    if ($raw === false || $raw === '') {
+        $dataUriCache[$cacheKey] = '';
+        return '';
+    }
+    $mime = getMimeTypeFromPath($path);
+    $dataUriCache[$cacheKey] = 'data:' . $mime . ';base64,' . base64_encode($raw);
+    return $dataUriCache[$cacheKey];
+}
+
+function buildRankings($standings)
+{
+    $rankings = [];
     arsort($standings);
     $rank = 1;
-    $tie_rank = 0;
-    $prev_score = -1;
-
-    foreach ($standings as $name => $score) {
-        if ($score != $prev_score) { 
+    $tieRank = 0;
+    $prevScore = null;
+    $count = 0;
+    foreach ($standings as $studentId => $score) {
+        if ($prevScore === null || (float)$score !== (float)$prevScore) {
             $count = 0;
-            $prev_score = $score;
-            $rankings[$name] = array('score' => $score, 'rank' => $rank);
-        } else { 
-            $prev_score = $score;
-            if ($count++ == 0) {
-                $tie_rank = $rank - 1;
+            $prevScore = $score;
+            $rankings[$studentId] = ['score' => $score, 'rank' => $rank];
+        } else {
+            if ($count++ === 0) {
+                $tieRank = $rank - 1;
             }
-            $rankings[$name] = array('score' => $score, 'rank' => $tie_rank);
+            $rankings[$studentId] = ['score' => $score, 'rank' => $tieRank];
         }
         $rank++;
     }
     return $rankings;
 }
 
-//--------------------------------------------------------Total Score------------------------------------------------------------------------------------------------------
-//$subdetaisForToal=$db->getRows("select id from school_subject where class_id = '" .$iStudent['class']. "' and create_by_userid='".$create_by_userid."'");
-// $tSubtotal= count($subjectdetails);
-// foreach ($subjectdetails as $IlistTotal) {
-//   //  $iAlreadyRemoved = $db->getVal("select id from  student_subject_remove where create_by_userid='".$create_by_userid."' and subjectid='".$IlistTotal['id']."' and studentid='".$iStudent['id']."'");
-  
-//   // if($iAlreadyRemoved=='') {  
-  
-//           $scroreTotal = 0;
-//       foreach($totalAssesment as $Val) 
-//       {   
-//         foreach($allQuery as $iAll) {
-//             if($iAll['student_id'] == $iStudent['id'] && $iAll['subject_id'] == $IlistTotal['id'] && $iAll['assesment_id'] == $Val){
-//               $scroreTotal += $iAll['score'];
-//               break;
-//             }
-//         }
-//       }
-//       $grandTotalsss += $scroreTotal;
-
-//    // }
-
-// }
-
-$subdetaisForToal=$db->getRows("select id from school_subject where class_id = '" .$iStudent['class']. "' and create_by_userid='".$create_by_userid."'");
-$tSubtotal=0;
-foreach ($subdetaisForToal as $IlistTotal) { 
-
-   $iAlreadyRemoved = $db->getVal("select id from  student_subject_remove where create_by_userid='".$create_by_userid."' and subjectid='".$IlistTotal['id']."' and studentid='".$iStudent['id']."'");
-  
-  if($iAlreadyRemoved=='') {  
-  
-$tSubtotal++;
-
-foreach($totalAssesment as $Val) 
-{   
-
-$scoresTotal=$db->getRow("select score from input_score_class_teacher where assesment_id='".$Val."' and student_id='".$iStudent['id']."' and subject_id='".$IlistTotal['id']."' and create_by_userid='".$create_by_userid."'");
-${"stotal" . $IlistTotal['id']}+=$scoresTotal['score'];
-
-} 
-$grandTotalsss += ${"stotal" . $IlistTotal['id']};
-
+function formatOrdinal($number)
+{
+    $number = (int)$number;
+    if ($number <= 0) return '-';
+    $lastTwo = $number % 100;
+    if ($lastTwo >= 11 && $lastTwo <= 13) return $number . 'th';
+    switch ($number % 10) {
+        case 1:
+            return $number . 'st';
+        case 2:
+            return $number . 'nd';
+        case 3:
+            return $number . 'rd';
+        default:
+            return $number . 'th';
     }
-
 }
 
-//--------------------------------------------------------Final POstion------------------------------------------------------------------------------------------------------
-// foreach($allQuery as $query)
-// {
-//   $grandTotalsss += $query['score'];
-//   $student_final["$bf"] += $query['score'];
-// }
-	//$ifinala=$db->getRows("select id, class from manage_student  where class='".$iClass['id']."' and session='".$_GET['session']."' and term_id='".$_GET['term_id']."'  and create_by_userid='".$create_by_userid."' ");
-  foreach($studentIds as $iifinalList)
-  {
-   $bf=$iifinalList['id'];
-     $iScorefe = $iifinalList['score']; 
-      ${"dsp" . $iifinalList['id']}+= $iScorefe;
-      $ifiSum = ${"dsp" . $iifinalList['id']}; 
-     
-    $student_final["$bf"] = $ifiSum;
-  }
-	
-function setPositionf($standingsf) {
-    $rankings = array();
-    arsort($standingsf);
-    $rankf = 1;
-    $tie_rank = 0;
-    $prev_score = -1;
+function resolveGradeScaleInfo($schoolId, $score)
+{
+    $score = round((float)$score, 2);
+    static $rangeCacheBySchool = [];
+    if (!isset($rangeCacheBySchool[(int)$schoolId])) {
+        $rangeCacheBySchool[(int)$schoolId] = db_get_rows(
+            "SELECT grade, description, comment, minimum_number, maximum_number
+             FROM school_grade
+             WHERE create_by_userid = ?
+             AND minimum_number <= maximum_number
+             ORDER BY minimum_number DESC",
+            [$schoolId]
+        );
+    }
+    $ranges = $rangeCacheBySchool[(int)$schoolId];
+    if (empty($ranges)) {
+        return [
+            'grade' => ($score >= 70 ? 'A' : ($score >= 60 ? 'B' : ($score >= 50 ? 'C' : ($score >= 45 ? 'D' : ($score >= 40 ? 'E' : 'F'))))),
+            'description' => '',
+            'comment' => '',
+            'score' => $score,
+        ];
+    }
+    foreach ($ranges as $range) {
+        $min = (float)($range['minimum_number'] ?? 0);
+        $max = (float)($range['maximum_number'] ?? 100);
+        if ($score >= $min && $score <= $max) {
+            return [
+                'grade'       => trim((string)$range['grade']),
+                'description' => trim((string)($range['description'] ?? '')),
+                'comment'     => trim((string)($range['comment'] ?? '')),
+                'score'       => $score,
+            ];
+        }
+    }
+    $fallback = null;
+    foreach ($ranges as $range) {
+        if (trim((string)($range['grade'] ?? '')) === '') continue;
+        $fallback = $range;
+        break;
+    }
+    return [
+        'grade' => ($score >= 70 ? 'A' : ($score >= 60 ? 'B' : ($score >= 50 ? 'C' : ($score >= 45 ? 'D' : ($score >= 40 ? 'E' : 'F'))))),
+        'description' => trim((string)($fallback['description'] ?? '')),
+        'comment' => trim((string)($fallback['comment'] ?? '')),
+        'score' => $score,
+    ];
+}
 
-    foreach ($standingsf as $name => $score) {
-        if ($score != $prev_score) { 
-            $count = 0;
-            $prev_score = $score;
-            $rankings[$name] = array('score' => $score, 'rankf' => $rankf);
-        } else { 
-            $prev_score = $score;
-            if ($count++ == 0) {
-                $tie_rank = $rankf - 1;
+function getImagePath($filename)
+{
+    global $uploadsPathCandidates;
+    $filename = trim((string)$filename);
+    if ($filename === '') return '';
+    static $resolvedImageCache = [];
+    $filename = rawurldecode($filename);
+    if (array_key_exists($filename, $resolvedImageCache)) {
+        return $resolvedImageCache[$filename];
+    }
+    if (strpos($filename, 'data:image/') === 0) {
+        $resolvedImageCache[$filename] = $filename;
+        return $filename;
+    }
+    $remoteUrl = '';
+    if (preg_match('#^https?://#i', $filename)) {
+        $remoteUrl = $filename;
+    }
+    $normalized = str_replace('\\', '/', $filename);
+    $parsedPath = (string)(parse_url($normalized, PHP_URL_PATH) ?? '');
+    if ($parsedPath !== '') $normalized = $parsedPath;
+
+    $candidates = [];
+    $candidates[] = ltrim($normalized, '/');
+    if (stripos($normalized, '/uploads/') !== false) {
+        $afterUploads = preg_replace('#^.*?/uploads/#i', '', $normalized);
+        if (!empty($afterUploads)) $candidates[] = ltrim($afterUploads, '/');
+    }
+    $baseName = basename($normalized);
+    if ($baseName !== '' && $baseName !== '.' && $baseName !== '..') $candidates[] = $baseName;
+    $candidates = array_values(array_unique(array_filter($candidates)));
+
+    $extraBasePaths = [];
+    $docRoot = str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT'] ?? '');
+    if ($docRoot !== '') {
+        $extraBasePaths[] = rtrim($docRoot, '/') . '/uploads/';
+        $extraBasePaths[] = rtrim($docRoot, '/') . '/bestschoolpage/uploads/';
+    }
+    $basePaths = array_merge($uploadsPathCandidates, $extraBasePaths);
+
+    foreach ($candidates as $candidate) {
+        foreach ($basePaths as $basePath) {
+            $fullPath = rtrim($basePath, '/') . '/' . ltrim($candidate, '/');
+            if (is_file($fullPath)) {
+                $dataUri = fileToDataUri($fullPath);
+                if ($dataUri !== '') {
+                    $resolvedImageCache[$filename] = $dataUri;
+                    return $dataUri;
+                }
+                $resolvedImageCache[$filename] = toFileUri($fullPath);
+                return $resolvedImageCache[$filename];
             }
-            $rankings[$name] = array('score' => $score, 'rankf' => $tie_rank);
-        }
-        $rankf++;
-    }
-    return $rankings;
-}
-
-
-$rankedScoresf = setPositionf($student_final);
-
-foreach ($rankedScoresf as $studentwaf => $dataf)
- {
-	if($iStudent['id']==$studentwaf){
-	// $_SESSION["board_$studentwaf"]=$dataf['rankf'];
-	}
-	
-}
-$val = $totalScore;
-
-//print_r($val);
-rsort($totalScore);
-//print_r($totalScore);
-$i = 0;
-foreach($val as $key => $v){
-   if($iStudent['id']==$key){
-      $rank = $v;
-	// echo $_SESSION["board_$studentwaf"]=$i;
-       
-	} 
-	$i++;
-}
-foreach($totalScore as $key => $val){
-    if($val == $rank){
-        if($key == 0){
-             $rank = 1;
-        }else{
-         $rank = $key+=1;
         }
     }
+    if ($remoteUrl !== '') {
+        $resolvedImageCache[$filename] = $remoteUrl;
+        return $remoteUrl;
+    }
+    $resolvedImageCache[$filename] = '';
+    return '';
 }
 
-//$iTotalStudents = $db->getVal("select count(*) from manage_student where class='".$iClass['id']."' and   create_by_userid='".$create_by_userid."' and session='".$_GET['session']."' $term_select");
-$subjectCount =$db->getVal("select count(*) from school_subject where  class_id='".$iClass['id']."'");
-$studentArr=$db->getRows("select * from manage_student where class='".$iClass['id']."' and create_by_userid='".$create_by_userid."' and session='".$_GET['session']."' $term_select");
-$iTotalStudents = count($studentArr);
+// Layout metrics parsing
+$assessmentCount = count($totalAssesment);
+$extraCols = 3 + ($showPos ? 1 : 0) + ($showOutOf ? 1 : 0) + ($showLowestAvg ? 1 : 0) + ($showHighestAvg ? 1 : 0) + ($showClassAvg ? 1 : 0);
+$columnCount = 1 + $assessmentCount + $extraCols;
+$subjectCountForLayout = (int)$iCountSubject;
 
-$subjectArr=$db->getRows("select * from school_subject where  class_id='".$iClass['id']."'");
-foreach($studentArr as $studentArrItem){
-		$scoreTotalSum=0;
-		foreach($subjectArr as $subjectItem) {
-				$sumScore=$db->getVal("select SUM(score) from input_score_class_teacher where assesment_id IN ($assesmentIn) and student_id='".$studentArrItem['id']."' and session_id='".$_GET['session']."' $term_select and class_id='".$studentArrItem['class']."' and subject_id='".$subjectItem['id']."'");
+$paperMode = strtolower(trim((string)($_GET['paper_mode'] ?? 'smart')));
+$autoPaperMode = in_array($paperMode, ['smart', 'auto', 'legacy_auto', ''], true);
+$forceA3Paper = $forceA3Paper || in_array($paperMode, ['a3', 'a3_portrait'], true);
+$forceCompactForSchoolIds = in_array((int)$SCHOOL_ID, [30, 64], true);
+$assessmentCountForLayout = max(1, count($totalAssesment));
+$denseLayout = $forceCompactForSchoolIds || ($subjectCountForLayout >= 10) || ($assessmentCountForLayout >= 4 && $columnCount >= 13) || ($columnCount >= 14) || ($totalRows > 20);
+$useA3Page = $forceA3Paper || ($autoPaperMode && $denseLayout);
+$paperSize = $useA3Page ? 'A3' : 'A4';
+$compactMode = $denseLayout || $forceCompactForSchoolIds || $totalRows > 25;
+$traitsMarginTop = $compactMode ? '15px' : '30px';
+$brandImageScale = 1.55;
 
-				$scoreTotalSum += $sumScore;
-				${"avg".$subjectItem['id']}[] = $sumScore;
-		}
-		$classAvgList[]=$scoreTotalSum/$subjectCount;
+$pageMargin = '10mm';
+$baseFont = '10.5pt';
+$lineHeight = '1.28';
+$headerNameSize = '18pt';
+$tableFont = '9.0pt';
+$tablePadding = '3px';
+$logoMax = '130px';
+$photoSize = '130px';
+$watermarkScale = '45%';
+
+// Adjust for compact mode
+if ($compactMode) {
+    $pageMargin = $useA3Page ? '5mm' : '4.8mm';
+    $baseFont = '10.4pt';
+    $lineHeight = '1.2';
+    $headerNameSize = '15.5pt';
+    $tableFont = '8.0pt';
+    $tablePadding = '1px';
+    $logoMax = '70px';
+    $photoSize = '66px';
+    $watermarkScale = '36%';
 }
 
- $highestAvg = max($classAvgList);
-$lowestAvg = min($classAvgList);
+// Further reduce for very large tables
+if ($totalRows > 25) {
+    $tableFont = '7.5pt';
+    $baseFont = '9.5pt';
+    $tablePadding = '1px';
+    $pageMargin = '4mm';
+}
+
+if ($columnCount <= 10) {
+    $pageMargin = '8mm';
+    $baseFont = '11.7pt';
+    $lineHeight = '1.3';
+    $headerNameSize = '19pt';
+    $tableFont = '10.3pt';
+    $tablePadding = '4px';
+    $logoMax = '96px';
+    $photoSize = '88px';
+    $watermarkScale = '48%';
+} elseif ($columnCount <= 12) {
+    $pageMargin = '7.5mm';
+    $baseFont = '11.3pt';
+    $lineHeight = '1.29';
+    $headerNameSize = '18.5pt';
+    $tableFont = '9.9pt';
+    $tablePadding = '3px';
+    $logoMax = '92px';
+    $photoSize = '86px';
+    $watermarkScale = '46%';
+}
+if ($columnCount >= 16) {
+    $pageMargin = '5.5mm';
+    $baseFont = '9.9pt';
+    $lineHeight = '1.22';
+    $headerNameSize = '15pt';
+    $tableFont = '8.0pt';
+    $tablePadding = '2px';
+    $logoMax = '74px';
+    $photoSize = '72px';
+    $watermarkScale = '40%';
+} elseif ($columnCount >= 13) {
+    $pageMargin = '6.2mm';
+    $baseFont = '10.5pt';
+    $lineHeight = '1.24';
+    $headerNameSize = '16pt';
+    $tableFont = '8.5pt';
+    $tablePadding = '2px';
+    $logoMax = '80px';
+    $photoSize = '78px';
+    $watermarkScale = '42%';
+}
+
+$logoMax = round((float)$logoMax * $brandImageScale, 2) . 'px';
+$photoSize = round((float)$photoSize * $brandImageScale, 2) . 'px';
+
+$principalSignaturePath = '';
+$signTermRow = db_get_row("SELECT sign FROM principal_sign_nextTerm WHERE create_by_userid = ? ORDER BY id DESC", [$SCHOOL_ID]);
+if (is_array($signTermRow) && !empty($signTermRow['sign'])) {
+    $principalSignaturePath = getImagePath($signTermRow['sign']);
+}
+
+$schoolLogoPath = getImagePath($iSchool['logo'] ?? '');
+$studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImagePath($iStudent['picture']) : '';
 ?>
+<!DOCTYPE html>
 <html>
+
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<style>
-#watermark {
-	position: absolute;
-	bottom: 10%;
-	z-index: -1000;
-	opacity: 0.1;
-}
-.fontsubject{ font-family: DejaVu Sans, sans-serif; }
-</style>
-</head>
-<body style="border: 1px solid; background-repeat: no-repeat;background-size: cover; background-position:center; opacity:1;">
-<div id="watermark" > <img src="<?php echo 'https://'.$_SERVER['HTTP_HOST'].'/uploads/'.$iSchool['logo']; ?>" height="100%" width="100%" /> </div>
-<table style="width:100%;">
-  <tr> 
-    <td style="width:250px; max-width:20%; padding-top:80px;"><div>&nbsp;&nbsp;&nbsp; <img style="width:250px" src="<?php echo 'https://'.$_SERVER['HTTP_HOST'].'/uploads/'.$iSchool['logo']; ?>"> </div></td>
-    <td style="max-width:80%; width:500px;"><p style="font-size: 35px;color: #2196F3;font-weight: bolder;text-align: center;font-family: sans-serif;margin-bottom: 0; margin-right:50px;"><?php echo str_replace('(', '<br/>(',$iSchool['name']); ?></p>      
-      <p style="font-size: 12px;font-weight:600;text-align:center;font-family: sans-serif;margin-top:0px; margin-right:50px;">MOTO:<?php echo $iSchool['moto']; ?></p>
-      <p style="font-size: 12px;font-weight:600;text-align:center;font-family: sans-serif;margin-top:0px; margin-right:50px;"><?php echo $iSchool['location']; ?>, <?php echo $statename; ?></p>
-      <p style="font-size: 15px;text-align:center;font-family: sans-serif;margin-top:30px;margin-bottom:0px; margin-right:50px;">REPORT SHEET FOR <?php echo $term_id['term']; ?> <?php echo $iSession['session']; ?> ACADEMIC SESSION</p>
-      <br>
-   </td>
-    <td style="width: 120px; max-width:20%;"><div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <?php if($iSchoolPDFsetting['is_profilepic']=='1') { ?>
-        <img style="width:150px" src="<?php echo 'https://'.$_SERVER['HTTP_HOST'].'/uploads/'.$iStudent['picture']; ?>">
-        <?php } ?>
-      </div></td>
-  </tr>
-</table>
-<table cellspacing="0"; style="width: 100%;">
-  <tbody style="font-family: sans-serif;">
-    <tr>
-      <td style="width:100%;" ><table style="width:100%;">
-          <tr>
-            <td style=""><b>Name:</b></td>
-            <td style=""><?php echo $iStudent['first_name'].' '.$iStudent['other_name'].' '.$iStudent['last_name']; ?></td>
-            <?php $ggrade= floor($grandTotalsss/$tSubtotal); if($iSchoolPDFsetting['is_grade']=='1') { ?>
-            <td style=""><b>Final Grade:</b></td>
-            <?php  ?>
-            <td style=""><?php echo $graddingg=$db->getVal("select grade from school_grade where create_by_userid='".$create_by_userid."' and minimum_number <= ".$ggrade." and maximum_number >= ".$ggrade."");?></td>
-            <?php } ?>
-            <td style=""></td>
-            <td style=""></td>
-          </tr>
-          <tr>
-            <?php if($iSchoolPDFsetting['is_class']=='1') { ?>
-            <td style=""><b>Class:</b></td>
-            <td style=""><?php echo $iClass['name']; ?></td>
-            <?php } ?>
-            <?php if($iSchoolPDFsetting['is_position']=='1') { ?>
-            <td style=""><b>Final Postion:</b></td>
-            <td style=""><?php $af= $iStudent['id']; echo $rank; unset($_SESSION["board_$af"]); ?></td>
-            <?php } ?>
-            <?php if($iSchoolPDFsetting['is_totalstudent']=='1') { ?>
-            <td style=""><b>Total Student:</b></td>
-            <td style=""><?php echo $iTotalStudents; ?></td>
-            <?php } else {  ?>
-            <td style=""></td>
-            <td style=""></td>
-            <?php } ?>
-          </tr>
-          <tr>
-            <td></td>
-          </tr>
-          <tr>
-            <?php if($iSchoolPDFsetting['is_addmission']=='1') { ?>
-            <td style=""><b>Admission No:</b></td>
-            <td style=""><?php 
-						echo $iStudent['student_id'];
-						 ?></td>
-            <?php } ?>
-            <?php if($iSchoolPDFsetting['is_totalscore']=='1') { ?>
-            <td style=""><b>Total Score:</b></td>
-            <td style=""><?php echo $grandTotalsss; ?></td>
-            <?php } ?>
-            <td style=""></td>
-            <td style=""></td>
-          </tr>
-          <tr>
-            <?php if($iSchoolPDFsetting['is_session']=='1') { ?>
-            <td style=""><b>Session:</b></td>
-            <td style=""><?php echo $iSession['session']; ?></td>
-            <?php } ?>
-            <?php if($iSchoolPDFsetting['is_finalaverage']=='1') { ?>
-            <td style=""><b>Final Average:</b></td>
-            <td style=""><?php echo round($grandTotalsss/$tSubtotal,2); ?></td>
-            <?php } else {  ?>
-            <td style=""></td>
-            <td style=""></td>
-            <?php } ?>
-          </tr>
-          <tr>
-            <?php if($iSchoolPDFsetting['is_terms']=='1') { ?>
-            <td style=""><b>Term:</b></td>
-            <td style=""><?php echo $_GET["term_id"] == 'all' ? "All" : $term_id['term']; ?></td>
-            <?php } ?>
-            <?php if($iSchoolPDFsetting['is_highestaverage']=='1') { 
-            ?>
-            <td style=""><b>Highest Avg. in Class:</b></td>
-            <td style=""><?php echo round($highestAvg,2); ?></td>
-            <?php } ?>
-            <?php if($iSchoolPDFsetting['is_lowestaverage']=='1') { ?>
-            <td style=""><b>Lowest Avg. in Class:</b></td>
-            <td style=""><?php echo round($lowestAvg,2); ?></td>
-            <?php } else {  ?>
-            <td style=""></td>
-            <td style=""></td>
-            <?php } ?>
-          </tr>
-          <tr>
-            <?php if($iSchoolPDFsetting['is_schoolopen']=='1') { ?>
-            <td style=""><b>Days School Open:</b></td>
-            <td style=""><?php echo $db->getVal("select total_days_open from class_teacher_roll_call_bulk where student_id='".$iStudent['student_id']."' and session_id='".$_GET['session']."' $term_select and class_id='".$iStudent['class']."' and create_by_userid='".$create_by_userid."'"); ?></td>
-            <?php } ?>
-            <?php if($iSchoolPDFsetting['is_daypresent']=='1') { ?>
-            <td style=""><b>Day(s) Present:</b></td>
-            <td style=""><?php echo $db->getVal("select present from class_teacher_roll_call_bulk where student_id='".$iStudent['student_id']."' and session_id='".$_GET['session']."' $term_select and class_id='".$iStudent['class']."' and create_by_userid='".$create_by_userid."'"); ?></td>
-            <?php } ?>
-            <?php if($iSchoolPDFsetting['is_dayabsent']=='1') { ?>
-            <td style=""><b>Day(s) Absent:</b></td>
-            <td style=""><?php echo $db->getVal("select absent from class_teacher_roll_call_bulk where student_id='".$iStudent['student_id']."' and session_id='".$_GET['session']."' $term_select and class_id='".$iStudent['class']."' and create_by_userid='".$create_by_userid."'"); ?></td>
-            <?php } else {  ?>
-            <td style=""></td>
-            <td style=""></td>
-            <?php } ?>
-          </tr>
-        </table></td>
-    </tr>
-  </tbody>
-</table>
-<table cellspacing="0"; style="width: 100%;">
-  <tbody style="font-size: 18px;font-weight: bolder;font-family: sans-serif;">
-    <tr style="height: 50px;">
-      <td style="border: 1px solid #000000;text-align: center;">SUBJECT</td>
-      <?php
-			foreach($totalAssesment as $Val) 
-			{
-			?>
-      <td style="border: 1px solid #000000;text-align: center;"><?php echo $db->getVal("select assesment from school_assessment where id='".$Val."'"); ?> <br>
-        (<?php echo $db->getVal("select percentage from score_entry_time_frame where assesment_id='".$Val."'") ?>)</td>
-      <?php } ?>
-      <td style="border: 1px solid #000000;text-align: center;">TOTAL<br> (100%)</td>
-      <td style="border: 1px solid #000000;text-align: center;">GRD</td>
-      <td style="border: 1px solid #000000;text-align: center; <?php if($iSchoolPDFsetting['is_pos']!='1') { echo 'display:none'; }  ?>">POS</td>
-      <td style="border: 1px solid #000000;text-align: center; <?php if($iSchoolPDFsetting['is_out']!='1') { echo 'display:none'; } ?>">OUT OF</td>
-      <td style="border: 1px solid #000000;text-align: center;  <?php if($iSchoolPDFsetting['is_lowest_avg']!='1') { echo 'display:none'; }  ?>">LOW.IN<br>
-        CLASS</td>
-      <td style="border: 1px solid #000000;text-align: center;  <?php if($iSchoolPDFsetting['is_highest_avg']!='1') { echo 'display:none'; }  ?>">HIGH.IN<br>
-        CLASS</td>
-      <td style="border: 1px solid #000000;text-align: center;  <?php if($iSchoolPDFsetting['is_class_avg']!='1') { echo 'display:none'; }  ?>">CLASS<br>
-        AVG</td>
-      <td style="border: 1px solid #000000;text-align: center;">REMARKS</td>
-    </tr>
-    <?php  
-		//$subjectdetail=$db->getRows("select * from school_subject where class_id = '" .$iStudent['class']. "' and create_by_userid='".$create_by_userid."'");
-		$tSub=0;
-		foreach ($subjectdetails as $Ilist) { 
-		
-		
-											 
-  $iAlreadyRemoved = $db->getVal("select id from  student_subject_remove where create_by_userid='".$create_by_userid."' and subjectid='".$Ilist['id']."'and studentid='".$iStudent['id']."'");
- 
-					if($iAlreadyRemoved=='') {	
-				$tSub++;	
-		?>
-    <tr style="height: 35px;">
-      <td class="fontsubject" style="font-weight: 100; border: 1px solid #000000;"><?php echo ($Ilist['subject']); ?></td>
-      <?php $count=0;
-          $avgTotal = 0;
-			foreach($totalAssesment as $Val) 
-      {   
-        $count=$count+1;
-        $hasScore = false;
-        foreach($allQuery as $iAll) {
-            if($iAll['student_id'] == $iStudent['id'] && $iAll['subject_id'] == $Ilist['id'] && $iAll['assesment_id'] == $Val){
-              $scores = $iAll;
-              $hasScore = true;
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Student Report Sheet</title>
+    <style>
+        @page {
+            size: <?= $paperSize ?> portrait;
+            margin: <?= $pageMargin ?>;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'DejaVu Sans', 'Segoe UI', Arial, sans-serif;
+            font-size: <?= $baseFont ?>;
+            line-height: <?= $lineHeight ?>;
+            color: #333;
+            background: white;
+        }
+
+        .sheet {
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ============================================================================
+         * PAGE BREAK CONTROL - FIXED
+         * ============================================================================ */
+        .page-break {
+            page-break-after: always;
+        }
+
+        .no-page-break {
+            page-break-inside: avoid;
+        }
+
+        .no-page-break table,
+        .no-page-break tr,
+        .no-page-break td {
+            page-break-inside: avoid;
+        }
+
+        .subjects-table {
+            page-break-inside: auto;
+            page-break-after: auto;
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 6px;
+            font-size: <?= $tableFont ?>;
+            table-layout: auto;
+        }
+
+        .subjects-table tbody tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
+
+        .subjects-table thead {
+            display: table-header-group;
+        }
+
+        .subjects-table tfoot {
+            display: table-footer-group;
+        }
+
+        .subjects-table tr {
+            page-break-inside: avoid;
+        }
+
+        .subjects-table thead th {
+            background: #1B3058 !important;
+            color: white !important;
+            padding: <?= $tablePadding ?>;
+            border: 1px solid #2a4780;
+            font-weight: bold;
+            text-align: center;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* ============================================================================
+         * WATERMARK BACKGROUND STYLING
+         * ============================================================================ */
+        .watermark {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -30%);
+            z-index: -1000;
+            opacity: 0.06;
+            text-align: center;
+            width: 100%;
+        }
+
+        .watermark img {
+            width: 450px;
+            height: auto;
+        }
+
+        .header {
+            margin-bottom: 6px;
+            padding-bottom: 4px;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            border: none;
+            vertical-align: middle;
+            padding: 2px;
+        }
+
+        .logo-cell {
+            width: <?= $logoMax ?>;
+            text-align: left;
+        }
+
+        .logo-img {
+            max-width: <?= $logoMax ?>;
+            max-height: <?= $logoMax ?>;
+            object-fit: contain;
+        }
+
+        .school-info-cell {
+            text-align: center;
+        }
+
+        .school-name {
+            font-size: <?= $headerNameSize ?>;
+            font-weight: bold;
+            color: #1B3058;
+            margin-bottom: 2px;
+        }
+
+        .school-moto {
+            font-size: 9.5pt;
+            color: #666;
+            font-style: italic;
+        }
+
+        .school-address {
+            font-size: 8.5pt;
+            color: #444;
+        }
+
+        .report-title {
+            font-size: 11pt;
+            font-weight: bold;
+            margin-top: 4px;
+            color: #1B3058;
+            text-transform: uppercase;
+        }
+
+        .photo-cell {
+            width: <?= $photoSize ?>;
+            text-align: right;
+        }
+
+        .student-photo {
+            width: <?= $photoSize ?>;
+            height: <?= $photoSize ?>;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid #1B3058;
+        }
+
+        .info-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 4px;
+            background: rgba(248, 250, 252, 0.85);
+            border: 1px solid #dde4ee;
+            font-size: <?= $compactMode ? '9.5pt' : '11pt' ?>;
+        }
+
+        .info-grid td {
+            border: 1px solid #eef3f8;
+            padding: <?= $compactMode ? '3px 4px' : '5px 7px' ?>;
+            vertical-align: top;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            width: 35%;
+            font-size: <?= $compactMode ? '9.5pt' : '11.9pt' ?>;
+        }
+
+        .info-value {
+            color: #333;
+            width: 65%;
+            font-size: <?= $compactMode ? '10pt' : '12.7pt' ?>;
+        }
+
+        .left-column {
+            border-right: 1px solid #ddd;
+        }
+
+        .term-badges {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 3px 0 5px 0;
+        }
+
+        .term-badges td {
+            width: 25%;
+            border: none;
+            padding: 0 3px 0 0;
+            vertical-align: top;
+        }
+
+        .term-badge {
+            border: 1px solid #d8e0ec;
+            background: #f4f7fc;
+            border-radius: 4px;
+            padding: 3px 4px;
+            text-align: center;
+            font-size: <?= $compactMode ? '8pt' : '9pt' ?>;
+        }
+
+        .term-badge-label {
+            font-size: 7pt;
+            color: #6d7787;
+            text-transform: uppercase;
+            margin-bottom: 1px;
+            line-height: 1;
+        }
+
+        .term-badge-value {
+            font-size: <?= $compactMode ? '9pt' : '11.1pt' ?>;
+            font-weight: bold;
+            color: #1B3058;
+            line-height: 1.1;
+        }
+
+        .subjects-table th {
+            background: #1B3058;
+            color: white;
+            padding: <?= $tablePadding ?>;
+            border: 1px solid #2a4780;
+            font-weight: bold;
+            text-align: center;
+            font-size: <?= $compactMode ? '7.5pt' : '9pt' ?>;
+        }
+
+        .subjects-table td {
+            border: 1px solid #ddd;
+            padding: <?= $tablePadding ?>;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: <?= $compactMode ? '7.5pt' : '9pt' ?>;
+        }
+
+        .subjects-table .subject-name {
+            text-align: left;
+            font-weight: bold;
+            background: #f5f5f5;
+            white-space: normal;
+            font-size: <?= $compactMode ? '8pt' : '9.5pt' ?>;
+        }
+
+        .subjects-table .remark-col {
+            text-align: left;
+            white-space: normal;
+            font-size: <?= $compactMode ? '7pt' : '8.5pt' ?>;
+        }
+
+        .total-cell {
+            font-weight: bold;
+            background: #e8f0fe;
+        }
+
+        .grade-details {
+            margin-bottom: 4px;
+            padding: 3px;
+            background: rgba(249, 249, 249, 0.9);
+            border: 1px solid #e3e9f2;
+            font-size: <?= $compactMode ? '7.5pt' : '8.7pt' ?>;
+        }
+
+        .remarks-section {
+            margin-top: <?= $compactMode ? '15px' : '25px' ?>;
+            border-top: 1px solid #ddd;
+            padding-top: 4px;
+        }
+
+        .remarks-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .remarks-table td {
+            border: none;
+            padding: <?= $compactMode ? '2px' : '3px 2px' ?>;
+            vertical-align: top;
+            font-size: <?= $compactMode ? '10pt' : '12.5pt' ?>;
+        }
+
+        .remarks-label {
+            font-weight: bold;
+            width: 30%;
+            color: #555;
+            font-size: <?= $compactMode ? '10pt' : '12.5pt' ?>;
+        }
+
+        .remarks-value {
+            width: 70%;
+            font-size: <?= $compactMode ? '11pt' : '14.7pt' ?>;
+            line-height: 1.3;
+        }
+
+        .principal-sign-box {
+            position: fixed;
+            right: 8mm;
+            bottom: 2mm;
+            text-align: center;
+            width: 350px;
+            z-index: 4;
+            padding: 0;
+        }
+
+        .principal-sign-img {
+            max-width: 330px;
+            max-height: 110px;
+            display: block;
+            margin: 0 auto 4px auto;
+            object-fit: contain;
+            filter: contrast(1.9) brightness(1.35) saturate(1.1);
+        }
+
+        .principal-sign-label {
+            font-size: 11.5pt;
+            color: #444;
+            border-top: 1px solid #555;
+            padding-top: 2px;
+            line-height: 1.1;
+        }
+
+        .principal-next-term {
+            margin-top: 10px;
+            font-size: 12.5pt;
+            line-height: 1.2;
+            color: #333;
+            text-align: center;
+        }
+
+        /* Compact Layout Overrides */
+        body.compact-layout .header {
+            margin-bottom: 4px;
+            padding-bottom: 4px;
+        }
+
+        body.compact-layout .info-grid {
+            margin-bottom: 4px;
+        }
+
+        body.compact-layout .info-grid td {
+            padding: 2px 3px;
+        }
+
+        body.compact-layout .info-label {
+            font-size: 9.5pt;
+        }
+
+        body.compact-layout .info-value {
+            font-size: 10pt;
+        }
+
+        body.compact-layout .term-badges {
+            margin: 2px 0 4px 0;
+        }
+
+        body.compact-layout .subjects-table {
+            margin-bottom: 4px;
+        }
+
+        body.compact-layout .subjects-table th {
+            padding: 1px 2px;
+        }
+
+        body.compact-layout .subjects-table td {
+            padding: 1px 2px;
+        }
+
+        body.compact-layout .grade-details {
+            margin-bottom: 4px;
+            padding: 3px;
+            font-size: 7.5pt;
+        }
+
+        body.compact-layout .remarks-section {
+            margin-top: 15px;
+            padding-top: 3px;
+        }
+
+        body.compact-layout .remarks-table td {
+            padding: 1px;
+            font-size: 10pt;
+        }
+
+        body.compact-layout .remarks-value {
+            font-size: 11pt;
+            line-height: 1.15;
+        }
+
+        body.compact-layout .principal-sign-box {
+            width: 190px;
+            right: 3mm;
+            bottom: 1.5mm;
+            padding: 0;
+        }
+
+        body.compact-layout .principal-sign-img {
+            max-width: 175px;
+            max-height: 62px;
+        }
+
+        body.compact-layout .principal-sign-label {
+            font-size: 10.1pt;
+        }
+
+        body.compact-layout .principal-next-term {
+            margin-top: 4px;
+            font-size: 10.7pt;
+            line-height: 1.1;
+        }
+
+        @media print {
+            body {
+                background: white;
             }
-            if($iAll['subject_id'] == $Ilist['id'] && $iAll['assesment_id'] == $Val){
-              $avgTotal += $iAll['score'];
+
+            .subjects-table th {
+                background: #1B3058 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
         }
-     
-				?>
-      <td style="font-weight: 100; text-align: center;  border: 1px solid #000000; text-transform:capitalize"><?php  echo $hasScore ? $scores['score'] : 0;  // if($scores['inpgradescore']=='1') {  echo $scores['score']; } else { echo $scores['score_grade']; } ?></td>
-      <?php 
-				${"s" . $Ilist['id']}+= $hasScore ? $scores['score'] : 0;
-			} 
-			$grandTotal = ${"s" . $Ilist['id']};
-			?>
-      <td style="  font-weight: 100; text-align: center;  border: 1px solid #000000;"><?php
-				echo round($grandTotal);
-				?></td>
-      <td style="font-weight: 100; text-align: center;  border: 1px solid #000000;">
-	  <?php  $gradding=$db->getRow("select grade, description, comment from school_grade where  create_by_userid='".$create_by_userid."' and minimum_number <= ".$ggrade." and maximum_number >= ".$ggrade."");
-	 		echo $gradding['grade'];
-		?></td>
-      <td style="font-weight: 100; text-align: center;  border: 1px solid #000000; <?php if($iSchoolPDFsetting['is_pos']!='1') { echo 'display:none'; }  ?>"><?php   $aiiisubs=$Ilist['id']; echo $_SESSION["$aiiisubs"]; unset($_SESSION["$aiiisubs"]); ?></td>
-      <td style="font-weight: 100; text-align: center;  border: 1px solid #000000;  <?php if($iSchoolPDFsetting['is_out']!='1') { echo 'display:none'; }  ?>"><?php echo $outOf= count($studentIds); ?></td>
-      <td style="font-weight: 100; text-align: center;  border: 1px solid #000000; <?php if($iSchoolPDFsetting['is_lowest_avg']!='1') { echo 'display:none'; }  ?>"><?php echo round(min( ${"avg".$Ilist['id']} ),2); ?></td>
-      <td style="font-weight: 100; text-align: center;  border: 1px solid #000000; <?php if($iSchoolPDFsetting['is_highest_avg']!='1') { echo 'display:none'; }  ?>"><?php  echo round(max( ${"avg".$Ilist['id']}  ),2);  ?></td>
-      <td style="font-weight: 100; text-align: center;  border: 1px solid #000000; <?php if($iSchoolPDFsetting['is_class_avg']!='1') { echo 'display:none'; }  ?>"><?php 
-                 $getClasAv= $avgTotal/$outOf;
-				 echo round($getClasAv,2);
-				?></td>
-      <td style="font-weight: 100; text-align: center;  border: 1px solid #000000;"><?php echo $gradding['description']; //$db->getVal("select description from school_grade where create_by_userid='".$create_by_userid."' and maximum_number > ".$grandTotal." or maximum_number = ".$grandTotal."");?></td>
-    </tr>
-   
-   
-    <?php } } ?>
-  </tbody>
-</table>
-<table cellspacing="0"; style="width: 100%;">
-  <tbody style="font-family: sans-serif;">
-    <tr>
-      <td style="width:100%;" ><table style="width:100%;">
-          <br>
-          <tr style=" <?php if($iSchoolPDFsetting['is_no_of_subjects']!='1') { echo 'display:none'; }  ?> ">
-            <td style="" colspan="3">GRADE DETAILS:</td>
-            <td style="text-align: center;" colspan="3">No. of Subjects: <?php echo $tSub; ?></td>
-          </tr>
-          <tr style=" <?php if($iSchoolPDFsetting['is_grade_details']!='1') { echo 'display:none'; }  ?> ">
-            <td style="" colspan="3"><?php
-						$iGradingAll=$db->getRows("select * from school_grade where create_by_userid='".$create_by_userid."' order by id desc");
-						foreach($iGradingAll as $iList)
-						{
-						?>
-              <?php echo $iList['grade']; ?> = <?php echo $iList['minimum_number']; ?>-<?php echo $iList['maximum_number'].','; ?>
-              <?php } ?></td>
-            <td style="text-align: center;" colspan="3"></td>
-          </tr>
-        </table></td>
-    </tr>
-  </tbody>
-</table>
-<table cellspacing="0"; style="width: 100%;">
-  <tbody style="font-family: sans-serif;">
-    <tr>
-      <td style="width:100%;" ><table style="width:100%;">
-          <br>
-          <tr>
-            <?php if($iSchoolPDFsetting['is_affective']=='1') { ?>
-            <td style="padding: 0;vertical-align: baseline;width: 50%;">
-            <table cellspacing="0"; style="width: 95%;">
-                <tbody style="font-size: 16px;font-family: sans-serif;">
-                  <tr style="height: 40px;">
-                    <td style="  border: 1px solid #000000;"><?php if($iSchoolPDFsetting['title_4']=='') { echo "AFFECTIVE TRAITS"; } else { echo $iSchoolPDFsetting['title_4']; } ?></td>
-                    <td style="  border: 1px solid #000000;text-align: center;">RATING</td>
-                  </tr>
-                  <?php
-					$iManageTraitsAll=$db->getRows("select * from manage_traits where create_by_userid='".$create_by_userid."'");
-					foreach($iManageTraitsAll as $iList)
-					{
-						$iTraits=$db->getRow("select * from student_traits_class_teacher where traits_id='".$iList['id']."' and student_id='".$iStudent['id']."'");
-					?>
-                  <tr style="height: 40px;">
-                    <td style="border: 1px solid #000000;"><?php echo $iList['trait']; ?></td>
-                    <td style="border: 1px solid #000000;text-align: center;text-transform: capitalize;"><?php echo $iTraits['trait']; ?></td>
-                  </tr>
-                  <?php } ?>
-                </tbody>
-              </table>
-             </td>
-            <?php } ?>
-          
-            <td style="padding: 0;vertical-align: baseline;width: 50%;"><?php if($iSchoolPDFsetting['is_phycomotor']=='1') { ?>
-              <table cellspacing="0";  style="width:500px">
-                <tbody style="font-size: 16px;font-family: sans-serif;">
-                  <tr style="height: 40px;">
-                    <td style="  border: 1px solid #000000;width:300px;"><?php if($iSchoolPDFsetting['title_5']=='') { echo "PSYCHOMOTOR"; } else { echo $iSchoolPDFsetting['title_5']; } ?></td>
-                    <td style="  border: 1px solid #000000;text-align: center;">RATING</td>
-                    
-                  </tr>
-                  <?php
-					$iManagePsychometerAll=$db->getRows("select * from manage_phycomotor where create_by_userid='".$create_by_userid."'");
-					foreach($iManagePsychometerAll as $iList)
-					{
-						$iPsychometer=$db->getRow("select * from student_pyschomotor_class_teacher where pyschmotor_id='".$iList['id']."' and student_id='".$iStudent['id']."'");
-					?>
-                  <tr style="height: 40px;">
-                    <td style="border: 1px solid #000000;width:300px;" ><?php echo $iList['phycomotor']; ?></td>
-                    <td style="border: 1px solid #000000;text-transform: capitalize;text-align: center;"><?php echo $iPsychometer['pyschmotor']; ?></td>
-                  
-                  </tr>
-                  <?php } ?>
-                </tbody>
-              </table>
-              <?php } ?>
-              <br>
-              <table cellspacing="0"  style="width:500px">
+    </style>
+</head>
+
+<body class="<?php echo $compactMode ? 'compact-layout' : ''; ?>">
+
+    <?php if (!empty($schoolLogoPath)): ?>
+        <div class="watermark">
+            <img src="<?php echo '../uploads/' . (isset($iSchool['logo']) ? $iSchool['logo'] : ''); ?>" style="width: 450px; height: auto;" />
+        </div>
+    <?php endif; ?>
+
+    <div class="sheet">
+
+        <div class="header">
+            <table class="header-table">
+                <tr>
+                    <td class="logo-cell">
+                        <?php if (!empty($schoolLogoPath)): ?>
+                            <img class="logo-img" src="<?php echo $schoolLogoPath; ?>" alt="School Logo Header">
+                        <?php else: ?>
+                            <div style="width: 80px; height: 80px; border: 1px dashed #ccc; background: #fafafa;"></div>
+                        <?php endif; ?>
+                    </td>
+                    <td class="school-info-cell">
+                        <div class="school-name"><?php echo htmlspecialchars($iSchool['name'] ?? 'School Name Placeholder'); ?></div>
+                        <div class="school-moto"><?php echo htmlspecialchars($iSchool['moto'] ?? 'Excellence in Education'); ?></div>
+                        <div class="school-address"><?php echo htmlspecialchars($iSchool['location'] ?? 'Location Address'); ?>, <?php echo htmlspecialchars($statename); ?></div>
+                        <div class="report-title">REPORT SHEET FOR <?php echo htmlspecialchars($termRow['term'] ?? 'TERM'); ?> <?php echo htmlspecialchars($iSession['session'] ?? 'SESSION'); ?> ACADEMIC SESSION</div>
+                    </td>
+                    <td class="photo-cell">
+                        <?php if (!empty($studentPhotoPath)): ?>
+                            <img class="student-photo" src="<?php echo $studentPhotoPath; ?>" alt="Student Photo" style="border-radius: 50%;">
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Student Info Grid -->
+        <table class="info-grid">
+            <tr>
+                <td class="left-column">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <tr>
+                            <td class="info-label">NAME:</td>
+                            <td class="info-value"><?php echo htmlspecialchars(($iStudent['first_name'] ?? '') . ' ' . ($iStudent['last_name'] ?? '')); ?></td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">ADMISSION NO:</td>
+                            <td class="info-value"><?php echo htmlspecialchars($iStudent['student_id'] ?? 'N/A'); ?></td>
+                        </tr>
+                        <?php if ($showClass): ?>
+                            <tr>
+                                <td class="info-label">CLASS:</td>
+                                <td class="info-value"><?php echo htmlspecialchars($iClass['name'] ?? 'N/A'); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                        <?php if ($showTerms): ?>
+                            <tr>
+                                <td class="info-label">TERM:</td>
+                                <td class="info-value"><?php echo htmlspecialchars($termRow['term'] ?? 'N/A'); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                        <?php if ($showFinalAverage): ?>
+                            <tr>
+                                <td class="info-label">AVERAGE:</td>
+                                <td class="info-value"><?php echo round($ggrade, 2); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    </table>
+                </td>
+                <td>
+                    <table style="width:100%; border-collapse:collapse;">
+                        <?php if ($showSession): ?>
+                            <tr>
+                                <td class="info-label">SESSION:</td>
+                                <td class="info-value"><?php echo htmlspecialchars($iSession['session'] ?? 'N/A'); ?></td>
+                            </tr>
+                        <?php endif; ?>
+                        <?php if ($showTotalScore): ?>
+                            <tr>
+                                <td class="info-label">TOTAL SCORE:</td>
+                                <td class="info-value"><?php echo $iFinalScore; ?></td>
+                            </tr>
+                        <?php endif; ?>
+                        <?php if ($showGrade): ?>
+                            <tr>
+                                <td class="info-label">GRADE:</td>
+                                <td class="info-value"><strong><?php echo $gradeLetter; ?></strong></td>
+                            </tr>
+                        <?php endif; ?>
+                        <?php if ($showPosition): ?>
+                            <tr>
+                                <td class="info-label">POSITION:</td>
+                                <td class="info-value"><?php echo $studentPosition; ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Term Badges -->
+        <table class="term-badges">
+            <tr>
+                <td>
+                    <div class="term-badge">
+                        <div class="term-badge-label">Total</div>
+                        <div class="term-badge-value"><?php echo number_format($iFinalScore, 0); ?></div>
+                    </div>
+                </td>
+                <td>
+                    <div class="term-badge">
+                        <div class="term-badge-label">Avg</div>
+                        <div class="term-badge-value"><?php echo number_format($ggrade, 2); ?></div>
+                    </div>
+                </td>
+                <td>
+                    <div class="term-badge">
+                        <div class="term-badge-label">Grade</div>
+                        <div class="term-badge-value"><?php echo htmlspecialchars($gradeLetter); ?></div>
+                    </div>
+                </td>
+                <?php if ($showPosition): ?>
+                    <td>
+                        <div class="term-badge">
+                            <div class="term-badge-label">Position</div>
+                            <div class="term-badge-value"><?php echo $studentPosition > 0 ? $studentPosition : '-'; ?></div>
+                        </div>
+                    </td>
+                <?php endif; ?>
+            </tr>
+        </table>
+
+        <!-- ============================================================================
+        SUBJECTS TABLE - SPLIT INTO MULTIPLE PAGES IF NEEDED
+        ============================================================================ -->
+        <?php
+        $colspan = 1 + count($totalAssesment) + 2;
+        if ($showPos) $colspan++;
+        if ($showOutOf) $colspan++;
+        if ($showLowestAvg) $colspan++;
+        if ($showHighestAvg) $colspan++;
+        if ($showClassAvg) $colspan++;
+        $colspan++;
+        ?>
+
+        <?php $pageCounter = 0;
+        foreach ($tablePages as $pageIndex => $pageData): ?>
+            <?php if ($pageIndex > 0): ?>
+                <div class="page-break"></div>
+            <?php endif; ?>
+
+            <?php if ($pageIndex > 0): ?>
+                <!-- Repeat header on subsequent pages -->
+                <div class="header" style="margin-bottom:4px;">
+                    <div style="text-align:center; font-size:10pt; font-weight:bold; color:#1B3058;">
+                        <?php echo htmlspecialchars($iSchool['name'] ?? 'School Name'); ?> - Report Sheet (Continued)
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <table class="subjects-table">
+                <colgroup>
+                    <col style="width:<?php echo $compactMode ? '15%' : '18%'; ?>;">
+                    <?php foreach ($totalAssesment as $Val): ?>
+                        <col style="width:<?php echo $compactMode ? '4%' : '5%'; ?>;">
+                    <?php endforeach; ?>
+                    <col style="width:<?php echo $compactMode ? '5%' : '6%'; ?>;">
+                    <col style="width:<?php echo $compactMode ? '4%' : '5%'; ?>;">
+                    <?php if ($showPos): ?>
+                        <col style="width:4%;"><?php endif; ?>
+                    <?php if ($showOutOf): ?>
+                        <col style="width:4%;"><?php endif; ?>
+                    <?php if ($showLowestAvg): ?>
+                        <col style="width:5%;"><?php endif; ?>
+                    <?php if ($showHighestAvg): ?>
+                        <col style="width:5%;"><?php endif; ?>
+                    <?php if ($showClassAvg): ?>
+                        <col style="width:6%;"><?php endif; ?>
+                    <col style="width:<?php echo $compactMode ? '12%' : '10%'; ?>;">
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th>SUBJECT</th>
+                        <?php foreach ($totalAssesment as $Val):
+                            $assName = $assessmentNameMap[(int)$Val] ?? '';
+                        ?>
+                            <th><?php echo htmlspecialchars($assName ?: 'CA'); ?></th>
+                        <?php endforeach; ?>
+                        <th>TOTAL</th>
+                        <th>GRD</th>
+                        <?php if ($showPos): ?><th>POS</th><?php endif; ?>
+                        <?php if ($showOutOf): ?><th>OUT OF</th><?php endif; ?>
+                        <?php if ($showLowestAvg): ?><th>LOW</th><?php endif; ?>
+                        <?php if ($showHighestAvg): ?><th>HIGH</th><?php endif; ?>
+                        <?php if ($showClassAvg): ?><th>CLASS AVG</th><?php endif; ?>
+                        <th>REMARKS</th>
+                    </tr>
+                </thead>
                 <tbody>
-                  <tr style="height: 40px;">
-                    <td style="border: 1px solid #000000;">SCALE </td>
-                  </tr>
-                  <?php $i=0;
-$aryList=$db->getRows("select * from school_scale where create_by_userid='".$create_by_userid."'");
-foreach($aryList as $iList)
-{	$i=$i+1;
-$aryPgAct["id"]=$iList['id'];
-?>
-                  <tr style="height: 40px;">
-                    <td style="border:1px solid #000000;"><?php echo $iList['rating']; ?>-
-                      <?php   echo $iList['review']; ?></td>
-                  </tr>
-                  <?php } ?>
+                    <?php if (empty($pageData)): ?>
+                        <tr>
+                            <td colspan="<?= $colspan ?>" style="text-align:center; padding:8px;">No subject score data found for this student.</td>
+                        </tr>
+                    <?php endif; ?>
+                    <?php foreach ($pageData as $data):
+                        $subjectTotal = $data['total'];
+                        $subjectGradeScore = (float)($data['grade_score'] ?? $subjectTotal);
+                        $subjectGradeInfo = resolveGradeScaleInfo($SCHOOL_ID, $subjectGradeScore);
+                        $subjectGrade = $subjectGradeInfo['grade'];
+                        $subjectRemark = $subjectGradeInfo['description'] ?: '-';
+                    ?>
+                        <tr>
+                            <td class="subject-name"><?php echo htmlspecialchars($data['subject']); ?></td>
+                            <?php foreach ($totalAssesment as $Val): ?>
+                                <td><?php echo $data['scores'][$Val] ?? 0; ?></td>
+                            <?php endforeach; ?>
+                            <td class="total-cell"><?php echo round($subjectTotal); ?></td>
+                            <td><strong><?php echo $subjectGrade; ?></strong></td>
+                            <?php if ($showPos): ?><td><?php echo htmlspecialchars(formatOrdinal((int)($data['position'] ?? 0))); ?></td><?php endif; ?>
+                            <?php if ($showOutOf): ?><td><?php echo (int)($data['out_of'] ?? 0); ?></td><?php endif; ?>
+                            <?php if ($showLowestAvg): ?><td><?php echo round((float)($data['low'] ?? 0), 2); ?></td><?php endif; ?>
+                            <?php if ($showHighestAvg): ?><td><?php echo round((float)($data['high'] ?? 0), 2); ?></td><?php endif; ?>
+                            <?php if ($showClassAvg): ?><td><?php echo round((float)($data['class_avg'] ?? 0), 2); ?></td><?php endif; ?>
+                            <td class="remark-col"><?php echo htmlspecialchars($subjectRemark); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
                 </tbody>
-              </table>
-             </td>
-          </tr>
-        </table></td>
-    </tr>
-    <tr> </tr>
-  </tbody>
-</table>
-<br>
-<hr>
-<br>
-<table cellspacing="0"; style="width: 100%;">
-  <tbody style="font-family: sans-serif;">
-    <tr>
-      <td style="width:100%;" ><table style="width:100%;">
-          <tr>
-            <?php
-					$iFormTeacher=$db->getRow("select * from class_teacher where school_class='".$iStudent['class']."' and school_session='".$_GET['session']."'");
-					
-					$iTeacher=$db->getRow("select * from staff_manage where id='".$iFormTeacher['staff_id']."'");
-					?>
-            <td style=""><?php if($iSchoolPDFsetting['title_1']=='') { echo 'Class Teacher'; } else { echo $iSchoolPDFsetting['title_1']; } ?>
-              :</td>
-            <td style=""><?php echo $iTeacher['first_name'].' '.$iTeacher['last_name']; ?></td>
-          </tr>
-          <tr>
-            <td style=""><?php if($iSchoolPDFsetting['title_2']=='') { echo "Class Teacher's Remarks"; } else { echo $iSchoolPDFsetting['title_2']; } ?>
-              :</td>
-            <td style=""><?php echo $db->getVal("select comments from clas_teacher_make_comment where student_id='".$iStudent['id']."' "); ?></td>
-          </tr>
-          <tr>
-           <!--  <?php
-						$iPrinciple=$db->getRow("select * from assign_role where principal='1' and create_by_userid='".$create_by_userid."'");
-						
-						$iStaffPrinciple=$db->getRow("select * from staff_manage where id='".$iPrinciple['staff_id']."'");
-						?> -->
-            <td style=""><?php if($iSchoolPDFsetting['title_3']=='') { echo "Principal's Remarks"; } else { echo $iSchoolPDFsetting['title_3']; } ?>
-              :</td>
-            <td style=""><?php  $iPrinciPleRemarkComment =  $db->getVal("select comments from principle_remarks where student_id='".$iStudent['id']."'");
-				if($iPrinciPleRemarkComment!='') { echo $iPrinciPleRemarkComment; } 
-				else {                                        
-				echo $gradding['comment'];
-				}
-			 ?></td>
-            <?php $sign_term=$db->getRow("select sign from  principal_sign_nextTerm where  create_by_userid='".$create_by_userid."' order by id desc"); ?>
-            <?php $sign_termdate=$db->getRow("select nextTerm from  principal_set_nextTerm where  create_by_userid='".$create_by_userid."' and session_id='".$_GET['session']."' $term_select order by id desc"); ?>
-            <td style="width: 200px;"><img  src="<?php echo 'https://'.$_SERVER['HTTP_HOST'].'/uploads/'.$sign_term['sign']; ?>" style="width: 200px;"></td>
-          </tr>
-          <tr>
-            <td style="">Next Term Begins:</td>
-            <td style=""><?php echo $sign_termdate['nextTerm']; ?></td>
-          </tr>
-        </table></td>
-    </tr>
-  </tbody>
-</table>
+            </table>
+
+            <?php $pageCounter++; ?>
+        <?php endforeach; ?>
+
+        <!-- ============================================================================
+        AFFECTIVE & PSYCHOMOTOR TRAITS - FORCED TO STAY TOGETHER
+        ============================================================================ -->
+        <div class="no-page-break">
+            <?php if ($showAffective || $showPsychomotor): ?>
+                <div style="margin-top: <?php echo $traitsMarginTop; ?>;">
+                    <table style="width:100%; border-collapse:collapse; border:none;">
+                        <tr>
+                            <td style="width:50%; vertical-align:top; border:none; padding-right:4px;">
+                                <?php if ($showAffective): ?>
+                                    <table style="width:95%; border-collapse:collapse; font-size: <?php echo $tableFont; ?>;">
+                                        <tr>
+                                            <td style="border:1px solid #000; font-weight:bold; background:#f4f7fc;"><?php echo htmlspecialchars($title4); ?></td>
+                                            <td style="border:1px solid #000; font-weight:bold; text-align:center; width:24%; background:#f4f7fc;">RATING</td>
+                                        </tr>
+                                        <?php if (!empty($affectiveRows)): ?>
+                                            <?php foreach ($affectiveRows as $traitRow): ?>
+                                                <tr>
+                                                    <td style="border:1px solid #000;"><?php echo htmlspecialchars($traitRow['trait'] ?? ''); ?></td>
+                                                    <td style="border:1px solid #000; text-align:center; text-transform:capitalize;"><?php echo htmlspecialchars($affectiveRatings[(int)($traitRow['id'] ?? 0)] ?? '-'); ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <tr>
+                                                <td style="border:1px solid #000;" colspan="2">No affective traits found.</td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </table>
+                                    <?php else: ?>&nbsp;<?php endif; ?>
+                            </td>
+                            <td style="width:50%; vertical-align:top; border:none; padding-left:4px;">
+                                <?php if ($showPsychomotor): ?>
+                                    <table style="width:95%; border-collapse:collapse; font-size: <?php echo $tableFont; ?>;">
+                                        <tr>
+                                            <td style="border:1px solid #000; font-weight:bold; background:#f4f7fc;"><?php echo htmlspecialchars($title5); ?></td>
+                                            <td style="border:1px solid #000; font-weight:bold; text-align:center; width:24%; background:#f4f7fc;">RATING</td>
+                                        </tr>
+                                        <?php if (!empty($psychomotorRows)): ?>
+                                            <?php foreach ($psychomotorRows as $skillRow): ?>
+                                                <tr>
+                                                    <td style="border:1px solid #000;"><?php echo htmlspecialchars($skillRow['phycomotor'] ?? ''); ?></td>
+                                                    <td style="border:1px solid #000; text-align:center; text-transform:capitalize;"><?php echo htmlspecialchars($psychomotorRatings[(int)($skillRow['id'] ?? 0)] ?? '-'); ?></td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <tr>
+                                                <td style="border:1px solid #000;" colspan="2">No psychomotor skills found.</td>
+                                            </tr>
+                                        <?php endif; ?>
+                                    </table>
+                                    <?php else: ?>&nbsp;<?php endif; ?>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- ============================================================================
+        GRADE DETAILS - FORCED TO STAY TOGETHER
+        ============================================================================ -->
+        <div class="no-page-break">
+            <?php if ($showGradeDetails || $showNoOfSubjects): ?>
+                <div class="grade-details">
+                    <?php if ($showGradeDetails): ?>
+                        <strong>GRADE DETAILS:</strong><br>
+                        <?php
+                        if (is_array($gradeDetailsRows)) {
+                            $gradeText = [];
+                            foreach ($gradeDetailsRows as $iList) {
+                                $gradeText[] = ($iList['grade'] ?? '') . ' = ' . ($iList['minimum_number'] ?? 0) . '-' . ($iList['maximum_number'] ?? 0);
+                            }
+                            echo implode(', ', $gradeText);
+                        }
+                        ?>
+                    <?php endif; ?>
+                    <?php if ($showNoOfSubjects): ?>
+                        <div style="margin-top: 3px;"><strong>NO. OF SUBJECTS:</strong> <?php echo $tSub; ?></div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- ============================================================================
+        REMARKS SECTION - FORCED TO STAY TOGETHER
+        ============================================================================ -->
+        <div class="no-page-break">
+            <div class="remarks-section">
+                <table class="remarks-table">
+                    <tr>
+                        <td class="remarks-label"><?php echo htmlspecialchars($title1); ?>:</td>
+                        <td class="remarks-value"><?php echo htmlspecialchars((is_array($classTeacherInfo) ? trim(($classTeacherInfo['first_name'] ?? '') . ' ' . ($classTeacherInfo['last_name'] ?? '')) : 'N/A')); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="remarks-label"><?php echo htmlspecialchars($title2); ?>:</td>
+                        <td class="remarks-value"><?php echo htmlspecialchars($classTeacherComment !== '' ? $classTeacherComment : 'No remarks entered.'); ?></td>
+                    </tr>
+                    <tr>
+                        <td class="remarks-label"><?php echo htmlspecialchars($title3); ?>:</td>
+                        <td class="remarks-value">
+                            <?php
+                            if (!empty($principalRemark)) {
+                                echo htmlspecialchars($principalRemark);
+                            } else {
+                                $defaultComment = $overallGradeInfo['comment'] ?? '';
+                                echo htmlspecialchars($defaultComment !== '' ? $defaultComment : 'Keep up the good work!');
+                            }
+                            ?>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <?php if (!empty($principalSignaturePath)): ?>
+        <div class="principal-sign-box">
+            <img class="principal-sign-img" src="<?php echo $principalSignaturePath; ?>" alt="Principal Signature">
+            <div class="principal-sign-label">Signature</div>
+            <div class="principal-next-term">
+                <strong>NEXT TERM BEGINS:</strong><br>
+                <?php echo htmlspecialchars(is_array($nextTermRow) ? ($nextTermRow['nextTerm'] ?? 'To be announced') : 'To be announced'); ?>
+            </div>
+        </div>
+    <?php endif; ?>
+
 </body>
+
 </html>
 <?php
 $html = ob_get_clean();
-$dompdf = new Dompdf();
-use Dompdf\Options;
-$options = new Options();
-$options->set('isRemoteEnabled', TRUE);
-$options->set('isJavascriptEnabled', TRUE);
-$dompdf = new Dompdf($options);
-if($_SERVER['HTTP_HOST']=='localhost' || $_SERVER['HTTP_HOST']=='127.0.0.1')
-	{
-	 echo $html;
-	 exit;	
-		
-	}
 
-	
+$dompdf = new Dompdf();
+$options = new Options();
+$options->set('isRemoteEnabled', true);
+$options->set('isJavascriptEnabled', true);
+$options->set('chroot', $_SERVER['DOCUMENT_ROOT']);
+$options->set('isHtml5ParserEnabled', true);
+$options->set('defaultFont', 'DejaVu Sans');
+$options->set('dpi', 96);
+$options->set('enable_css_float', true);
+$dompdf->setOptions($options);
 $dompdf->load_html($html);
-$customPaper = array(0,0,1000,1400);
-$dompdf->set_paper($customPaper);
+$dompdf->setPaper($paperSize, 'portrait');
 $dompdf->render();
-$dompdf->stream("",array("Attachment" => false));
+
+$pdfPerfMs = (microtime(true) - $pdfPerfStart) * 1000;
+error_log(sprintf(
+    '[PDF_PERF] student=%s time_ms=%.2f',
+    (string)($iStudent['student_id'] ?? 'unknown'),
+    $pdfPerfMs
+));
+
+$dompdf->stream("Report_" . ($iStudent['first_name'] ?? 'Student') . ".pdf", array("Attachment" => false));
 ?>
