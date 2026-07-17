@@ -5,7 +5,7 @@
  * SKOOL TERM RESULT PDF - WITH WORKING LOGO HEADER & WATERMARK BACKGROUND
  * ============================================================================
  * FIXED: Page break issues, table scattering, and multi-page rendering
- * Version: 4.0 (Fixed Page Rendering)
+ * Version: 4.1 (Signature at Bottom Right)
  * ============================================================================
  */
 
@@ -1154,120 +1154,61 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             line-height: 1.3;
         }
 
-        .principal-sign-box {
-            position: fixed;
-            right: 8mm;
-            bottom: 2mm;
+        /* ============================================================================
+         * SIGNATURE SECTION - BOTTOM RIGHT (NOT FIXED)
+         * ============================================================================ */
+        .signature-wrapper {
+            width: 100%;
+            margin-top: 15px;
+            text-align: right;
+        }
+
+        .signature-content {
+            display: inline-block;
             text-align: center;
-            width: 350px;
-            z-index: 4;
-            padding: 0;
+            min-width: 200px;
         }
 
-        .principal-sign-img {
-            max-width: 330px;
-            max-height: 110px;
-            display: block;
-            margin: 0 auto 4px auto;
+        .signature-content .sign-img {
+            max-width: 280px;
+            max-height: 80px;
             object-fit: contain;
-            filter: contrast(1.9) brightness(1.35) saturate(1.1);
+            display: block;
+            margin: 0 auto 2px auto;
         }
 
-        .principal-sign-label {
-            font-size: 11.5pt;
+        .signature-content .sign-label {
+            font-size: 10pt;
             color: #444;
             border-top: 1px solid #555;
             padding-top: 2px;
             line-height: 1.1;
         }
 
-        .principal-next-term {
-            margin-top: 10px;
-            font-size: 12.5pt;
+        .signature-content .next-term {
+            margin-top: 6px;
+            font-size: 10pt;
             line-height: 1.2;
             color: #333;
             text-align: center;
         }
 
-        /* Compact Layout Overrides */
-        body.compact-layout .header {
-            margin-bottom: 4px;
-            padding-bottom: 4px;
+        body.compact-layout .signature-wrapper {
+            margin-top: 8px;
         }
 
-        body.compact-layout .info-grid {
-            margin-bottom: 4px;
+        body.compact-layout .signature-content .sign-img {
+            max-width: 200px;
+            max-height: 55px;
         }
 
-        body.compact-layout .info-grid td {
-            padding: 2px 3px;
+        body.compact-layout .signature-content .sign-label {
+            font-size: 8.5pt;
         }
 
-        body.compact-layout .info-label {
-            font-size: 9.5pt;
-        }
-
-        body.compact-layout .info-value {
-            font-size: 10pt;
-        }
-
-        body.compact-layout .term-badges {
-            margin: 2px 0 4px 0;
-        }
-
-        body.compact-layout .subjects-table {
-            margin-bottom: 4px;
-        }
-
-        body.compact-layout .subjects-table th {
-            padding: 1px 2px;
-        }
-
-        body.compact-layout .subjects-table td {
-            padding: 1px 2px;
-        }
-
-        body.compact-layout .grade-details {
-            margin-bottom: 4px;
-            padding: 3px;
-            font-size: 7.5pt;
-        }
-
-        body.compact-layout .remarks-section {
-            margin-top: 15px;
-            padding-top: 3px;
-        }
-
-        body.compact-layout .remarks-table td {
-            padding: 1px;
-            font-size: 10pt;
-        }
-
-        body.compact-layout .remarks-value {
-            font-size: 11pt;
-            line-height: 1.15;
-        }
-
-        body.compact-layout .principal-sign-box {
-            width: 190px;
-            right: 3mm;
-            bottom: 1.5mm;
-            padding: 0;
-        }
-
-        body.compact-layout .principal-sign-img {
-            max-width: 175px;
-            max-height: 62px;
-        }
-
-        body.compact-layout .principal-sign-label {
-            font-size: 10.1pt;
-        }
-
-        body.compact-layout .principal-next-term {
-            margin-top: 4px;
-            font-size: 10.7pt;
-            line-height: 1.1;
+        body.compact-layout .signature-content .next-term {
+            font-size: 8.5pt;
+            margin-top: 3px;
         }
 
         @media print {
@@ -1629,18 +1570,27 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             </div>
         </div>
 
-    </div>
-
-    <?php if (!empty($principalSignaturePath)): ?>
-        <div class="principal-sign-box">
-            <img class="principal-sign-img" src="<?php echo $principalSignaturePath; ?>" alt="Principal Signature">
-            <div class="principal-sign-label">Signature</div>
-            <div class="principal-next-term">
-                <strong>NEXT TERM BEGINS:</strong><br>
-                <?php echo htmlspecialchars(is_array($nextTermRow) ? ($nextTermRow['nextTerm'] ?? 'To be announced') : 'To be announced'); ?>
-            </div>
+        <!-- ============================================================================
+        SIGNATURE SECTION - BOTTOM RIGHT (NOT FIXED)
+        ============================================================================ -->
+        <div class="signature-wrapper">
+            <?php if (!empty($principalSignaturePath) || !empty($nextTermRow)): ?>
+                <div class="signature-content">
+                    <?php if (!empty($principalSignaturePath)): ?>
+                        <img class="sign-img" src="<?php echo $principalSignaturePath; ?>" alt="Principal Signature">
+                        <div class="sign-label">Principal's Signature</div>
+                    <?php endif; ?>
+                    <?php if (!empty($nextTermRow)): ?>
+                        <div class="next-term">
+                            <strong>NEXT TERM BEGINS:</strong><br>
+                            <?php echo htmlspecialchars(is_array($nextTermRow) ? ($nextTermRow['nextTerm'] ?? 'To be announced') : 'To be announced'); ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
         </div>
-    <?php endif; ?>
+
+    </div>
 
 </body>
 
