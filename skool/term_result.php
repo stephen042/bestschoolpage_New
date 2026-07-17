@@ -6,6 +6,8 @@ require_once('inc.session-create.php');
 $PageTitle = "Term Results";
 $FileName = 'term_result.php';
 
+$stat = "";
+
 // ============================================================================
 // FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
 // ============================================================================
