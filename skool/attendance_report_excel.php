@@ -1,10 +1,11 @@
 <?php
+
 /**
  * ============================================================================
- * ATTENDANCE REPORT - EXCEL EXPORT
+ * ATTENDANCE REPORT - EXCEL EXPORT (Mobile Compatible)
  * ============================================================================
  * Description: Export attendance report to CSV/Excel format
- * Version: 3.0 (PHP 8.x Compatible)
+ * Version: 4.0 (Mobile Compatible + Correct User ID)
  * ============================================================================
  */
 
@@ -12,11 +13,36 @@ include('../config.php');
 include('inc.session-create.php');
 
 // ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (EXACTLY MATCHES dashboard.php)
+// ============================================================================
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $create_by_userid = (int)$userData['create_by_userid'];
+    }
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+// ============================================================================
 // GET FILTERS
 // ============================================================================
-$sessionId = $_GET['session'] ?? 0;
-$termId = $_GET['term_id'] ?? 0;
-$classId = $_GET['class_id'] ?? 0;
+$sessionId = isset($_GET['session']) ? (int)$_GET['session'] : 0;
+$termId = isset($_GET['term_id']) ? (int)$_GET['term_id'] : 0;
+$classId = isset($_GET['class_id']) ? (int)$_GET['class_id'] : 0;
+
+// ============================================================================
+// VALIDATE FILTERS
+// ============================================================================
+if ($sessionId == 0 || $termId == 0 || $classId == 0) {
+    die("Missing required filters: session, term, and class are required.");
+}
 
 // Get names
 $sessionName = db_get_val("SELECT session FROM school_session WHERE id = ? AND create_by_userid = ?", [$sessionId, $create_by_userid]);
@@ -24,9 +50,12 @@ $termName = db_get_val("SELECT term FROM school_term WHERE id = ? AND create_by_
 $className = db_get_val("SELECT name FROM school_class WHERE id = ? AND create_by_userid = ?", [$classId, $create_by_userid]);
 $school = db_get_row("SELECT * FROM school_register WHERE id = ?", [$create_by_userid]);
 
-// Get attendance data
+// ============================================================================
+// GET ATTENDANCE DATA
+// ============================================================================
 $students = db_get_rows(
     "SELECT 
+        m.id,
         m.student_id,
         m.first_name,
         m.last_name,
@@ -51,8 +80,9 @@ foreach ($students as $s) {
     $totalAbsent += (int)$s['absent'];
 }
 $totalStudents = count($students);
-$attendanceRate = ($totalPresent + $totalAbsent > 0) 
-    ? round(($totalPresent / ($totalPresent + $totalAbsent)) * 100, 1) 
+$totalDays = $totalPresent + $totalAbsent;
+$attendanceRate = $totalDays > 0
+    ? round(($totalPresent / $totalDays) * 100, 1)
     : 0;
 
 // ============================================================================
@@ -69,20 +99,36 @@ fwrite($output, "\xEF\xBB\xBF"); // UTF-8 BOM
 // ============================================================================
 // HEADER SECTION
 // ============================================================================
-fputcsv($output, ['ATTENDANCE REPORT']);
+fputcsv($output, ['📋 ATTENDANCE REPORT']);
+fputcsv($output, ['']);
 fputcsv($output, ['School:', $school['name'] ?? '']);
 fputcsv($output, ['Session:', $sessionName ?? 'N/A']);
 fputcsv($output, ['Term:', $termName ?? 'N/A']);
 fputcsv($output, ['Class:', $className ?? 'N/A']);
 fputcsv($output, ['Generated:', date('d M Y H:i:s')]);
-fputcsv($output, []);
-fputcsv($output, ['SUMMARY']);
+fputcsv($output, ['']);
+
+// ============================================================================
+// SUMMARY
+// ============================================================================
+fputcsv($output, ['📊 SUMMARY']);
 fputcsv($output, ['Total Students', 'Total Present', 'Total Absent', 'Attendance Rate']);
 fputcsv($output, [$totalStudents, $totalPresent, $totalAbsent, $attendanceRate . '%']);
-fputcsv($output, []);
-fputcsv($output, ['DETAILED ATTENDANCE']);
+fputcsv($output, ['']);
+
+// ============================================================================
+// DETAILED ATTENDANCE
+// ============================================================================
+fputcsv($output, ['📋 DETAILED ATTENDANCE']);
 fputcsv($output, [
-    '#', 'Student ID', 'Student Name', 'Present', 'Absent', 'Total Days', 'Percentage', 'Status'
+    '#',
+    'Student ID',
+    'Student Name',
+    'Present',
+    'Absent',
+    'Total Days',
+    'Percentage',
+    'Status'
 ]);
 
 // ============================================================================
@@ -95,8 +141,15 @@ foreach ($students as $student) {
     $absent = (int)$student['absent'];
     $total = $present + $absent;
     $percent = $total > 0 ? round(($present / $total) * 100, 0) : 0;
-    $status = $percent >= 80 ? 'Good' : ($percent >= 60 ? 'Average' : 'Poor');
-    
+
+    if ($percent >= 80) {
+        $status = 'Good ✅';
+    } elseif ($percent >= 60) {
+        $status = 'Average ⚠️';
+    } else {
+        $status = 'Poor ❌';
+    }
+
     fputcsv($output, [
         $i,
         $student['student_id'] ?? '',
@@ -112,10 +165,11 @@ foreach ($students as $student) {
 // ============================================================================
 // FOOTER
 // ============================================================================
-fputcsv($output, []);
-fputcsv($output, ['End of Report']);
+fputcsv($output, ['']);
+fputcsv($output, ['--- End of Report ---']);
 fputcsv($output, ['Generated on:', date('d M Y H:i:s')]);
+fputcsv($output, ['']);
+fputcsv($output, ['Powered by Best School Page']);
 
 fclose($output);
 exit;
-?>

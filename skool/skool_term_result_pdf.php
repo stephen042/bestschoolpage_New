@@ -2,10 +2,10 @@
 
 /**
  * ============================================================================
- * SKOOL TERM RESULT PDF - SINGLE A4 PAGE OPTIMIZED (REDUCED FONTS)
+ * SKOOL TERM RESULT PDF - SINGLE A4 PAGE OPTIMIZED (INCREASED TRAITS FONTS)
  * ============================================================================
- * FIXED: Fonts reduced by 10% from current sizes, traits section visually distinct
- * Version: 6.3 (Single A4 Page - Reduced Fonts + Distinct Traits)
+ * FIXED: Traits and subjects table fonts increased by 10%, traits-container margins improved
+ * Version: 6.4 (Single A4 Page - Increased Traits Fonts + Better Margins)
  * ============================================================================
  */
 
@@ -718,50 +718,59 @@ function getImagePath($filename)
 }
 
 // ============================================================================
-// SINGLE A4 PAGE - FONTS REDUCED BY 10% FROM CURRENT SIZES
+// SINGLE A4 PAGE - FONTS OPTIMIZED (TRAITS + SUBJECTS TABLE INCREASED BY 10%)
 // ============================================================================
 $paperSize = 'A4';
 $pageMargin = '5.5mm';
 
-// Font sizes reduced by 10% from current values
-$baseFont = '9.8pt';        // Was 10.9pt, reduced by 10%
+// Base font sizes
+$baseFont = '9.8pt';
 $lineHeight = '1.25';
-$headerNameSize = '15.5pt'; // Was 17.25pt, reduced by 10%
-$tableFont = '8.1pt';       // Was 8.97pt, reduced by 10%
-$tablePadding = '2.1px';    // Was 2.3px, reduced by 10%
-$logoMax = '67.3px';        // Was 74.75px, reduced by 10%
-$photoSize = '62.1px';      // Was 69px, reduced by 10%
-$traitsMarginTop = '4.1px'; // Was 4.6px, reduced by 10%
+$headerNameSize = '15.5pt';
+$logoMax = '67.3px';
+$photoSize = '62.1px';
+
+// SUBJECTS TABLE FONT - INCREASED BY 10% FOR READABILITY
+$tableFont = '10.0pt';        // Was 8.1pt, increased by 10%
+$tablePadding = '2.3px';     // Was 2.1px, increased by 10%
+
+// TRAITS FONT - INCREASED BY 10% FOR READABILITY
+$traitsFont = '9.25pt';      // Was 7.5pt, increased by 10%
+$traitsHeaderFont = '8.5pt'; // Was 7.7pt, increased by 10%
+$traitsLabelFont = '8.6pt';  // Was 7.8pt, increased by 10%
+$traitItemFont = '8.7pt';    // Was 7.0pt, increased by 10%
+$traitsMarginTop = '8px';    // Increased margin top to free from table above
+$traitsMarginBottom = '6px'; // Added margin bottom to free from stuff below
 
 // Adjust for more subjects
 if ($totalRows > 20) {
-    $tableFont = '7.25pt';      // Was 8.05pt, reduced by 10%
-    $baseFont = '9.3pt';        // Was 10.35pt, reduced by 10%
-    $tablePadding = '1.55px';   // Was 1.73px, reduced by 10%
+    $tableFont = '8.0pt';      // Was 7.25pt, increased by 10%
+    $baseFont = '9.3pt';
+    $tablePadding = '1.7px';   // Was 1.55px, increased by 10%
 }
 
 if ($totalRows > 30) {
-    $tableFont = '7.0pt';       // Was 7.82pt, reduced by 10%
-    $baseFont = '8.8pt';        // Was 9.78pt, reduced by 10%
-    $tablePadding = '1.25px';   // Was 1.38px, reduced by 10%
-    $headerNameSize = '13.5pt'; // Was 14.95pt, reduced by 10%
-    $logoMax = '56.9px';        // Was 63.25px, reduced by 10%
-    $photoSize = '51.8px';      // Was 57.5px, reduced by 10%
+    $tableFont = '7.7pt';      // Was 7.0pt, increased by 10%
+    $baseFont = '8.8pt';
+    $tablePadding = '1.4px';   // Was 1.25px, increased by 10%
+    $headerNameSize = '13.5pt';
+    $logoMax = '56.9px';
+    $photoSize = '51.8px';
 }
 
-// If very few subjects, use larger fonts but still reduced
+// If very few subjects, use larger fonts
 if ($totalRows <= 8 && $totalColumns <= 10) {
-    $tableFont = '9.3pt';       // Was 10.35pt, reduced by 10%
-    $baseFont = '10.9pt';       // Was 12.08pt, reduced by 10%
+    $tableFont = '10.2pt';     // Was 9.3pt, increased by 10%
+    $baseFont = '10.9pt';
     $pageMargin = '6.8mm';
-    $headerNameSize = '17.6pt'; // Was 19.55pt, reduced by 10%
-    $logoMax = '77.6px';        // Was 86.25px, reduced by 10%
-    $photoSize = '72.5px';      // Was 80.5px, reduced by 10%
+    $headerNameSize = '17.6pt';
+    $logoMax = '77.6px';
+    $photoSize = '72.5px';
+    $traitsFont = '9.1pt';     // Was 8.25pt, increased by 10%
+    $traitsHeaderFont = '9.4pt';
+    $traitsLabelFont = '9.5pt';
+    $traitItemFont = '8.5pt';
 }
-
-// Apply the 10% reduction to these as well (they were already increased by 15% in the original)
-$logoMax = round((float)$logoMax * 1.0, 2) . 'px';
-$photoSize = round((float)$photoSize * 1.0, 2) . 'px';
 
 $principalSignaturePath = '';
 $signTermRow = db_get_row("SELECT sign FROM principal_sign_nextTerm WHERE create_by_userid = ? ORDER BY id DESC", [$SCHOOL_ID]);
@@ -966,7 +975,9 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             line-height: 1.2;
         }
 
-        /* SUBJECTS TABLE */
+        /* ============================================================================
+           SUBJECTS TABLE - FONT INCREASED BY 10%
+           ============================================================================ */
         .subjects-table {
             page-break-inside: avoid;
             width: 100%;
@@ -1074,25 +1085,26 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
         }
 
         /* ============================================================================
-         * TRAITS - VISUALLY DISTINCT WITH COLOR AND STYLING
-         * ============================================================================ */
+           TRAITS - FONTS INCREASED BY 10%, MARGINS IMPROVED
+           ============================================================================ */
         .traits-container {
             margin-top: <?= $traitsMarginTop ?>;
-            padding: 4px 8px;
+            margin-bottom: <?= $traitsMarginBottom ?>;
+            padding: 6px 10px;
             background: #e8f0fe;
             border: 2px solid #1B3058;
             border-radius: 4px;
-            font-size: 7.5pt;
+            font-size: <?= $traitsFont ?>;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .traits-container .traits-header {
             font-weight: bold;
             color: #1B3058;
-            font-size: 7.7pt;
-            margin-bottom: 2px;
+            font-size: <?= $traitsHeaderFont ?>;
+            margin-bottom: 4px;
             border-bottom: 1px solid #1B3058;
-            padding-bottom: 2px;
+            padding-bottom: 3px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -1100,33 +1112,33 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
         .traits-container .traits-row {
             display: inline-block;
             width: 100%;
-            margin: 2px 0;
+            margin: 3px 0;
         }
 
         .traits-container .traits-label {
             font-weight: bold;
             color: #0d47a1;
             display: inline-block;
-            min-width: 110px;
+            min-width: 120px;
             vertical-align: top;
-            font-size: 7.8pt;
+            font-size: <?= $traitsLabelFont ?>;
             background: #dce8f5;
-            padding: 0 4px;
+            padding: 1px 5px;
             border-radius: 2px;
         }
 
         .traits-container .traits-items {
             display: inline-block;
             vertical-align: top;
-            max-width: 89%;
+            max-width: 88%;
         }
 
         .traits-container .trait-item {
             display: inline-block;
-            margin: 0 4.1px 1px 0;
-            padding: 0 3.2px;
+            margin: 0 4.5px 2px 0;
+            padding: 0 4px;
             border-right: 1px solid #b0c4de;
-            font-size: 7.0pt;
+            font-size: <?= $traitItemFont ?>;
         }
 
         .traits-container .trait-item:last-child {
@@ -1142,7 +1154,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             color: #1B3058;
             text-transform: capitalize;
             margin-left: 2px;
-            padding: 0 3px;
+            padding: 0 4px;
             background: #fff;
             border-radius: 2px;
         }
@@ -1169,7 +1181,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
 
         .traits-container .traits-divider {
             border-top: 2px solid #b0c4de;
-            margin: 3px 0;
+            margin: 4px 0;
         }
 
         /* SIGNATURE SECTION */
@@ -1438,7 +1450,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
         </table>
 
         <!-- ============================================================================
-        TRAITS - VISUALLY DISTINCT WITH COLOR AND STYLING
+        TRAITS - FONTS INCREASED BY 10%, MARGINS IMPROVED
         ============================================================================ -->
         <?php if ($showAffective || $showPsychomotor): ?>
             <div class="traits-container">
