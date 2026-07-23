@@ -4,7 +4,7 @@
  * CONFIGURATION PAGE - MODERN PHP 8.x (FIXED)
  * ============================================================================
  * Manage: School Info, Session, Term, Section, Class, Subject, PDF Settings
- * Version: 2.0 (PHP 8.x Compatible) - PDF Settings Save Fixed
+ * Version: 3.0 (PHP 8.x Compatible) - User Identification & Mobile Fixed
  * ============================================================================
  */
 
@@ -19,12 +19,29 @@ if (!is_dir($uploadDir)) {
 }
 
 // ============================================================================
+// FIX: USE CORRECT USER IDENTIFICATION (Same as dashboard.php)
+// ============================================================================
+$create_by_userid = (int)($_SESSION['userid'] ?? 0);
+
+// If create_by_userid is not set in session, try to get it from the user record
+if ($create_by_userid == 0 && !empty($_SESSION['userid'])) {
+    $userData = db_get_row("SELECT create_by_userid FROM users WHERE id = ?", [$_SESSION['userid']]);
+    if ($userData && !empty($userData['create_by_userid'])) {
+        $create_by_userid = (int)$userData['create_by_userid'];
+    }
+}
+
+// Fallback: if still 0, use the user's own ID
+if ($create_by_userid == 0) {
+    $create_by_userid = (int)($_SESSION['userid'] ?? 0);
+}
+
+// ============================================================================
 // INITIALIZATION
 // ============================================================================
 $stat = [];
 $action = $_GET['action'] ?? '';
 $randomid = $_GET['randomid'] ?? '';
-$create_by_userid = $_SESSION['userid'] ?? 0;
 $create_by_usertype = $_SESSION['usertype'] ?? '';
 
 if (isset($_SESSION['success']) && $_SESSION['success'] != "") {
@@ -191,6 +208,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete_section' && !empty($ran
     redirect($FileName . '?action=section');
     exit;
 }
+
 // ============================================================================
 // TERM MANAGEMENT
 // ============================================================================
@@ -228,42 +246,39 @@ if (isset($_GET['action']) && $_GET['action'] == 'deleteterm' && !empty($randomi
 }
 
 // ============================================================================
-// SECTION MANAGEMENT
+// SESSION MANAGEMENT
 // ============================================================================
-if (isset($_POST['savesection'])) {
-    $section = $_POST['section'] ?? '';
-    $shortName = $_POST['short_name'] ?? '';
-    $displaySection = ($section == '0') ? $shortName : $section;
-    $displayShort = ($section == '0') ? $shortName : $section;
-    
-    $existing = db_get_val("SELECT id FROM school_section WHERE section = ? AND create_by_userid = ?", [$displaySection, $create_by_userid]);
-    if ($existing) {
-        $stat['error'] = "Section already exists";
-    } else {
-        db_insert("school_section", [
-            'usertype' => $_SESSION['usertype'] ?? '',
-            'userid' => $_SESSION['userid'] ?? 0,
-            'section' => $displaySection,
-            'short_name' => $displayShort,
-            'create_by_usertype' => $create_by_usertype,
-            'create_by_userid' => $create_by_userid,
-            'randomid' => randomFix(15) . '-' . time(),
-        ]);
-        $_SESSION['success'] = "Section saved successfully";
+if (isset($_POST['savesession'])) {
+    $session = trim($_POST['session'] ?? '');
+    if (!empty($session)) {
+        $existing = db_get_val("SELECT id FROM school_session WHERE session = ? AND create_by_userid = ?", [$session, $create_by_userid]);
+        if ($existing) {
+            $stat['error'] = "Session already exists";
+        } else {
+            db_insert("school_session", [
+                'usertype' => $_SESSION['usertype'] ?? '',
+                'userid' => $_SESSION['userid'] ?? 0,
+                'session' => $session,
+                'create_by_usertype' => $create_by_usertype,
+                'create_by_userid' => $create_by_userid,
+                'randomid' => randomFix(15) . '-' . time(),
+            ]);
+            $_SESSION['success'] = "Session saved successfully";
+        }
     }
-    redirect($FileName . '?action=section');
+    redirect($FileName . '?action=session');
 }
 
-if (isset($_POST['editsection']) && !empty($randomid)) {
-    db_update("school_section", ['short_name' => $_POST['short_name']], "randomid = ?", [$randomid]);
-    $_SESSION['success'] = "Section updated successfully";
-    redirect($FileName . '?action=section');
+if (isset($_POST['editsession']) && !empty($randomid)) {
+    db_update("school_session", ['session' => $_POST['session']], "randomid = ?", [$randomid]);
+    $_SESSION['success'] = "Session updated successfully";
+    redirect($FileName . '?action=session');
 }
 
-if (isset($_GET['action']) && $_GET['action'] == 'delete_section' && !empty($randomid)) {
-    db_delete("school_section", "randomid = ?", [$randomid]);
-    $_SESSION['success'] = "Section deleted successfully";
-    redirect($FileName . '?action=section');
+if (isset($_GET['action']) && $_GET['action'] == 'deletesession' && !empty($randomid)) {
+    db_delete("school_session", "randomid = ?", [$randomid]);
+    $_SESSION['success'] = "Session deleted successfully";
+    redirect($FileName . '?action=session');
 }
 
 // ============================================================================
@@ -462,35 +477,383 @@ function getClassName($id) {
 <html>
 <head>
     <?php include('inc.meta.php'); ?>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <style>
+        /* ============================================================
+        MOBILE-FIRST CONFIGURATION STYLES
+        ============================================================ */
         * { box-sizing: border-box; }
-        .config-container { padding: 20px; max-width: 1400px; margin: 0 auto; }
-        .config-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 25px; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
-        .config-tab { padding: 10px 20px; background: #f5f5f5; border-radius: 8px 8px 0 0; text-decoration: none; color: #333; transition: all 0.2s; }
-        .config-tab:hover { background: #e0e0e0; }
-        .config-tab.active { background: #1B3058; color: white; }
-        .config-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 20px; }
-        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: 500; margin-bottom: 6px; color: #333; }
-        .form-control, .form-select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
-        .form-control:focus, .form-select:focus { outline: none; border-color: #1B3058; box-shadow: 0 0 0 3px rgba(27,48,88,0.1); }
-        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
-        .btn-primary { background: #1B3058; color: white; }
-        .btn-primary:hover { background: #f21151; }
-        .btn-sm { padding: 5px 10px; font-size: 12px; }
-        .data-table { width: 100%; border-collapse: collapse; }
-        .data-table th, .data-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        .data-table th { background: #f8f9fa; font-weight: 600; }
-        .action-icons a { margin: 0 5px; color: #1B3058; text-decoration: none; }
-        .action-icons a:hover { color: #f21151; }
-        .logo-preview { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; margin-bottom: 15px; border: 2px solid #1B3058; }
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
-        .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
-        .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } .config-tabs { flex-wrap: wrap; } }
+        
+        /* Base */
+        .config-container { 
+            padding: 10px; 
+            max-width: 1400px; 
+            margin: 0 auto; 
+        }
+        
+        /* Mobile-first tabs - horizontal scroll */
+        .config-tabs { 
+            display: flex; 
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            gap: 4px; 
+            margin-bottom: 15px; 
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e0e0e0;
+            scrollbar-width: thin;
+        }
+        
+        .config-tabs::-webkit-scrollbar {
+            height: 3px;
+        }
+        
+        .config-tabs::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+        
+        .config-tab { 
+            padding: 8px 12px; 
+            background: #f5f5f5; 
+            border-radius: 8px 8px 0 0; 
+            text-decoration: none; 
+            color: #333; 
+            font-size: 12px;
+            white-space: nowrap;
+            transition: all 0.2s; 
+            flex-shrink: 0;
+        }
+        
+        .config-tab:hover { 
+            background: #e0e0e0; 
+        }
+        
+        .config-tab.active { 
+            background: #1B3058; 
+            color: white; 
+        }
+        
+        .config-card { 
+            background: #fff; 
+            border-radius: 12px; 
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); 
+            padding: 16px; 
+            margin-bottom: 16px; 
+        }
+        
+        /* Form - mobile first */
+        .form-grid { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 12px; 
+        }
+        
+        .form-group { 
+            margin-bottom: 12px; 
+        }
+        
+        .form-group label { 
+            display: block; 
+            font-weight: 500; 
+            margin-bottom: 4px; 
+            color: #333; 
+            font-size: 13px;
+        }
+        
+        .form-control, .form-select { 
+            width: 100%; 
+            padding: 10px 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            font-size: 14px; 
+            background: white;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .form-control:focus, .form-select:focus { 
+            outline: none; 
+            border-color: #1B3058; 
+            box-shadow: 0 0 0 3px rgba(27,48,88,0.1); 
+        }
+        
+        /* Buttons - touch friendly */
+        .btn { 
+            padding: 12px 20px; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 500; 
+            font-size: 14px;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            min-height: 44px;
+        }
+        
+        .btn-primary { 
+            background: #1B3058; 
+            color: white; 
+        }
+        
+        .btn-primary:hover { 
+            background: #f21151; 
+        }
+        
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+        
+        .btn-sm { 
+            padding: 6px 12px; 
+            font-size: 12px;
+            min-height: 34px;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-outline-secondary {
+            background: transparent;
+            color: #6c757d;
+            border: 1px solid #6c757d;
+        }
+        
+        /* Tables - responsive */
+        .data-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 13px;
+        }
+        
+        .data-table th, .data-table td { 
+            padding: 8px 6px; 
+            text-align: left; 
+            border-bottom: 1px solid #eee; 
+            word-break: break-word;
+        }
+        
+        .data-table th { 
+            background: #f8f9fa; 
+            font-weight: 600; 
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #555;
+        }
+        
+        .data-table .action-icons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .data-table .action-icons a { 
+            padding: 4px 8px;
+            color: #1B3058; 
+            text-decoration: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .data-table .action-icons a:hover { 
+            background: #f0f0f0;
+        }
+        
+        .data-table .action-icons a i {
+            font-size: 14px;
+        }
+        
+        /* Logo preview */
+        .logo-preview { 
+            width: 100px; 
+            height: 100px; 
+            object-fit: cover; 
+            border-radius: 12px; 
+            margin-bottom: 12px; 
+            border: 2px solid #1B3058; 
+        }
+        
+        /* Checkbox group - mobile friendly */
+        .checkbox-group { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 8px; 
+            margin-bottom: 12px; 
+        }
+        
+        .checkbox-label { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            cursor: pointer; 
+            font-size: 13px;
+            padding: 4px 0;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            accent-color: #1B3058;
+        }
+        
+        /* Alerts */
+        .alert { 
+            padding: 12px 16px; 
+            border-radius: 10px; 
+            margin-bottom: 16px; 
+            font-size: 14px;
+        }
+        
+        .alert-success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+        }
+        
+        .alert-danger { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+        }
+        
+        /* Mobile inline forms */
+        .inline-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .inline-form .form-control {
+            font-size: 13px;
+        }
+        
+        .inline-form .btn {
+            align-self: flex-start;
+            min-height: 36px;
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        
+        /* ============================================================
+        DESKTOP BREAKPOINTS
+        ============================================================ */
+        @media (min-width: 768px) {
+            .config-container { 
+                padding: 20px; 
+            }
+            
+            .config-tabs { 
+                flex-wrap: wrap; 
+                overflow-x: visible;
+                gap: 5px; 
+                padding-bottom: 10px;
+            }
+            
+            .config-tab { 
+                padding: 10px 20px; 
+                font-size: 14px;
+            }
+            
+            .config-card { 
+                padding: 25px; 
+                margin-bottom: 20px; 
+            }
+            
+            .form-grid { 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 20px; 
+            }
+            
+            .checkbox-group { 
+                grid-template-columns: repeat(3, 1fr); 
+                gap: 10px; 
+            }
+            
+            .data-table th, .data-table td { 
+                padding: 12px; 
+                font-size: 14px;
+            }
+            
+            .data-table th {
+                font-size: 12px;
+            }
+            
+            .inline-form {
+                flex-direction: row;
+                align-items: center;
+                flex-wrap: wrap;
+            }
+            
+            .inline-form .form-control {
+                width: auto;
+                min-width: 150px;
+                flex: 1;
+            }
+            
+            .logo-preview { 
+                width: 120px; 
+                height: 120px; 
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .config-container { 
+                padding: 30px; 
+            }
+            
+            .config-card { 
+                padding: 30px; 
+            }
+            
+            .checkbox-group { 
+                grid-template-columns: repeat(4, 1fr); 
+            }
+        }
+        
+        /* ============================================================
+        VERY SMALL SCREENS
+        ============================================================ */
+        @media (max-width: 400px) {
+            .checkbox-group { 
+                grid-template-columns: 1fr 1fr; 
+            }
+            
+            .config-tab { 
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+            
+            .data-table { 
+                font-size: 12px;
+            }
+            
+            .data-table th, .data-table td { 
+                padding: 6px 4px; 
+            }
+            
+            .btn { 
+                font-size: 13px;
+                padding: 10px 16px;
+            }
+        }
+        
+        /* ============================================================
+        PRINT STYLES
+        ============================================================ */
+        @media print {
+            .config-tabs { display: none; }
+            .btn { display: none; }
+            .config-card { box-shadow: none; border: 1px solid #ddd; }
+            .action-icons a { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -500,18 +863,18 @@ function getClassName($id) {
     <div class="content-page">
         <div class="content">
             <div class="config-container">
-                <h2 style="margin-bottom: 20px;">⚙️ Configuration</h2>
+                <h2 style="margin-bottom: 16px; font-size: 20px;">⚙️ Configuration</h2>
                 <?= showMessage($stat) ?>
                 
                 <div class="config-tabs">
-                    <a href="?action=configuration" class="config-tab <?= ($action == '' || $action == 'configuration') ? 'active' : '' ?>">🏫 School Info</a>
+                    <a href="?action=configuration" class="config-tab <?= ($action == '' || $action == 'configuration') ? 'active' : '' ?>">🏫 School</a>
                     <a href="?action=session" class="config-tab <?= ($action == 'session') ? 'active' : '' ?>">📅 Session</a>
                     <a href="?action=term" class="config-tab <?= ($action == 'term') ? 'active' : '' ?>">📖 Term</a>
                     <a href="?action=section" class="config-tab <?= ($action == 'section') ? 'active' : '' ?>">📂 Sections</a>
                     <a href="?action=class" class="config-tab <?= ($action == 'class') ? 'active' : '' ?>">🏷️ Classes</a>
                     <a href="?action=subject" class="config-tab <?= ($action == 'subject') ? 'active' : '' ?>">📚 Subjects</a>
                     <?php if ($action == 'pdfsetting'): ?>
-                        <a href="?action=pdfsetting&randomid=<?= urlencode($randomid) ?>" class="config-tab active">📄 PDF Settings</a>
+                        <a href="?action=pdfsetting&randomid=<?= urlencode($randomid) ?>" class="config-tab active">📄 PDF</a>
                     <?php endif; ?>
                 </div>
 
@@ -521,21 +884,60 @@ function getClassName($id) {
                 <?php if ($action == '' || $action == 'configuration'): ?>
                 <div class="config-card">
                     <form method="post" enctype="multipart/form-data">
-                        <div style="text-align: center; margin-bottom: 20px;">
-                            <img src="../uploads/<?= htmlspecialchars($schoolData['logo'] ?? '') ?>" class="logo-preview" onerror="this.src='assets/image/default-logo.png'">
-                            <div><input type="file" name="logo" accept="image/*"></div>
+                        <div style="text-align: center; margin-bottom: 16px;">
+                            <div>
+                                <img src="../uploads/<?= htmlspecialchars($schoolData['logo'] ?? '') ?>" class="logo-preview" onerror="this.src='assets/image/default-logo.png'">
+                            </div>
+                            <div style="margin-top: 8px;">
+                                <input type="file" name="logo" accept="image/*" style="font-size: 13px; max-width: 100%;">
+                            </div>
                             <input type="hidden" name="logo_old" value="<?= htmlspecialchars($schoolData['logo'] ?? '') ?>">
                         </div>
                         <div class="form-grid">
-                            <div class="form-group"><label>School Name</label><input type="text" name="name" class="form-control" value="<?= htmlspecialchars($schoolData['name'] ?? '') ?>"></div>
-                            <div class="form-group"><label>About School</label><input type="text" name="about" class="form-control" value="<?= htmlspecialchars($schoolData['about'] ?? '') ?>"></div>
-                            <div class="form-group"><label>School Type</label><select name="school_type" class="form-select"><?php $types = db_get_rows("SELECT * FROM school_type"); foreach($types as $t): ?><option value="<?= $t['id'] ?>" <?= ($schoolData['school_type'] == $t['id']) ? 'selected' : '' ?>><?= htmlspecialchars($t['school_type']) ?></option><?php endforeach; ?></select></div>
-                            <div class="form-group"><label>Location</label><input type="text" name="location" class="form-control" value="<?= htmlspecialchars($schoolData['location'] ?? '') ?>"></div>
-                            <div class="form-group"><label>State</label><select name="state" class="form-select"><?php $states = db_get_rows("SELECT * FROM state WHERE status='1'"); foreach($states as $s): ?><option value="<?= $s['id'] ?>" <?= ($schoolData['state'] == $s['id']) ? 'selected' : '' ?>><?= htmlspecialchars($s['title']) ?></option><?php endforeach; ?></select></div>
-                            <div class="form-group"><label>Motto</label><input type="text" name="moto" class="form-control" value="<?= htmlspecialchars($schoolData['moto'] ?? '') ?>"></div>
-                            <div class="form-group"><label>Website</label><input type="text" name="website" class="form-control" value="<?= htmlspecialchars($schoolData['website'] ?? '') ?>"></div>
+                            <div class="form-group">
+                                <label>School Name</label>
+                                <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($schoolData['name'] ?? '') ?>">
+                            </div>
+                            <div class="form-group">
+                                <label>About School</label>
+                                <input type="text" name="about" class="form-control" value="<?= htmlspecialchars($schoolData['about'] ?? '') ?>">
+                            </div>
+                            <div class="form-group">
+                                <label>School Type</label>
+                                <select name="school_type" class="form-select">
+                                    <?php $types = db_get_rows("SELECT * FROM school_type"); 
+                                    foreach($types as $t): ?>
+                                        <option value="<?= $t['id'] ?>" <?= ($schoolData['school_type'] == $t['id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($t['school_type']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Location</label>
+                                <input type="text" name="location" class="form-control" value="<?= htmlspecialchars($schoolData['location'] ?? '') ?>">
+                            </div>
+                            <div class="form-group">
+                                <label>State</label>
+                                <select name="state" class="form-select">
+                                    <?php $states = db_get_rows("SELECT * FROM state WHERE status='1'"); 
+                                    foreach($states as $s): ?>
+                                        <option value="<?= $s['id'] ?>" <?= ($schoolData['state'] == $s['id']) ? 'selected' : '' ?>>
+                                            <?= htmlspecialchars($s['title']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Motto</label>
+                                <input type="text" name="moto" class="form-control" value="<?= htmlspecialchars($schoolData['moto'] ?? '') ?>">
+                            </div>
+                            <div class="form-group">
+                                <label>Website</label>
+                                <input type="text" name="website" class="form-control" value="<?= htmlspecialchars($schoolData['website'] ?? '') ?>">
+                            </div>
                         </div>
-                        <button type="submit" name="configuration" class="btn btn-primary">💾 Save School Info</button>
+                        <button type="submit" name="configuration" class="btn btn-primary" style="width: 100%;">💾 Save School Info</button>
                     </form>
                 </div>
                 <?php endif; ?>
@@ -547,25 +949,55 @@ function getClassName($id) {
                 <div class="config-card">
                     <form method="post" action="<?= $FileName ?>?action=session">
                         <div class="form-group">
-                            <input type="text" name="session" class="form-control" placeholder="e.g., 2024-2025" required>
-                            <button type="submit" name="savesession" class="btn btn-primary" style="margin-top:10px">+ Add Session</button>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <input type="text" name="session" class="form-control" placeholder="e.g., 2024-2025" required>
+                                <button type="submit" name="savesession" class="btn btn-primary">+ Add Session</button>
+                            </div>
                         </div>
                     </form>
-                    <table class="data-table">
-                        <thead><tr><th>#</th><th>Session</th><th>Action</th></tr></thead>
-                        <tbody>
-                            <?php $i=1; foreach($sessions as $s): ?>
-                            <tr>
-                                <td><?= $i++ ?></td>
-                                <td><?= ($randomid == $s['randomid']) ? '<form method="post" style="display:inline"><input type="text" name="session" value="'.htmlspecialchars($s['session']).'"><button type="submit" name="editsession">Save</button></form>' : htmlspecialchars($s['session']) ?></td>
-                                <td class="action-icons">
-                                    <?= ($randomid != $s['randomid']) ? '<a href="?action=session&randomid='.$s['randomid'].'"><i class="fa fa-pencil"></i></a>' : '' ?>
-                                    <a href="javascript:del(\'?action=deletesession&randomid='.$s['randomid'].'\')"><i class="fa fa-trash"></i></a>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <table class="data-table">
+                            <thead><tr><th>#</th><th>Session</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <?php 
+                                $sessions = db_get_rows("SELECT * FROM school_session WHERE create_by_userid = ? ORDER BY id DESC", [$create_by_userid]);
+                                $i=1; 
+                                foreach($sessions as $s): 
+                                ?>
+                                <tr>
+                                    <td><?= $i++ ?></td>
+                                    <td>
+                                        <?php if ($randomid == $s['randomid']): ?>
+                                            <form method="post" class="inline-form" style="display:flex; flex-wrap:wrap; gap:6px;">
+                                                <input type="text" name="session" value="<?= htmlspecialchars($s['session']) ?>" class="form-control" style="flex:1; min-width:100px;">
+                                                <button type="submit" name="editsession" class="btn btn-primary btn-sm">Save</button>
+                                                <a href="<?= $FileName ?>?action=session" class="btn btn-outline-secondary btn-sm" style="text-decoration:none; text-align:center;">Cancel</a>
+                                            </form>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($s['session']) ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="action-icons">
+                                            <?php if ($randomid != $s['randomid']): ?>
+                                                <a href="<?= $FileName ?>?action=session&randomid=<?= urlencode($s['randomid']) ?>" title="Edit">
+                                                    <i class="fa fa-pencil"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="javascript:void(0);" onclick="confirmDelete('<?= $FileName ?>?action=deletesession&randomid=<?= urlencode($s['randomid']) ?>', 'session')" title="Delete">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($sessions)): ?>
+                                    <tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">No sessions found.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <?php endif; ?>
 
@@ -576,215 +1008,224 @@ function getClassName($id) {
                 <div class="config-card">
                     <form method="post" action="<?= $FileName ?>?action=term">
                         <div class="form-group">
-                            <input type="text" name="term" class="form-control" placeholder="e.g., First Term" required>
-                            <button type="submit" name="saveterm" class="btn btn-primary" style="margin-top:10px">+ Add Term</button>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <input type="text" name="term" class="form-control" placeholder="e.g., First Term" required>
+                                <button type="submit" name="saveterm" class="btn btn-primary">+ Add Term</button>
+                            </div>
                         </div>
                     </form>
-                    <table class="data-table">
-                        <thead><tr><th>#</th><th>Term</th><th>Action</th></tr></thead>
-                        <tbody>
-                            <?php $i=1; foreach($terms as $t): ?>
-                            <tr>
-                                <td><?= $i++ ?></td>
-                                <td><?= ($randomid == $t['randomid']) ? '<form method="post" style="display:inline"><input type="text" name="term" value="'.htmlspecialchars($t['term']).'"><button type="submit" name="editterm">Save</button></form>' : htmlspecialchars($t['term']) ?></td>
-                                <td class="action-icons">
-                                    <?= ($randomid != $t['randomid']) ? '<a href="?action=term&randomid='.$t['randomid'].'"><i class="fa fa-pencil"></i></a>' : '' ?>
-                                    <a href="javascript:del(\'?action=deleteterm&randomid='.$t['randomid'].'\')"><i class="fa fa-trash"></i></a>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <table class="data-table">
+                            <thead><tr><th>#</th><th>Term</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <?php 
+                                $terms = db_get_rows("SELECT * FROM school_term WHERE create_by_userid = ? ORDER BY id DESC", [$create_by_userid]);
+                                $i=1; 
+                                foreach($terms as $t): 
+                                ?>
+                                <tr>
+                                    <td><?= $i++ ?></td>
+                                    <td>
+                                        <?php if ($randomid == $t['randomid']): ?>
+                                            <form method="post" class="inline-form" style="display:flex; flex-wrap:wrap; gap:6px;">
+                                                <input type="text" name="term" value="<?= htmlspecialchars($t['term']) ?>" class="form-control" style="flex:1; min-width:100px;">
+                                                <button type="submit" name="editterm" class="btn btn-primary btn-sm">Save</button>
+                                                <a href="<?= $FileName ?>?action=term" class="btn btn-outline-secondary btn-sm" style="text-decoration:none; text-align:center;">Cancel</a>
+                                            </form>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($t['term']) ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="action-icons">
+                                            <?php if ($randomid != $t['randomid']): ?>
+                                                <a href="<?= $FileName ?>?action=term&randomid=<?= urlencode($t['randomid']) ?>" title="Edit">
+                                                    <i class="fa fa-pencil"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="javascript:void(0);" onclick="confirmDelete('<?= $FileName ?>?action=deleteterm&randomid=<?= urlencode($t['randomid']) ?>', 'term')" title="Delete">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($terms)): ?>
+                                    <tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">No terms found.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <?php endif; ?>
 
                 <!-- ============================================================ -->
                 <!-- SECTION TAB -->
                 <!-- ============================================================ -->
-            
-<?php if ($action == 'section'): ?>
-<div class="config-card">
-    <form method="post" action="<?= $FileName ?>?action=section">
-        <div class="form-group">
-            <select name="section" class="form-select" id="sectionSelect">
-                <option value="CRECHE">CRECHE</option>
-                <option value="NURSERY">NURSERY</option>
-                <option value="PRIMARY">PRIMARY</option>
-                <option value="SECONDARY">SECONDARY</option>
-                <option value="0">OTHERS</option>
-            </select>
-            <div id="otherSection" style="display:none; margin-top:10px">
-                <input type="text" name="short_name" class="form-control" placeholder="Enter Section Name">
-            </div>
-            <button type="submit" name="savesection" class="btn btn-primary" style="margin-top:10px">+ Add Section</button>
-        </div>
-    </form>
-    
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Section Name</th>
-                <th>Random ID</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php 
-            // Refresh sections after any operation
-            $sections = db_get_rows("SELECT * FROM school_section WHERE create_by_userid = ? ORDER BY id DESC", [$create_by_userid]);
-            $i = 1; 
-            foreach($sections as $sec): 
-            ?>
-            <tr>
-                <td><?= $i++ ?></td>
-                <td>
-                    <?php if ($randomid == $sec['randomid']): ?>
-                        <form method="post" style="display: inline-block;">
-                            <input type="hidden" name="randomid" value="<?= $sec['randomid'] ?>">
-                            <input type="text" name="short_name" value="<?= htmlspecialchars($sec['short_name']) ?>" required>
-                            <button type="submit" name="editsection" class="btn btn-primary btn-sm">Save</button>
-                            <a href="<?= $FileName ?>?action=section" class="btn btn-sm" style="background:#6c757d; color:white; text-decoration:none; padding:5px 10px;">Cancel</a>
-                        </form>
-                    <?php else: ?>
-                        <?= htmlspecialchars($sec['short_name']) ?>
-                    <?php endif; ?>
-                 </td>
-                <td><?= htmlspecialchars($sec['randomid']) ?></td>
-                <td class="action-icons">
-                    <?php if ($randomid != $sec['randomid']): ?>
-                        <a href="<?= $FileName ?>?action=section&randomid=<?= urlencode($sec['randomid']) ?>" title="Edit">
-                            <i class="fa fa-pencil"></i>
-                        </a>
-                    <?php endif; ?>
-                    <a href="javascript:void(0);" onclick="confirmDelete('<?= $FileName ?>?action=delete_section&randomid=<?= urlencode($sec['randomid']) ?>', 'section')" title="Delete">
-                        <i class="fa fa-trash"></i>
-                    </a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-            
-            <?php if (empty($sections)): ?>
-                <tr>
-                    <td colspan="4" style="text-align: center;">No sections found. Add your first section above.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
-</div>
+                <?php if ($action == 'section'): ?>
+                <div class="config-card">
+                    <form method="post" action="<?= $FileName ?>?action=section">
+                        <div class="form-group">
+                            <select name="section" class="form-select" id="sectionSelect">
+                                <option value="CRECHE">CRECHE</option>
+                                <option value="NURSERY">NURSERY</option>
+                                <option value="PRIMARY">PRIMARY</option>
+                                <option value="SECONDARY">SECONDARY</option>
+                                <option value="0">OTHERS</option>
+                            </select>
+                            <div id="otherSection" style="display:none; margin-top:8px;">
+                                <input type="text" name="short_name" class="form-control" placeholder="Enter Section Name">
+                            </div>
+                            <button type="submit" name="savesection" class="btn btn-primary" style="margin-top:10px; width:100%;">+ Add Section</button>
+                        </div>
+                    </form>
+                    
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Section Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php 
+                                $sections = db_get_rows("SELECT * FROM school_section WHERE create_by_userid = ? ORDER BY id DESC", [$create_by_userid]);
+                                $i=1; 
+                                foreach($sections as $sec): 
+                                ?>
+                                <tr>
+                                    <td><?= $i++ ?></td>
+                                    <td>
+                                        <?php if ($randomid == $sec['randomid']): ?>
+                                            <form method="post" class="inline-form" style="display:flex; flex-wrap:wrap; gap:6px;">
+                                                <input type="hidden" name="randomid" value="<?= $sec['randomid'] ?>">
+                                                <input type="text" name="short_name" value="<?= htmlspecialchars($sec['short_name']) ?>" class="form-control" style="flex:1; min-width:80px;" required>
+                                                <button type="submit" name="editsection" class="btn btn-primary btn-sm">Save</button>
+                                                <a href="<?= $FileName ?>?action=section" class="btn btn-outline-secondary btn-sm" style="text-decoration:none; text-align:center;">Cancel</a>
+                                            </form>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($sec['short_name']) ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="action-icons">
+                                            <?php if ($randomid != $sec['randomid']): ?>
+                                                <a href="<?= $FileName ?>?action=section&randomid=<?= urlencode($sec['randomid']) ?>" title="Edit">
+                                                    <i class="fa fa-pencil"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="javascript:void(0);" onclick="confirmDelete('<?= $FileName ?>?action=delete_section&randomid=<?= urlencode($sec['randomid']) ?>', 'section')" title="Delete">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($sections)): ?>
+                                    <tr><td colspan="3" style="text-align:center; color:#999; padding:20px;">No sections found.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <?php endif; ?>
 
-<script>
-// Show/hide custom section input
-document.getElementById('sectionSelect').addEventListener('change', function() {
-    var otherDiv = document.getElementById('otherSection');
-    if (this.value == '0') {
-        otherDiv.style.display = 'block';
-    } else {
-        otherDiv.style.display = 'none';
-    }
-});
-
-// Improved delete confirmation
-function confirmDelete(url, itemName) {
-    if (confirm('Are you sure you want to delete this ' + itemName + '?\n\nThis action cannot be undone.')) {
-        window.location.href = url;
-    }
-}
-</script>
-<?php endif; ?>
                 <!-- ============================================================ -->
                 <!-- CLASS TAB -->
                 <!-- ============================================================ -->
-               <!-- ============================================================ -->
-<?php if ($action == 'class'): ?>
-<div class="config-card">
-    <form method="post" action="<?= $FileName ?>?action=class">
-        <div class="form-grid">
-            <div class="form-group">
-                <select name="section_id" class="form-select" required>
-                    <option value="">Select Section</option>
-                    <?php foreach($sections as $sec): ?>
-                        <option value="<?= $sec['id'] ?>"><?= htmlspecialchars($sec['section']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="form-group">
-                <input type="text" name="name" class="form-control" placeholder="Class Name" required>
-            </div>
-            <div class="form-group">
-                <input type="text" name="short_name" class="form-control" placeholder="Short Name" required>
-            </div>
-        </div>
-        <button type="submit" name="saveclass" class="btn btn-primary">+ Add Class</button>
-    </form>
-    
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>Short Name</th>
-                <th>Section</th>
-                <th>PDF Setting</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php 
-            $classes = db_get_rows("SELECT * FROM school_class WHERE create_by_userid = ? ORDER BY id DESC", [$create_by_userid]);
-            $i = 1; 
-            foreach($classes as $cls): 
-                // FIXED: Get the section's randomid for the PDF Settings link
-                $sectionRandomid = db_get_val("SELECT randomid FROM school_section WHERE id = ? AND create_by_userid = ?", [$cls['section_id'], $create_by_userid]);
-            ?>
-            <tr>
-                <td><?= $i++ ?></td>
-                <td>
-                    <?php if ($randomid == $cls['randomid']): ?>
-                        <form method="post" style="display: inline-block;">
-                            <input type="hidden" name="randomid" value="<?= $cls['randomid'] ?>">
-                            <input type="text" name="name" value="<?= htmlspecialchars($cls['name']) ?>" required>
-                            <input type="text" name="short_name" value="<?= htmlspecialchars($cls['short_name']) ?>" required>
-                            <button type="submit" name="editclass" class="btn btn-primary btn-sm">Save</button>
-                            <a href="<?= $FileName ?>?action=class" class="btn btn-sm" style="background:#6c757d; color:white; text-decoration:none; padding:5px 10px;">Cancel</a>
-                        </form>
-                    <?php else: ?>
-                        <?= htmlspecialchars($cls['name']) ?>
-                    <?php endif; ?>
-                </td>
-                <td><?= htmlspecialchars($cls['short_name']) ?></td>
-                <td><?= htmlspecialchars(getSectionName($cls['section_id'])) ?></td>
-                <td>
-                    <?php if (!empty($sectionRandomid)): ?>
-                        <a href="<?= $FileName ?>?action=pdfsetting&randomid=<?= urlencode($sectionRandomid) ?>">
-                            <i class="fa fa-file-pdf-o"></i> Configure
-                        </a>
-                    <?php else: ?>
-                        <span style="color:#999;">No section</span>
-                    <?php endif; ?>
-                </td>
-                <td class="action-icons">
-                    <?php if ($randomid != $cls['randomid']): ?>
-                        <a href="<?= $FileName ?>?action=class&randomid=<?= urlencode($cls['randomid']) ?>" title="Edit">
-                            <i class="fa fa-pencil"></i>
-                        </a>
-                    <?php endif; ?>
-                    <a href="javascript:void(0);" onclick="confirmDelete('<?= $FileName ?>?action=delete_class&randomid=<?= urlencode($cls['randomid']) ?>', 'class')" title="Delete">
-                        <i class="fa fa-trash"></i>
-                    </a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-            
-            <?php if (empty($classes)): ?>
-                <tr>
-                    <td colspan="6" style="text-align: center;">No classes found. Add your first class above.</td>
-                </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
-</div>
-<?php endif; ?>
+                <?php if ($action == 'class'): ?>
+                <div class="config-card">
+                    <form method="post" action="<?= $FileName ?>?action=class">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <select name="section_id" class="form-select" required>
+                                    <option value="">Select Section</option>
+                                    <?php foreach($sections as $sec): ?>
+                                        <option value="<?= $sec['id'] ?>"><?= htmlspecialchars($sec['section']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="name" class="form-control" placeholder="Class Name" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="short_name" class="form-control" placeholder="Short Name" required>
+                            </div>
+                        </div>
+                        <button type="submit" name="saveclass" class="btn btn-primary" style="width:100%;">+ Add Class</button>
+                    </form>
+                    
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top:16px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Short</th>
+                                    <th>Section</th>
+                                    <th>PDF</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php 
+                                $classes = db_get_rows("SELECT * FROM school_class WHERE create_by_userid = ? ORDER BY id DESC", [$create_by_userid]);
+                                $i=1; 
+                                foreach($classes as $cls): 
+                                    $sectionRandomid = db_get_val("SELECT randomid FROM school_section WHERE id = ? AND create_by_userid = ?", [$cls['section_id'], $create_by_userid]);
+                                ?>
+                                <tr>
+                                    <td><?= $i++ ?></td>
+                                    <td>
+                                        <?php if ($randomid == $cls['randomid']): ?>
+                                            <form method="post" class="inline-form" style="display:flex; flex-wrap:wrap; gap:4px;">
+                                                <input type="hidden" name="randomid" value="<?= $cls['randomid'] ?>">
+                                                <input type="text" name="name" value="<?= htmlspecialchars($cls['name']) ?>" class="form-control" style="flex:1; min-width:60px;" required>
+                                                <input type="text" name="short_name" value="<?= htmlspecialchars($cls['short_name']) ?>" class="form-control" style="flex:1; min-width:60px;" required>
+                                                <button type="submit" name="editclass" class="btn btn-primary btn-sm">Save</button>
+                                                <a href="<?= $FileName ?>?action=class" class="btn btn-outline-secondary btn-sm" style="text-decoration:none; text-align:center;">Cancel</a>
+                                            </form>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($cls['name']) ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($cls['short_name']) ?></td>
+                                    <td><?= htmlspecialchars(getSectionName($cls['section_id'])) ?></td>
+                                    <td>
+                                        <?php if (!empty($sectionRandomid)): ?>
+                                            <a href="<?= $FileName ?>?action=pdfsetting&randomid=<?= urlencode($sectionRandomid) ?>" title="Configure PDF">
+                                                <i class="fa fa-file-pdf-o"></i>
+                                            </a>
+                                        <?php else: ?>
+                                            <span style="color:#ccc;">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="action-icons">
+                                            <?php if ($randomid != $cls['randomid']): ?>
+                                                <a href="<?= $FileName ?>?action=class&randomid=<?= urlencode($cls['randomid']) ?>" title="Edit">
+                                                    <i class="fa fa-pencil"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="javascript:void(0);" onclick="confirmDelete('<?= $FileName ?>?action=delete_class&randomid=<?= urlencode($cls['randomid']) ?>', 'class')" title="Delete">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($classes)): ?>
+                                    <tr><td colspan="6" style="text-align:center; color:#999; padding:20px;">No classes found.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <!-- ============================================================ -->
                 <!-- SUBJECT TAB -->
                 <!-- ============================================================ -->
@@ -792,45 +1233,75 @@ function confirmDelete(url, itemName) {
                 <div class="config-card">
                     <form method="post" action="<?= $FileName ?>?action=subject">
                         <div class="form-grid">
-                            <div class="form-group"><select name="section_id" class="form-select" required onchange="loadClasses(this.value)"><option value="">Select Section</option><?php foreach($sections as $sec): ?><option value="<?= $sec['id'] ?>"><?= htmlspecialchars($sec['section']) ?></option><?php endforeach; ?></select></div>
-                            <div class="form-group"><select name="class_id" id="classSelect" class="form-select" required><option value="">Select Class First</option></select></div>
-                            <div class="form-group"><input type="text" name="subject" class="form-control" placeholder="Subject Name" required></div>
+                            <div class="form-group">
+                                <select name="section_id" class="form-select" required onchange="loadClasses(this.value)">
+                                    <option value="">Select Section</option>
+                                    <?php foreach($sections as $sec): ?>
+                                        <option value="<?= $sec['id'] ?>"><?= htmlspecialchars($sec['section']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <select name="class_id" id="classSelect" class="form-select" required>
+                                    <option value="">Select Class First</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" name="subject" class="form-control" placeholder="Subject Name" required>
+                            </div>
                         </div>
-                        <button type="submit" name="savesubject" class="btn btn-primary">+ Add Subject</button>
+                        <button type="submit" name="savesubject" class="btn btn-primary" style="width:100%;">+ Add Subject</button>
                     </form>
-                    <table class="data-table">
-                        <thead><tr><th>#</th><th>Section</th><th>Class</th><th>Subject</th><th>Action</th></tr></thead>
-                        <tbody>
-                            <?php $i=1; foreach($subjects as $sub): ?>
-                            <tr>
-                                <td><?= $i++ ?></td>
-                                <td><?= getSectionName($sub['section_id']) ?></td>
-                                <td><?= getClassName($sub['class_id']) ?></td>
-                                <td><?= ($randomid == $sub['randomid']) ? '<form method="post" style="display:inline"><input type="text" name="subject" value="'.htmlspecialchars($sub['subject']).'"><button type="submit" name="editsubject">Save</button></form>' : htmlspecialchars($sub['subject']) ?></td>
-                                <td class="action-icons">
-                                    <?= ($randomid != $sub['randomid']) ? '<a href="?action=subject&randomid='.$sub['randomid'].'"><i class="fa fa-pencil"></i></a>' : '' ?>
-                                    <a href="javascript:del(\'?action=delete_subject&randomid='.$sub['randomid'].'\')"><i class="fa fa-trash"></i></a>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top:16px;">
+                        <table class="data-table">
+                            <thead><tr><th>#</th><th>Section</th><th>Class</th><th>Subject</th><th>Action</th></tr></thead>
+                            <tbody>
+                                <?php 
+                                $subjects = db_get_rows("SELECT * FROM school_subject WHERE create_by_userid = ? ORDER BY id DESC", [$create_by_userid]);
+                                $i=1; 
+                                foreach($subjects as $sub): 
+                                ?>
+                                <tr>
+                                    <td><?= $i++ ?></td>
+                                    <td><?= getSectionName($sub['section_id']) ?></td>
+                                    <td><?= getClassName($sub['class_id']) ?></td>
+                                    <td>
+                                        <?php if ($randomid == $sub['randomid']): ?>
+                                            <form method="post" class="inline-form" style="display:flex; flex-wrap:wrap; gap:6px;">
+                                                <input type="text" name="subject" value="<?= htmlspecialchars($sub['subject']) ?>" class="form-control" style="flex:1; min-width:80px;">
+                                                <button type="submit" name="editsubject" class="btn btn-primary btn-sm">Save</button>
+                                                <a href="<?= $FileName ?>?action=subject" class="btn btn-outline-secondary btn-sm" style="text-decoration:none; text-align:center;">Cancel</a>
+                                            </form>
+                                        <?php else: ?>
+                                            <?= htmlspecialchars($sub['subject']) ?>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <div class="action-icons">
+                                            <?php if ($randomid != $sub['randomid']): ?>
+                                                <a href="<?= $FileName ?>?action=subject&randomid=<?= urlencode($sub['randomid']) ?>" title="Edit">
+                                                    <i class="fa fa-pencil"></i>
+                                                </a>
+                                            <?php endif; ?>
+                                            <a href="javascript:void(0);" onclick="confirmDelete('<?= $FileName ?>?action=delete_subject&randomid=<?= urlencode($sub['randomid']) ?>', 'subject')" title="Delete">
+                                                <i class="fa fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <?php if (empty($subjects)): ?>
+                                    <tr><td colspan="5" style="text-align:center; color:#999; padding:20px;">No subjects found.</td></tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <script>
-                    function loadClasses(sectionId) {
-                        fetch('ajax.php', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: 'action=getsubclass&sec_id=' + sectionId
-                        }).then(r => r.text()).then(html => {
-                            document.getElementById('classSelect').innerHTML = html;
-                        });
-                    }
-                </script>
                 <?php endif; ?>
 
                 <!-- ============================================================ -->
-                <!-- PDF SETTINGS TAB (FIXED - with explicit form action) -->
+                <!-- PDF SETTINGS TAB -->
                 <!-- ============================================================ -->
                 <?php if ($action == 'pdfsetting' && !empty($randomid)): ?>
                 <div class="config-card">
@@ -838,30 +1309,30 @@ function confirmDelete(url, itemName) {
                         <div class="checkbox-group">
                             <?php 
                             $fields = [
-                                'is_pos' => 'Show Position', 
-                                'is_out' => 'Show Out of', 
-                                'is_highest_avg' => 'Show Highest Average', 
-                                'is_lowest_avg' => 'Show Lowest Average', 
-                                'is_class_avg' => 'Show Class Average', 
-                                'is_grade_details' => 'Show Grade Details', 
-                                'is_no_of_subjects' => 'Show No. of Subjects', 
-                                'is_grade' => 'Show Final Grade', 
-                                'is_class' => 'Show Class', 
-                                'is_position' => 'Show Final Position', 
-                                'is_totalstudent' => 'Show Total Students', 
-                                'is_addmission' => 'Show Admission No', 
-                                'is_totalscore' => 'Show Total Score', 
-                                'is_session' => 'Show Session', 
-                                'is_finalaverage' => 'Show Final Average', 
-                                'is_terms' => 'Show Term', 
-                                'is_highestaverage' => 'Show Highest Avg', 
-                                'is_lowestaverage' => 'Show Lowest Avg', 
-                                'is_schoolopen' => 'Show Days School Open', 
-                                'is_daypresent' => 'Show Days Present', 
-                                'is_dayabsent' => 'Show Days Absent', 
-                                'is_profilepic' => 'Show Profile Picture', 
-                                'is_affective' => 'Show Affective Traits', 
-                                'is_phycomotor' => 'Show Psychomotor'
+                                'is_pos' => 'Position', 
+                                'is_out' => 'Out of', 
+                                'is_highest_avg' => 'Highest Avg', 
+                                'is_lowest_avg' => 'Lowest Avg', 
+                                'is_class_avg' => 'Class Avg', 
+                                'is_grade_details' => 'Grade Details', 
+                                'is_no_of_subjects' => 'No. of Subjects', 
+                                'is_grade' => 'Final Grade', 
+                                'is_class' => 'Class', 
+                                'is_position' => 'Final Position', 
+                                'is_totalstudent' => 'Total Students', 
+                                'is_addmission' => 'Admission No', 
+                                'is_totalscore' => 'Total Score', 
+                                'is_session' => 'Session', 
+                                'is_finalaverage' => 'Final Avg', 
+                                'is_terms' => 'Term', 
+                                'is_highestaverage' => 'Highest Avg', 
+                                'is_lowestaverage' => 'Lowest Avg', 
+                                'is_schoolopen' => 'Days Open', 
+                                'is_daypresent' => 'Days Present', 
+                                'is_dayabsent' => 'Days Absent', 
+                                'is_profilepic' => 'Profile Pic', 
+                                'is_affective' => 'Affective', 
+                                'is_phycomotor' => 'Psychomotor'
                             ]; 
                             ?>
                             <?php foreach($fields as $key => $label): ?>
@@ -877,7 +1348,7 @@ function confirmDelete(url, itemName) {
                                 <input type="text" name="title_1" class="form-control" value="<?= htmlspecialchars($pdfSettings['title_1'] ?? 'Class Teacher') ?>">
                             </div>
                             <div class="form-group">
-                                <label>Title 2 (Class Teacher's Remarks)</label>
+                                <label>Title 2 (Teacher's Remarks)</label>
                                 <input type="text" name="title_2" class="form-control" value="<?= htmlspecialchars($pdfSettings['title_2'] ?? "Class Teacher's Remarks") ?>">
                             </div>
                             <div class="form-group">
@@ -893,7 +1364,7 @@ function confirmDelete(url, itemName) {
                                 <input type="text" name="title_5" class="form-control" value="<?= htmlspecialchars($pdfSettings['title_5'] ?? 'PSYCHOMOTOR') ?>">
                             </div>
                         </div>
-                        <button type="submit" name="pdfsetting" class="btn btn-primary">💾 Save PDF Settings</button>
+                        <button type="submit" name="pdfsetting" class="btn btn-primary" style="width:100%;">💾 Save PDF Settings</button>
                     </form>
                 </div>
                 <?php endif; ?>
@@ -904,8 +1375,30 @@ function confirmDelete(url, itemName) {
     </div>
 </div>
 <?php include('inc.js.php'); ?>
+
 <script>
-<script>
+// Show/hide custom section input
+document.getElementById('sectionSelect').addEventListener('change', function() {
+    var otherDiv = document.getElementById('otherSection');
+    if (this.value == '0') {
+        otherDiv.style.display = 'block';
+    } else {
+        otherDiv.style.display = 'none';
+    }
+});
+
+// Load classes for subject
+function loadClasses(sectionId) {
+    fetch('ajax.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'action=getsubclass&sec_id=' + sectionId
+    }).then(r => r.text()).then(html => {
+        document.getElementById('classSelect').innerHTML = html;
+    });
+}
+
+// Improved delete confirmation
 function confirmDelete(url, itemName) {
     if (confirm('Are you sure you want to delete this ' + itemName + '?\n\nThis action cannot be undone.')) {
         window.location.href = url;
