@@ -4,8 +4,8 @@
  * ============================================================================
  * SKOOL TERM RESULT PDF - SINGLE A4 PAGE OPTIMIZED (INCREASED TRAITS FONTS)
  * ============================================================================
- * FIXED: Traits and subjects table fonts increased by 10%, traits-container margins improved
- * Version: 6.4 (Single A4 Page - Increased Traits Fonts + Better Margins)
+ * FIXED: Added Total Student display (like old file), traits fonts increased
+ * Version: 6.5 (Single A4 Page - Total Student Fixed)
  * ============================================================================
  */
 
@@ -300,6 +300,21 @@ $iFinalScore = 0;
 $subjectScoresData = [];
 $subjectStats = [];
 
+// ============================================================================
+// GET ALL STUDENTS IN CLASS FOR TOTAL COUNT - FIXED
+// ============================================================================
+$studentArr = db_get_rows(
+    "SELECT * FROM manage_student WHERE class = ? AND create_by_userid = ? AND session = ? AND term_id = ?",
+    [$classId, $SCHOOL_ID, $sessionId, $termId]
+);
+if (!is_array($studentArr)) $studentArr = [];
+
+// TOTAL STUDENTS IN CLASS - MATCHES OLD FILE
+$iTotalStudents = count($studentArr);
+
+// ============================================================================
+// GET CLASS STUDENT IDS FOR SCORE CALCULATIONS
+// ============================================================================
 $classStudents = db_get_rows(
     "SELECT id FROM manage_student WHERE class = ? AND session = ? AND term_id = ? AND create_by_userid = ?",
     [$classId, $sessionId, $termId, $SCHOOL_ID]
@@ -311,6 +326,29 @@ foreach ($classStudents as $classStudent) {
     if (is_array($classStudent) && !empty($classStudent['id'])) {
         $classStudentIds[] = (int)$classStudent['id'];
     }
+}
+
+// ============================================================================
+// GET SCORES - Build score map like old file
+// ============================================================================
+$scorelist = db_get_rows(
+    "SELECT * FROM input_score_class_teacher WHERE class_id = ? AND create_by_userid = ? AND session_id = ? AND term_id = ?",
+    [$classId, $SCHOOL_ID, $sessionId, $termId]
+);
+if (!is_array($scorelist)) $scorelist = [];
+
+// Helper function - matches old file
+function getScoreSum($list, $sid, $subjectId = 0, $assessId = 0) {
+    $sum = 0;
+    if (!is_array($list)) return $sum;
+    foreach ($list as $scorelistItem) {
+        if ($scorelistItem['student_id'] == $sid) {
+            if ($subjectId == 0 || ($subjectId != 0 && $scorelistItem['subject_id'] == $subjectId && $scorelistItem['assesment_id'] == $assessId)) {
+                $sum += $scorelistItem['score'];
+            }
+        }
+    }
+    return $sum;
 }
 
 $removedStudentMap = [];
@@ -341,6 +379,7 @@ if (!empty($subjectdetail) && !empty($classStudentIds)) {
             }
         }
 
+        // Get scores using the old file's approach
         $classScoreRows = db_get_rows(
             "SELECT student_id, subject_id, COALESCE(SUM(score), 0) AS total_score
              FROM input_score_class_teacher
@@ -1243,7 +1282,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
 
     <?php if (!empty($schoolLogoPath)): ?>
         <div class="watermark">
-            <img src="<?php echo '../uploads/' . (isset($iSchool['logo']) ? $iSchool['logo'] : ''); ?>" style="width: 300px; height: auto;" />
+            <img src="<?php echo $schoolLogoPath; ?>" style="width: 300px; height: auto;" />
         </div>
     <?php endif; ?>
 
@@ -1273,7 +1312,7 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
             </table>
         </div>
 
-        <!-- STUDENT INFO -->
+        <!-- STUDENT INFO - ADDED TOTAL STUDENTS LIKE OLD FILE -->
         <table class="info-grid">
             <tr>
                 <td class="left-column">
@@ -1298,6 +1337,12 @@ $studentPhotoPath = ($showProfilePic && !empty($iStudent['picture'])) ? getImage
                                 <td class="info-value"><?php echo htmlspecialchars($termRow['term'] ?? 'N/A'); ?></td>
                             </tr>
                         <?php endif; ?>
+                        <!-- ===== ADDED: TOTAL STUDENTS - MATCHES OLD FILE ===== -->
+                        <tr>
+                            <td class="info-label">TOTAL STUDENTS:</td>
+                            <td class="info-value"><strong><?php echo $iTotalStudents; ?></strong></td>
+                        </tr>
+                        <!-- =================================================== -->
                     </table>
                 </td>
                 <td>
